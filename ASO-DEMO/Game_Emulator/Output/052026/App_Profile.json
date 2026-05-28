@@ -1,0 +1,27 @@
+{
+    "app_id": "com.game.emulator.gb4.retro.gameboy.collection",
+    "last_checked": "2026-05-22T09:27:57.378946",
+    "title": "Game Emulator: GB4 Retro Games",
+    "short_description": "All in one game emulator for Android. Play classic 90s games your way!",
+    "full_description": "🎮 Game Emulator: GB4 Retro Games – All‑in‑one emulator for classic gaming\nGame Emulator: GB4 Retro Games turns your Android device into a pocket‑sized arcade. Enjoy smooth, lag‑free play for a wide range of retro games from beloved 8‑bit handhelds to 32‑bit home systems - no complex setup required.\nNote: Most platforms work right away; a few may need legally‑acquired system files.\n🚀 Key Features:\n- All-in-one Emulator: Play games from multiple classic consoles in a single app.\n- Game Hub: Collect, organize, and launch all your retro titles in one library.\n- Multi-System Support: Enjoy everything from 8-bit handhelds to 32-bit home consoles.\n- Save & Load Anytime: Freeze the action and resume from the exact same moment.\n- Fast Forward: Skip long cutscenes or grinding sections with a single tap.\n- One-Tap Screenshot: Capture and share your favorite retro moments in seconds.\n🎛️ Customizable Controls:\n- Controller Mapping: Pair Bluetooth gamepads and assign them to players - perfect for couch co‑op.\n- On‑screen Button Skins: Switch between retro‑styled touch layouts in portrait or landscape.\n- Adjust Transparency: Make virtual buttons subtle or bold - whatever fits best.\n- Haptic Feedback: Feel every press and joystick move with gentle vibration.\n📁 Game Library Made Easy\n- Import your own titles: Add legally‑owned game files from local storage or cloud drive in seconds.\n- Smart Organization: Your collection auto‑groups by system generation for quick browsing.\n- Instant Search: Find any game fast with real‑time filtering.\n- Quick Actions: Long‑press a game to rename, delete, load state, or play.\n💡 Friendly for every retro gamer\n- Step‑by‑step Tutorial: Simple walkthroughs guide newcomers through setup and features.\n- Custom Themes: Personalize colors and layouts to match your nostalgia vibe.\n✅ Built for performance, made for nostalgia\nGame Emulator: GB4 Retro Games isn’t just a game emulator. It’s a full classic‑gaming hub in your pocket. Replay childhood favorites or discover hidden gems with speed, flexibility, and zero distractions.\nPlatformers, RPGs, arcade shooters, puzzlers. play them all whenever inspiration strikes.\n📲 Download Game Emulator: GB4 Retro Games today\nRelive the golden age of gaming wherever you go. Whether you’re at home, commuting, or hanging out with friends, GB4 delivers endless retro fun in seconds. Tap “Install,” add your personal game backups, and start playing the 90s and early‑2000s hits that defined a generation.\n🚨Legal notice: This emulator does not contain any game data or system firmware. Please use only content you have the legal right to possess.",
+    "competitors": [
+        {
+            "package_id": "com.fulldive.extension.fullroid",
+            "title": "One Emulator for Game Consoles",
+            "short_description": "One Emulator is an easy to use game console emulator for a range of consoles.",
+            "desc200": "One Wize Emulator: Free Emulator for Games is an open-source emulator. It's designed to work on a wide range of devices, from phones to TVs, and to provide the best user experience on Android. It's co"
+        },
+        {
+            "package_id": "org.ppsspp.ppsspp",
+            "title": "PPSSPP - PSP emulator",
+            "short_description": "Play PSP games on your Android device, at high definition with extra features!",
+            "desc200": "Play PSP games on your Android device, at high definition with extra features!\nPPSSPP is the original and best PSP emulator for Android. It runs a lot of games, but depending on the power of your devi"
+        },
+        {
+            "package_id": "org.dolphinemu.dolphinemu",
+            "title": "Dolphin Emulator",
+            "short_description": "Dolphin, a GameCube/Wii emulator",
+            "desc200": "Dolphin Emulator lets you play GameCube and Wii games on your Android device! Various graphical enhancements and other features are available to improve your game experience.\nTHIS APP DOES NOT COME WI"
+        }
+    ]
+}

@@ -1,0 +1,340 @@
+{
+  "schema_version": "2.0",
+  "profile_type": "aso_app_profile",
+  "last_checked": "2026-05-22",
+  "source_url": "https://play.google.com/store/apps/details?id=com.filter.ar.effect.camera3d.fyp.meme",
+  "app_identity": {
+    "app_id": "com.filter.ar.effect.camera3d.fyp.meme",
+    "package_id": "com.filter.ar.effect.camera3d.fyp.meme",
+    "title": "AR Filter: FYP Dogy Filter",
+    "developer": "Mobile Innovate X",
+    "category": "Entertainment",
+    "content_rating": "Rated for 3+",
+    "monetization": {
+      "contains_ads": true,
+      "in_app_purchases": true
+    },
+    "installs": "100K+",
+    "updated_on": "2026-05-15"
+  },
+  "live_store_metadata": {
+    "short_description": "Create funny AR videos with AR Dogy Filter, interactive 3D characters, trending filter effects, and weird face filters.",
+    "full_description_digest": {
+      "one_sentence_summary": "A playful AR camera app for creating short videos with AR Dogy characters, interactive 3D characters, dance scenes, character controls, and weird/funny face effects.",
+      "description_sections": [
+        "AR Filter: FYP Dogy Filter",
+        "Key Features",
+        "Interactive 3D AR Character Filters",
+        "Control Character Actions While Recording",
+        "Dance With AR Characters",
+        "Funny Face Filters and Weird Effects",
+        "How to Use",
+        "Why Users Enjoy AR Filter: FYP Dogy Filter"
+      ],
+      "main_feature_claims": [
+        "Create funny AR short videos",
+        "Place AR Dogy characters into the real environment",
+        "Use interactive 3D AR characters",
+        "Control character actions while recording",
+        "Make characters run, jump, and move",
+        "Record dance videos with animated AR characters",
+        "Try weird/funny face filters and face transformations",
+        "Create reaction clips and meme-style content",
+        "Use an easy camera flow for playful videos"
+      ],
+      "how_to_use_flow": [
+        "Open the camera and choose an AR filter",
+        "Place the AR character in the real environment and adjust the scene",
+        "Control the character, dance with it, or try funny face effects",
+        "Record playful short videos"
+      ]
+    },
+    "data_safety_summary": {
+      "may_share_data_types": [
+        "Location",
+        "App activity",
+        "Device or other IDs"
+      ],
+      "may_collect_data_types": [
+        "Location",
+        "Photos and videos",
+        "Other declared data types"
+      ],
+      "encrypted_in_transit": true,
+      "user_can_request_data_deletion": true
+    }
+  },
+  "corrected_positioning": {
+    "primary_positioning": "AR camera app for funny short videos with AR Dogy characters and interactive 3D AR effects.",
+    "secondary_positioning": [
+      "Funny face filter app for weird transformations and meme-style reaction clips",
+      "3D AR character app for playful dance and movement scenes",
+      "Trend-inspired short video camera effect app"
+    ],
+    "not_the_right_positioning": [
+      "Not a full social network",
+      "Not a generic beauty camera",
+      "Not a pure photo editor",
+      "Not a TikTok/Snapchat/Instagram replacement",
+      "Not a broad AR platform for professional creators"
+    ],
+    "strongest_differentiators": [
+      "AR Dogy character hook",
+      "Interactive 3D AR characters placed in the real environment",
+      "Character controls such as running, jumping, and moving while recording",
+      "Dance-video use case with AR characters",
+      "Combination of AR character effects and weird face filters in one app"
+    ]
+  },
+  "user_intent_insights": {
+    "core_user_jobs": [
+      "I want to make funny short videos quickly",
+      "I want a dog/dogy AR effect for social content",
+      "I want to place a 3D character into my camera scene",
+      "I want to control a character while recording",
+      "I want weird face filters for joke, reaction, or meme videos",
+      "I want a playful effect that feels trend/FYP-inspired"
+    ],
+    "likely_audience": [
+      "Gen Z and young casual users",
+      "Meme and short-video creators",
+      "Users looking for funny camera effects",
+      "Users searching for dog/puppy/dogy filter experiences",
+      "Users interested in dance, trend, or challenge-style clips"
+    ],
+    "emotional_drivers": [
+      "Funny",
+      "Silly",
+      "Unexpected",
+      "Playful",
+      "Trend-aware",
+      "Easy to use",
+      "Shareable"
+    ],
+    "conversion_hooks": [
+      "AR Dogy Filter",
+      "Interactive 3D characters",
+      "Control character actions",
+      "Dance with AR characters",
+      "Weird face effects",
+      "Funny short videos",
+      "Meme-style content"
+    ]
+  },
+  "aso_keyword_strategy": {
+    "primary_keyword_cluster": [
+      "ar filter",
+      "ar dogy filter",
+      "dogy filter",
+      "3d ar character",
+      "ar camera",
+      "funny ar video",
+      "face filters",
+      "funny face filters",
+      "weird face filter"
+    ],
+    "feature_keyword_cluster": [
+      "interactive 3d character",
+      "3d character camera",
+      "character control",
+      "ar character dance",
+      "dance with ar character",
+      "face transformation",
+      "funny camera effects",
+      "meme camera",
+      "short video effects"
+    ],
+    "trend_intent_cluster": [
+      "fyp filter",
+      "trending filter",
+      "trend effect",
+      "meme filter",
+      "funny video effect",
+      "challenge filter",
+      "viral camera effect"
+    ],
+    "animal_filter_cluster": [
+      "dog filter",
+      "puppy face filter",
+      "dogy dance",
+      "dogy camera",
+      "cute dog filter",
+      "funny dog filter"
+    ],
+    "avoid_or_use_carefully": [
+      {
+        "keyword": "TikTok",
+        "note": "Use only as user-intent context or sharing behavior. Avoid implying affiliation."
+      },
+      {
+        "keyword": "Snapchat",
+        "note": "Do not position the app as Snapchat or an official Snapchat lens/filter source."
+      },
+      {
+        "keyword": "Instagram",
+        "note": "Use carefully as a sharing context only."
+      },
+      {
+        "keyword": "best / #1 / ultimate",
+        "note": "Avoid exaggerated ranking claims in metadata."
+      },
+      {
+        "keyword": "free",
+        "note": "Use only if accurate for the specific feature and monetization model."
+      }
+    ],
+    "semantic_weighting_recommendation": {
+      "ar_character_effects": 0.35,
+      "funny_face_filters": 0.25,
+      "dogy_animal_filter": 0.2,
+      "short_video_trend_intent": 0.15,
+      "social_platform_association": 0.05
+    }
+  },
+  "competitor_strategy": {
+    "previous_profile_issue": "Snapchat, TikTok, and Instagram are broad platform references, not direct ASO competitors for this niche app.",
+    "recommended_competitor_types": [
+      {
+        "type": "Direct feature competitors",
+        "description": "Apps ranking around funny face filters, live face camera, face warp, time warp, dog/puppy face filters, and camera effects."
+      },
+      {
+        "type": "AR/3D character competitors",
+        "description": "Apps with animated 3D characters, AR characters, AR camera effects, or character-in-real-world camera experiences."
+      },
+      {
+        "type": "Internal sibling benchmarks",
+        "description": "Apps from the same developer that may share audience and keywords, useful for cannibalization and portfolio keyword mapping."
+      },
+      {
+        "type": "Broad social platforms",
+        "description": "Use Snapchat/TikTok/Instagram only as inspiration or behavior context, not as direct competitor rows."
+      }
+    ],
+    "suggested_competitors": [
+      {
+        "package_id": "com.cem.software.ar.dog.filter.dog.doin",
+        "title": "AR Dog Filter: Dog Doin",
+        "developer": "CEM SOFTWARE LTD",
+        "relationship": "external direct competitor",
+        "why_relevant": "Virtual AR dog placement, control character actions, record funny short videos for social sharing.",
+        "short_description": "Spawn a funny 3D AR dog in your room, control its actions, and record hilarious prank videos.",
+        "desc200": "AR Dog Filter: Dog Doin is an entertainment app that allows you to bring a virtual chaotic dog into the real world. Interact with a funny 3D dog through your camera, control its movements, and make",
+        "overlap_keywords": [
+          "ar dog filter",
+          "dog doin",
+          "control character",
+          "ar camera",
+          "funny short video"
+        ],
+        "difference_from_target_app": "Similar concept of placing a chaotic virtual dog in surroundings and controlling its actions."
+      },
+      {
+        "package_id": "com.ndqh.ar.dogy.funny.dog.filter.meme.prank",
+        "title": "AR Dogy: Funny Dog Filter",
+        "developer": "NDQH GLOBAL LIMITED",
+        "relationship": "external direct competitor / high-overlap clone",
+        "why_relevant": "AR dog placement in environment, record meme videos, funny pranks, very close name overlap.",
+        "short_description": "Enjoy funny meme pranks with virtual dogs! Spawn a 3D dog in your space and record AR camera videos.",
+        "desc200": "AR Dogy: Funny Dog Filter lets you place a realistic mischievous dog in your surroundings. Create hilarious prank videos, customize dog animations, and add popular sound effects for social media",
+        "overlap_keywords": [
+          "ar dogy",
+          "funny dog filter",
+          "ar filter",
+          "dogy filter",
+          "meme video"
+        ],
+        "difference_from_target_app": "Very close name cloning; focuses on simple dog placement and quick pranks."
+      },
+      {
+        "package_id": "com.vas.ardogy.funnyfiltermeme",
+        "title": "AR Dogy - Funny Filter Meme",
+        "developer": "Vietnam Australia International School (VAS)",
+        "relationship": "external direct competitor",
+        "why_relevant": "AR meme character placement in environment, record prank videos, save and manage created clips.",
+        "short_description": "Place trending meme characters and virtual dog filters in your room to record funny prank videos.",
+        "desc200": "AR Dogy - Funny Filter Meme brings your favorite internet memes to life! Use real-time AR camera tracking to place dogs and characters in your room, add custom music, and record funny prank videos",
+        "overlap_keywords": [
+          "ar dogy",
+          "funny filter meme",
+          "meme filter",
+          "ar camera",
+          "prank video"
+        ],
+        "difference_from_target_app": "Direct thematic match focusing on meme characters and video recording."
+      },
+      {
+        "package_id": "com.novosyx.ar.dogy.funny.meme.filter.prank",
+        "title": "AR Dogy: Funny Meme Filter",
+        "developer": "NovoSyx Global Limited",
+        "relationship": "external direct competitor",
+        "why_relevant": "AR dog filter with interactive tap-to-trigger character animations, movement, and actions.",
+        "short_description": "Create viral video clips with interactive AR dog filter animations, character movement, and funny meme effects.",
+        "desc200": "AR Dogy: Funny Meme Filter is the ultimate AR camera app for dog lovers and content creators. Place an animated virtual dog in your real space, tap to trigger funny movements, and record prank",
+        "overlap_keywords": [
+          "ar dogy",
+          "funny meme filter",
+          "character animation",
+          "dogy filter",
+          "character movement"
+        ],
+        "difference_from_target_app": "Strong focus on interactive tap actions and dog animations; target app offers broader 3D character control and dance scenes."
+      },
+      {
+        "package_id": "com.face.filters.funny.filter.timewarp.camera.prank",
+        "title": "Fazee - Funny Face Filter",
+        "developer": "Mobile Innovate X",
+        "relationship": "internal sibling / high-overlap feature benchmark",
+        "why_relevant": "Funny face filters, animal filters, face distortions, time warp, trend/video sharing intent.",
+        "short_description": "Try funny face filters, real-time face distortions, popular time warp scans, and funny camera pranks.",
+        "desc200": "Fazee - Funny Face Filter is your go-to app for creating hilarious camera distortions and warp effects. Use the trending time warp scan line, morph your facial features, try funny animal masks,",
+        "overlap_keywords": [
+          "funny face filter",
+          "face distortion",
+          "animal filter",
+          "time warp",
+          "trending video"
+        ],
+        "difference_from_target_app": "Fazee is more face-warp/time-warp oriented; target app is more AR Dogy and 3D AR character oriented."
+      }
+    ]
+  },
+  "content_direction": {
+    "recommended_store_message": "Make AR short videos more playful with AR Dogy characters, interactive 3D actions, dance scenes, and weird face effects.",
+    "recommended_first_screen_message": [
+      "AR Dogy Filter",
+      "Control 3D AR Characters",
+      "Dance & Record Funny Videos",
+      "Try Weird Face Filters"
+    ],
+    "recommended_screenshot_angles": [
+      "Place AR Dogy in your real scene",
+      "Control character actions: run, jump, move",
+      "Dance with animated AR characters",
+      "Try funny/weird face effects",
+      "Record short videos for social sharing"
+    ],
+    "recommended_localization_notes": [
+      "Keep Dogy as a branded/product term if it appears in the app name.",
+      "Translate user intent naturally: funny video, face filter, weird effect, dance, short video, AR character.",
+      "Do not over-translate FYP if the local market commonly uses FYP/TikTok-style wording.",
+      "In markets where 'dogy' looks like a typo, support it with dog/puppy semantic keywords in keyword fields."
+    ]
+  },
+  "pipeline_usage_notes": {
+    "best_for": [
+      "ASO seed keyword generation",
+      "Keyword clustering",
+      "Competitor keyword scraping",
+      "Localization brief",
+      "Screenshot message planning",
+      "Metadata quality review"
+    ],
+    "do_not_use_as": [
+      "Exact full-description archive",
+      "Legal affiliation claim source",
+      "Official trademark/brand clearance document"
+    ],
+    "recommended_next_step": "Run keyword extraction using weighted clusters instead of treating Snapchat/TikTok/Instagram as direct competitors."
+  }
+}

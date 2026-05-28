@@ -1,0 +1,27 @@
+{
+    "app_id": "com.example.yourapp",
+    "last_checked": "2026-05-22T09:27:15.000000",
+    "title": "Your App Name: Main Feature Keyword",
+    "short_description": "A compelling short description under 80 characters.",
+    "full_description": "Write a comprehensive marketing and functional description of your application here. Include key feature lists, customizable options, and user benefit highlights to assist the keyword relevance engine.",
+    "competitors": [
+        {
+            "package_id": "com.competitor.one",
+            "title": "Competitor One Title",
+            "short_description": "Competitor One short description under 80 characters.",
+            "desc200": "First 200 characters of Competitor One's full description. Used by the relevance boost engine to verify competitor-proven keywords."
+        },
+        {
+            "package_id": "com.competitor.two",
+            "title": "Competitor Two Title",
+            "short_description": "Competitor Two short description under 80 characters.",
+            "desc200": "First 200 characters of Competitor Two's full description. Used by the relevance boost engine to verify competitor-proven keywords."
+        },
+        {
+            "package_id": "com.competitor.three",
+            "title": "Competitor Three Title",
+            "short_description": "Competitor Three short description under 80 characters.",
+            "desc200": "First 200 characters of Competitor Three's full description. Used by the relevance boost engine to verify competitor-proven keywords."
+        }
+    ]
+}
