@@ -139,7 +139,7 @@ echo     gh auth login --web --git-protocol https
 echo     (Lam theo huong dan tren man hinh)
 echo.
 echo   Buoc 4: Clone du an:
-echo     git clone https://github.com/Ytube2403/ASO-DEMO.git
+echo     git clone https://github.com/Ytube2403/ASO-MVP.git
 echo.
 echo   Buoc 5: Cai dat Python packages:
 echo     pip install flask openpyxl pandas langdetect
@@ -163,7 +163,7 @@ if /i "%ready%"=="y" (
     set /p destdir="  Thu muc: "
     echo.
     echo  Dang clone du an...
-    git clone https://github.com/Ytube2403/ASO-DEMO.git "%destdir%\ASO-DEMO"
+    git clone https://github.com/Ytube2403/ASO-MVP.git "%destdir%\ASO-DEMO"
     if %ERRORLEVEL% EQU 0 (
         echo.
         echo  ✅  Clone thanh cong! Du an nam tai: %destdir%\ASO-DEMO
