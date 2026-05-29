@@ -1234,7 +1234,7 @@ def get_category_sound(kw):
 
 def classify_by_sound_category(df_all, selected_shortlist_kws):
     accepted_buckets = ['Core Intent Final', 'Broad Expansion', 'Feature Keywords', 'Style Keywords', 'Consider Keywords']
-    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets) & (~df_all['Keyword'].str.lower().isin(selected_shortlist_kws))]
+    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)]
     df_sorted = df_candidates.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     
     groups = {
