@@ -883,6 +883,8 @@ if 'RelevancyScore' in df_raw.columns:
 else:
     df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
 
+
+
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
 max_vol = df['Max. Volume'].max()

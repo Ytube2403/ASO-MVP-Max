@@ -52,7 +52,11 @@ APP_CONFIG = {
         "clipper prank", "razor prank", "clippers", "trimmer prank", 
         "stun gun simulator", "taser simulator", "shock gun", "funny sounds", 
         "funny sound", "prank app", "prank apps", "gun sounds", "gun sound", 
-        "gun simulator", "weapon sounds", "firearm sounds"
+        "gun simulator", "weapon sounds", "firearm sounds",
+        # Generic core keywords and common translations
+        "prank", "pranks", "fart", "taser", "shaver", "clipper", "shave", "razor", 
+        "trimmer", "horn", "sound effects", "fake sound", "fake sounds", 
+        "fun sound", "fun sounds", "hair cut", "hair cutting", "joke sound", "joke sounds", "barber"
     ],
     
     "feature_terms": [
@@ -62,7 +66,7 @@ APP_CONFIG = {
         "burp sounds", "scary sounds", "coughing sounds", "laughing sounds", "siren sounds", 
         "doorbell sounds", "vibration effect", "timer prank", "custom lists", "favorites list", 
         "voice changer", "face dance", "gunshot sound", "shotgun reload", "pistol fire", 
-        "machine gun burst", "weapon simulator"
+        "machine gun burst", "weapon simulator", "noise", "noisy"
     ],
     
     "style_terms": [

@@ -62,10 +62,15 @@ LANG_LEXICONS = {
         "de", "del", "la", "el", "los", "las", "para", "con", "sin", "gratis",
         "sonido", "sonidos", "broma", "bromas", "divertido", "divertidos", "juego",
         "juegos", "foto", "fotos", "editor", "camara", "filtro", "filtros", "centro",
+        "maquina", "corte", "pelo", "cabello", "bocina", "bocinas", "risa", "risas",
+        "gracioso", "graciosos", "graciosa", "graciosas", "choque", "choques", "pum"
     },
     "pt": {
         "de", "da", "do", "para", "com", "sem", "gratis", "som", "sons", "brincadeira",
         "foto", "fotos", "editor", "camera", "filtro", "filtros", "jogo", "jogos",
+        "barulho", "barulhos", "maquina", "corte", "cabelo", "peido", "peidos",
+        "buzina", "buzinas", "risada", "risadas", "engracado", "engracada", "engracados",
+        "choque", "choques", "pegadinha", "pegadinhas", "pum"
     },
     "vi": {
         "ung", "dung", "mien", "phi", "anh", "chinh", "sua", "tro", "choi", "am",
@@ -243,13 +248,19 @@ def _classify_latin_tokens(tokens, policy, config=None, english_vocab=None):
     english_words = _build_english_words(config, english_vocab)
     token_langs = []
 
+    # Determine search order for language lexicons: check policy's primary languages first
+    primary_langs = policy.get("primary", [])
+    other_langs = [l for l in LANG_LEXICONS if l not in primary_langs]
+    check_order = primary_langs + other_langs
+
     for token in tokens:
         root = _get_root_word(token)
         if token in english_words or root in english_words:
             token_langs.append("en")
             continue
         matched = None
-        for lang, lexicon in LANG_LEXICONS.items():
+        for lang in check_order:
+            lexicon = LANG_LEXICONS.get(lang, {})
             if token in lexicon or root in lexicon:
                 matched = lang
                 break
