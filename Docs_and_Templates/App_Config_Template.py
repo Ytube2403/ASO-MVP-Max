@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration Template
-Version: 3.4
+Version: 3.5
 Purpose: Template configuration for deploying ASO Keyword Planner on a new application.
 """
 
@@ -181,7 +181,7 @@ APP_CONFIG = {
                 "flag": "TOO_LONG"
             },
             "cross_language_bleed": {
-                "note": "Chỉ dùng để loại bỏ ngôn ngữ lạ, không flag nhầm secondary language",
+                "note": "Legacy note only. From v3.5, script/language mismatch is handled by shared/language_detector.py; naturalness must not hard-drop non-Latin text as LANGUAGE_BLEED.",
                 "forbidden_foreign_in_market": {},
                 "flag": "LANGUAGE_BLEED"
             }

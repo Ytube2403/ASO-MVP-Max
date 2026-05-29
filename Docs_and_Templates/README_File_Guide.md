@@ -9,8 +9,8 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 ### 1. [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/run_aso_filter.py)
 * **Tác dụng:** **Bộ điều phối trung tâm (Orchestrator)**. 
 * **Cách hoạt động:** Khi bạn chạy file này từ dòng lệnh với file CSV đầu vào, nó sẽ:
-  1. Tự động nhận dạng tên ứng dụng (`ARFilter`, `ControlWidget` hoặc `GameEmulator`) và thị trường (`Market` như `US_EN`) từ tên file CSV.
-  2. Di chuyển/sao chép file CSV đầu vào vào đúng thư mục lưu trữ (`Input/[Tháng]/`).
+  1. Tự động nhận dạng tên ứng dụng (`ARFilter`, `ControlWidget`, `GameEmulator`, `PrankSounds`/`Pranky`) và thị trường (`Market` như `US_EN`) từ tên file CSV.
+  2. Sao chép file CSV đầu vào vào đúng thư mục lưu trữ (`Input/[Tháng]/`); file gốc không bị xóa.
   3. Kích hoạt đúng script xử lý tương ứng của ứng dụng đó với các cờ cấu hình phù hợp.
   4. Xuất kết quả ra đúng thư mục (`Output/[Tháng]/`).
 
@@ -26,8 +26,8 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ## 📂 Thư Mục `Docs_and_Templates/` (Tài liệu & File mẫu)
 
-### 4. [ASO_Keyword_Planner_v3_4.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_4.md)
-* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.4 (Mới nhất)**.
+### 4. [ASO_Keyword_Planner_v3_5.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_5.md)
+* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.5 mới nhất**.
 * **Nội dung:** Giải thích chi tiết quy trình 10 bước của ASO Keyword Planner: chuẩn hóa dữ liệu đầu vào, lọc cứng chặn đối thủ/typo/noise, phân tích chính sách ngôn ngữ thị trường, lọc độ tự nhiên ngôn ngữ, chấm điểm Relevancy và tính điểm cân bằng Balanced Score, phân nhóm quota cho Top 30 và 10 Consider, cơ chế đa dạng hóa Word Overlap, và xuất duy nhất 01 file Excel tổng gồm các sheet quy chuẩn từ 00 đến 12.
 
 ### 5. [App_Config_Template.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/App_Config_Template.py)
@@ -40,7 +40,7 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ### 7. [english_words_10k.txt](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/english_words_10k.txt)
 * **Tác dụng:** **Từ điển 10,000 từ tiếng Anh thông dụng nhất**.
-* **Cách dùng:** Dùng làm whitelist để kiểm tra và phân loại nhanh xem một từ khóa có phải là tiếng Anh chuẩn hay không (ở Bước 3 - Language Naturalness).
+* **Cách dùng:** Dùng làm whitelist hỗ trợ `shared/language_detector.py` khi phân loại keyword tiếng Anh ngắn hoặc thuật ngữ ASO dễ bị detect nhầm.
 
 ### 8. [DESIGN.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/DESIGN.md)
 * **Tác dụng**: **Tài liệu hệ thống thiết kế (Design System Spec)**.
@@ -67,10 +67,15 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ---
 
-## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`)
+## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`, `Prank_Sounds/`)
 
-### 14. `run_[tên_app]_v3_4.py` (Ví dụ: `run_ar_filter_v3_4.py`)
-* **Tác dụng:** **Script xử lý nghiệp vụ chính**. Chứa toàn bộ mã nguồn cài đặt 10 bước của quy trình ASO Keyword Planner v3.4.
+### 14. `run_[tên_app]_v3_5.py` hoặc `run_pipeline.py`
+* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng script `v3_5`; `Prank_Sounds` dùng `run_pipeline.py`. Tất cả đều ưu tiên lấy language/filter logic từ `shared/`.
+* **Routing hiện tại của `run_aso_filter.py`:**
+  * Tên file chứa `filter` -> `AR_Filter/run_ar_filter_v3_5.py`.
+  * Tên file chứa `emulator` -> `Game_Emulator/run_game_emulator_v3_5.py`.
+  * Tên file chứa `prank` hoặc `pranky` -> `Prank_Sounds/run_pipeline.py`.
+  * Các trường hợp còn lại -> `Control_Widget/run_control_widget_v3_5.py`.
 
 ### 15. `App_Profile.json`
 * **Tác dụng:** **Hồ sơ cấu hình thực tế của ứng dụng** (được script xử lý đọc trực tiếp khi chạy).
@@ -99,3 +104,18 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ### 20. Thư mục [Master_Keywords/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Master_Keywords)
 * **Tác dụng:** Thư mục chứa các tệp Excel đầu ra của Module B (danh sách keyword sạch sau lọc dùng để import vào AppTweak, phân sheet theo locale).
+
+---
+
+## Shared Modules v3.5
+
+### 21. [shared/language_detector.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/language_detector.py)
+* **Tac dung:** Module nhan dien ngon ngu dung chung cho toan bo pipeline. Ham chinh la `detect_keyword_language`, tra ve ngon ngu duoc detect va nhom `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, hoac `UNKNOWN`.
+* **Luu y:** Market policy nam trong shared module; vi du `PH_FIL` cho phep mixed Filipino/Tagalog + English vao `Consider Keywords`.
+
+### 22. [shared/keyword_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/keyword_filter.py)
+* **Tac dung:** Module loc keyword dung chung, gom noise-only, irrelevant, naturalness, expansion score, language bucket classification va selection cache metadata.
+* **Luu y:** Tu v3.5, cac pipeline `Prank_Sounds`, `App_Template`, `AR_Filter`, `Control_Widget`, va `Game_Emulator` nen goi module nay truoc khi dung fallback legacy.
+
+### 23. [tests/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/tests)
+* **Tac dung:** Chua regression test cho `shared/language_detector.py` va `shared/keyword_filter.py`, bao gom case non-Latin, Philippines mixed language, Spanish mismatch, noise phrase va stale selection cache.

@@ -1,15 +1,15 @@
-# 🛠️ ASO App Template — Hướng Dẫn Cấu Hình Ứng Dụng Mới
+# 🛠️ Prank Sounds ASO Pipeline — Hướng Dẫn Chạy & Cấu Hình
 
-Thư mục mẫu này được thiết kế để giúp bạn dễ dàng thiết lập quy trình lọc từ khóa ASO cho bất kỳ ứng dụng mới nào mà không cần phải can thiệp trực tiếp vào mã nguồn của pipeline (khoảng 1500 dòng code).
+Thư mục này chứa pipeline thực tế cho nhóm app Prank Sounds. Có thể chạy trực tiếp bằng `run_pipeline.py` hoặc chạy qua orchestrator `ASO-DEMO/run_aso_filter.py` với file CSV có tên chứa `Prank`/`Pranky`.
 
 Hệ thống được thiết kế theo hướng **tách biệt cấu hình và mã nguồn**: toàn bộ thông số cấu hình nằm trong file `app_config.py` và hồ sơ ứng dụng nằm trong file `App_Profile.json`.
 
 ---
 
-## 📁 Cấu trúc thư mục mẫu
+## 📁 Cấu trúc thư mục
 
 ```text
-App_Template/
+Prank_Sounds/
 ├── README.md                      (Tài liệu hướng dẫn này)
 ├── app_config.py                  (Nơi điền từ khóa, thương hiệu đối thủ, trọng số điểm)
 ├── App_Profile.json               (Nơi điền mô tả hiện tại và đối thủ của app)
@@ -20,7 +20,7 @@ App_Template/
 
 ---
 
-## ⚙️ Các bước cấu hình ứng dụng mới
+## ⚙️ Cấu hình Prank Sounds
 
 ### Bước 1: Khai báo thông tin định danh và từ khóa trong `app_config.py`
 Mở file `app_config.py` bằng bất kỳ trình soạn thảo mã nguồn nào và chỉnh sửa các mục sau:
@@ -42,20 +42,45 @@ Mở file `App_Profile.json` và điền:
 
 ### Bước 3: Đặt tên file dữ liệu đầu vào chuẩn
 Lấy file CSV từ khoá thô từ Apptweak hoặc SensorTower về và lưu tên theo chuẩn:
-`[AppName]_[Country]_[Language].csv` (Ví dụ: `MyNewApp_US_EN.csv`).
+`[AppName]_[Country]_[Language].csv` (Ví dụ: `PrankSounds_US_EN.csv`, `Pranky_PH_FIL.csv`).
 
 ---
 
 ## 🚀 Cách chạy Lọc từ khóa
 
-Mở terminal/powershell tại thư mục gốc của dự án hoặc thư mục mẫu này và chạy lệnh:
+Mở terminal/powershell tại thư mục `ASO-DEMO/Prank_Sounds` và chạy trực tiếp pipeline:
 
 ```powershell
 # Chạy ở chế độ tự động xuất Excel trực tiếp
-python run_pipeline.py --csv C:\duong-dan-den\MyNewApp_US_EN.csv --market US_EN
+python run_pipeline.py --csv C:\duong-dan-den\PrankSounds_US_EN.csv --market US_EN
 
 # Chạy ở chế độ mở giao diện Web tương tác (để tự tay lựa chọn & viết mô tả)
-python run_pipeline.py --csv C:\duong-dan-den\MyNewApp_US_EN.csv --market US_EN --interactive
+python run_pipeline.py --csv C:\duong-dan-den\PrankSounds_US_EN.csv --market US_EN --interactive
 ```
 
-Kết quả sẽ tự động được xuất ra cùng thư mục dưới dạng một file Excel duy nhất chứa đầy đủ báo cáo, shortlist Top 30, danh sách Consider và lý do cụ thể loại/giữ từng từ khóa.
+Hoặc chạy từ thư mục gốc `ASO-DEMO` qua orchestrator để tự archive input vào `Prank_Sounds/Input/[MMYYYY]/` và xuất output vào `Prank_Sounds/Output/[MMYYYY]/`:
+
+```powershell
+python run_aso_filter.py --csv C:\duong-dan-den\PrankSounds_US_EN.csv
+python run_aso_filter.py --csv C:\duong-dan-den\Pranky_PH_FIL.csv --interactive
+```
+
+Kết quả sẽ được xuất thành một file Excel duy nhất chứa đầy đủ báo cáo, shortlist Top 30, danh sách Consider và lý do cụ thể loại/giữ từng từ khóa.
+
+---
+
+## Shared filter logic từ v3.5
+
+Pipeline hiện sử dụng các module chung trong `ASO-DEMO/shared/`:
+
+- `shared/language_detector.py`: detect ngôn ngữ theo market policy và phân nhóm `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, `UNKNOWN`.
+- `shared/keyword_filter.py`: lọc noise-only, irrelevant, naturalness, expansion score, bucket classification và selection cache metadata.
+
+Quy tắc cần nhớ:
+
+- `FOREIGN` vào `Language Mismatch Audit`.
+- `UNKNOWN` vào `Manual Review`.
+- `MIXED` vào `Consider Keywords` nếu market cho phép `mixed_allowed=True`.
+- `SECONDARY` giữ ở `Consider Keywords`.
+- Naturalness không hard-drop non-Latin/script khác bằng `LANGUAGE_BLEED`; ngôn ngữ do language detector xử lý.
+- `selected_keywords.json` chỉ được dùng lại khi metadata market và input file khớp run hiện tại.

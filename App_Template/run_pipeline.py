@@ -598,6 +598,19 @@ def detect_keyword_language(kw, market_lang, config):
     
     return primary_lang, 'PRIMARY'
 
+# Override the legacy local detector with the shared, market-aware implementation.
+try:
+    import sys
+    _PROJECT_ROOT_FOR_SHARED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _PROJECT_ROOT_FOR_SHARED not in sys.path:
+        sys.path.insert(0, _PROJECT_ROOT_FOR_SHARED)
+    from shared.language_detector import detect_keyword_language as _shared_detect_keyword_language
+
+    def detect_keyword_language(kw, market_lang, config):
+        return _shared_detect_keyword_language(kw, market_lang, config, english_vocab=english_vocab)
+except Exception as e:
+    print(f"Warning loading shared language detector: {e}. Falling back to legacy detector.")
+
 # Populate language columns in df
 detected_langs = []
 lang_groups = []
@@ -668,6 +681,12 @@ def translate_keywords_parallel(df_in):
 
 df['EN'] = translate_keywords_parallel(df)
 
+try:
+    from shared import keyword_filter as _shared_keyword_filter
+except Exception as e:
+    _shared_keyword_filter = None
+    print(f"Warning loading shared keyword filter: {e}. Falling back to legacy filter logic.")
+
 # Hard filters
 print("[Step 3] Hard filters...")
 df['is_competitor'] = df['Keyword'].apply(
@@ -678,10 +697,15 @@ df['is_typo'] = df['Keyword'].apply(
     lambda x: any(re.search(r'\b' + re.escape(typo.lower()) + r'\b', str(x).lower()) 
                   for typo in config['typo_blacklist'])
 )
-df['is_irrelevant'] = df['Keyword'].apply(
-    lambda x: any(re.search(r'\b' + re.escape(term.lower()) + r'\b', str(x).lower()) 
-                  for term in config['irrelevant_intent_terms'])
-)
+if _shared_keyword_filter:
+    df['is_competitor'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_competitor_keyword(x, config))
+    df['is_typo'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_typo_keyword(x, config))
+    df['is_irrelevant'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_irrelevant_keyword(x, config))
+else:
+    df['is_irrelevant'] = df['Keyword'].apply(
+        lambda x: any(re.search(r'\b' + re.escape(term.lower()) + r'\b', str(x).lower()) 
+                      for term in config['irrelevant_intent_terms'])
+    )
 
 def is_noise_only(kw, config):
     kw_lower = str(kw).lower().strip()
@@ -706,7 +730,7 @@ def is_noise_only(kw, config):
 # Setup default noise if missing in script
 if 'noise_terms' not in config:
     config['noise_terms'] = ['app', 'apps', 'free', 'download', 'android', 'for android', 'new', 'best', 'top', '2026', '2025']
-df['is_noise'] = df['Keyword'].apply(lambda x: is_noise_only(x, config))
+df['is_noise'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_noise_only(x, config) if _shared_keyword_filter else is_noise_only(x, config))
 
 # Naturalness Filter
 print("[Step 4] Naturalness checking...")
@@ -740,11 +764,11 @@ def check_naturalness(kw, config):
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
-if 'NaturalnessFlag' in df_raw.columns:
+if 'NaturalnessFlag' in df_raw.columns and not _shared_keyword_filter:
     df['NaturalnessFlag'] = df_raw['NaturalnessFlag'].fillna('OK')
     df['NaturalnessReason'] = df_raw.get('NaturalnessReason', 'Natural enough for keyword research')
 else:
-    naturalness = df['Keyword'].apply(lambda x: check_naturalness(x, config))
+    naturalness = df['Keyword'].apply(lambda x: _shared_keyword_filter.check_naturalness(x, config) if _shared_keyword_filter else check_naturalness(x, config))
     df['NaturalnessFlag'] = [n[0] for n in naturalness]
     df['NaturalnessReason'] = [n[1] for n in naturalness]
 
@@ -893,7 +917,7 @@ def calculate_expansion(row, config):
         score = 0.1
     return max(0.0, min(1.0, score))
 
-df['ExpansionValue'] = df.apply(lambda r: calculate_expansion(r, config), axis=1)
+df['ExpansionValue'] = df.apply(lambda r: _shared_keyword_filter.calculate_expansion(r, config) if _shared_keyword_filter else calculate_expansion(r, config), axis=1)
 
 bw = config['balanced_weights']
 df['BalancedScore'] = (
@@ -970,7 +994,7 @@ def classify_keyword(row, config):
         
     return 'Broad Expansion', 'broad_expansion', 'Broad widget expansion'
 
-classifications = df.apply(lambda r: classify_keyword(r, config), axis=1)
+classifications = df.apply(lambda r: _shared_keyword_filter.classify_keyword(r, config) if _shared_keyword_filter else classify_keyword(r, config), axis=1)
 df['Bucket'] = [c[0] for c in classifications]
 df['DecisionRule'] = [c[1] for c in classifications]
 df['Reason'] = [c[2] for c in classifications]
@@ -1242,19 +1266,29 @@ print("[Step 9] Metadata slot assignment...")
 
 # Start Interactive Selector Dashboard
 selections_file = os.path.join(os.path.dirname(__file__), "selected_keywords.json")
+selection_cache_meta = _shared_keyword_filter.build_selection_cache_meta(INPUT_PATH, config.get("market", "")) if _shared_keyword_filter else {}
 
 confirmed_selection = None
 
 if os.path.exists(selections_file):
-    print(f"\n[Step 9] Found existing keyword selections in {selections_file}. Loading...")
+    print(f"\n[Step 9] Found existing keyword selections in {selections_file}. Checking cache metadata...")
     with open(selections_file, "r", encoding="utf-8") as f:
-        confirmed_selection = json.load(f)
+        cached_selection = json.load(f)
+    if _shared_keyword_filter:
+        if _shared_keyword_filter.is_selection_cache_valid(cached_selection, selection_cache_meta):
+            confirmed_selection, _ = _shared_keyword_filter.unwrap_selection_payload(cached_selection)
+            print("[Step 9] Selection cache matches current input. Loading cached selections...")
+        else:
+            print("[Step 9] Selection cache does not match current input/market. Ignoring cached selections.")
+    else:
+        confirmed_selection = cached_selection
 else:
     if args.interactive:
         confirmed_selection = start_interactive_server(df, config, app_profile)
         if confirmed_selection:
             with open(selections_file, "w", encoding="utf-8") as f:
-                json.dump(confirmed_selection, f, indent=4, ensure_ascii=False)
+                payload = _shared_keyword_filter.wrap_selection_payload(confirmed_selection, selection_cache_meta) if _shared_keyword_filter else confirmed_selection
+                json.dump(payload, f, indent=4, ensure_ascii=False)
                 
             print("\n" + "="*50)
             print("[SELECTION_CONFIRMED] Keyword selections successfully saved!")
