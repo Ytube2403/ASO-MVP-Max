@@ -1,0 +1,90 @@
+{
+  "schema_version": "2.0",
+  "profile_type": "aso_app_profile",
+  "last_checked": "2026-05-27",
+  "source_url": "https://play.google.com/store/apps/details?id=com.example.mynewapp",
+  "app_identity": {
+    "app_id": "com.example.mynewapp",
+    "package_id": "com.example.mynewapp",
+    "title": "My New App Name",
+    "developer": "Your Developer Name",
+    "category": "Photo & Video",
+    "content_rating": "Rated for 3+",
+    "monetization": {
+      "contains_ads": true,
+      "in_app_purchases": false
+    },
+    "installs": "0+",
+    "updated_on": "2026-05-27"
+  },
+  "live_store_metadata": {
+    "short_description": "Hãy điền mô tả ngắn hiện tại của bạn vào đây. Đây là thông tin để script đánh giá relevancy.",
+    "full_description_digest": {
+      "one_sentence_summary": "Điền một câu tóm tắt ngắn về chức năng chính của app.",
+      "description_sections": [
+        "Tên ứng dụng",
+        "Tính năng chính",
+        "Cách sử dụng"
+      ],
+      "main_feature_claims": [
+        "Tính năng nổi bật 1",
+        "Tính năng nổi bật 2",
+        "Tính năng nổi bật 3"
+      ],
+      "how_to_use_flow": [
+        "Bước 1: Mở ứng dụng",
+        "Bước 2: Chọn tính năng",
+        "Bước 3: Lưu và chia sẻ"
+      ]
+    }
+  },
+  "corrected_positioning": {
+    "primary_positioning": "Định vị chính của ứng dụng trên store.",
+    "secondary_positioning": [
+      "Định vị phụ 1",
+      "Định vị phụ 2"
+    ],
+    "not_the_right_positioning": [
+      "Những định vị sai lệch cần tránh"
+    ],
+    "strongest_differentiators": [
+      "Điểm khác biệt lớn nhất của ứng dụng so với đối thủ"
+    ]
+  },
+  "competitor_strategy": {
+    "recommended_competitor_types": [
+      {
+        "type": "Direct competitor",
+        "description": "Đối thủ cạnh tranh trực tiếp có cùng các tính năng cốt lõi."
+      }
+    ],
+    "suggested_competitors": [
+      {
+        "package_id": "com.competitor.app1",
+        "title": "Tên App Đối Thủ 1",
+        "developer": "Developer Đối Thủ 1",
+        "relationship": "direct competitor",
+        "why_relevant": "Đối thủ trực tiếp đứng top danh mục, có tính năng giống app.",
+        "short_description": "Mô tả ngắn của đối thủ 1. Đây là dữ liệu dùng để quét từ khóa đã chứng minh hiệu quả.",
+        "desc200": "Đoạn mô tả ngắn khoảng 200 ký tự đầu tiên trong phần Full Description của đối thủ 1 để script phân tích và đối chiếu từ khóa.",
+        "overlap_keywords": [
+          "từ khóa đối thủ 1",
+          "từ khóa đối thủ 2"
+        ]
+      },
+      {
+        "package_id": "com.competitor.app2",
+        "title": "Tên App Đối Thủ 2",
+        "developer": "Developer Đối Thủ 2",
+        "relationship": "direct competitor",
+        "why_relevant": "Đối thủ trực tiếp có lượt tải cao.",
+        "short_description": "Mô tả ngắn của đối thủ 2.",
+        "desc200": "Đoạn mô tả ngắn khoảng 200 ký tự đầu tiên trong phần mô tả của đối thủ 2.",
+        "overlap_keywords": [
+          "từ khóa đối thủ 3",
+          "từ khóa đối thủ 4"
+        ]
+      }
+    ]
+  }
+}
