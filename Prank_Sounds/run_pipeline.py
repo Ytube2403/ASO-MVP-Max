@@ -706,9 +706,9 @@ df['is_typo'] = df['Keyword'].apply(
                   for typo in config['typo_blacklist'])
 )
 if _shared_keyword_filter:
-    df['is_competitor'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_competitor_keyword(x, config))
-    df['is_typo'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_typo_keyword(x, config))
-    df['is_irrelevant'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_irrelevant_keyword(x, config))
+    df['is_competitor'] = df.apply(lambda r: _shared_keyword_filter.is_competitor_keyword(r, config), axis=1)
+    df['is_typo'] = df.apply(lambda r: _shared_keyword_filter.is_typo_keyword(r, config), axis=1)
+    df['is_irrelevant'] = df.apply(lambda r: _shared_keyword_filter.is_irrelevant_keyword(r, config), axis=1)
 else:
     df['is_irrelevant'] = df['Keyword'].apply(
         lambda x: any(re.search(r'\b' + re.escape(term.lower()) + r'\b', str(x).lower()) 
@@ -738,7 +738,7 @@ def is_noise_only(kw, config):
 # Setup default noise if missing in script
 if 'noise_terms' not in config:
     config['noise_terms'] = ['app', 'apps', 'free', 'download', 'android', 'for android', 'new', 'best', 'top', '2026', '2025']
-df['is_noise'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_noise_only(x, config) if _shared_keyword_filter else is_noise_only(x, config))
+df['is_noise'] = df.apply(lambda r: _shared_keyword_filter.is_noise_only(r, config) if _shared_keyword_filter else is_noise_only(r['Keyword'], config), axis=1)
 
 # Naturalness Filter
 print("[Step 4] Naturalness checking...")
@@ -776,7 +776,7 @@ if 'NaturalnessFlag' in df_raw.columns and not _shared_keyword_filter:
     df['NaturalnessFlag'] = df_raw['NaturalnessFlag'].fillna('OK')
     df['NaturalnessReason'] = df_raw.get('NaturalnessReason', 'Natural enough for keyword research')
 else:
-    naturalness = df['Keyword'].apply(lambda x: _shared_keyword_filter.check_naturalness(x, config) if _shared_keyword_filter else check_naturalness(x, config))
+    naturalness = df.apply(lambda r: _shared_keyword_filter.check_naturalness(r, config) if _shared_keyword_filter else check_naturalness(r['Keyword'], config), axis=1)
     df['NaturalnessFlag'] = [n[0] for n in naturalness]
     df['NaturalnessReason'] = [n[1] for n in naturalness]
 
@@ -849,7 +849,7 @@ df['ProvenDetails'] = proven_details_list
 df['CompetitorBoost'] = competitor_boost_list
 
 def calculate_relevancy(row, config):
-    kw = str(row['Keyword']).lower()
+    kw = str(row.get('EN', row['Keyword'])).lower()
     score = 0.3 # baseline
     
     # Core intent
@@ -1484,9 +1484,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.3 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.3"),
+    ("Pipeline Version", "ASO Keyword Planner v3.5"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),

@@ -56,34 +56,65 @@ def has_term(text, terms):
 
 
 def has_core_intent(keyword, config):
-    return has_term(keyword, config.get("intent_core_terms", [])) or has_term(keyword, config.get("intent_core_words", []))
+    # Support dict/Series/row or string
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
+    return has_term(kw_str, config.get("intent_core_terms", [])) or has_term(kw_str, config.get("intent_core_words", []))
 
 
 def has_feature_intent(keyword, config):
-    return has_term(keyword, config.get("feature_terms", []))
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
+    return has_term(kw_str, config.get("feature_terms", []))
 
 
 def has_style_intent(keyword, config):
-    return has_term(keyword, config.get("style_terms", []))
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
+    return has_term(kw_str, config.get("style_terms", []))
 
 
 def is_competitor_keyword(keyword, config):
-    return has_term(keyword, config.get("competitor_brands", []))
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("Keyword", "")
+        # Competitor brands could match either the raw keyword or its English translation
+        return has_term(kw_str, config.get("competitor_brands", [])) or has_term(keyword.get("EN", ""), config.get("competitor_brands", []))
+    return has_term(kw_str, config.get("competitor_brands", []))
 
 
 def is_typo_keyword(keyword, config):
-    return has_term(keyword, config.get("typo_blacklist", []))
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        # Typo matching should be done on the raw keyword only
+        kw_str = keyword.get("Keyword", "")
+    return has_term(kw_str, config.get("typo_blacklist", []))
 
 
 def is_irrelevant_keyword(keyword, config):
-    return has_term(keyword, config.get("irrelevant_intent_terms", []))
+    kw_str = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
+    return has_term(kw_str, config.get("irrelevant_intent_terms", []))
 
 
 def is_noise_only(keyword, config):
+    kw_str = keyword
+    en_kw = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("Keyword", "")
+        en_kw = keyword.get("EN", kw_str)
+    else:
+        kw_str = keyword
+        en_kw = keyword
+
     if has_core_intent(keyword, config) or has_feature_intent(keyword, config) or has_style_intent(keyword, config):
         return False
 
-    tokens = tokenize(keyword)
+    tokens = tokenize(en_kw)
     if not tokens:
         return False
 
@@ -100,15 +131,24 @@ def is_noise_only(keyword, config):
         else:
             noise_phrases.add(term_norm)
 
-    keyword_norm = normalize_filter_text(keyword)
+    keyword_norm = normalize_filter_text(en_kw)
     if keyword_norm in noise_phrases:
         return True
     return all(token in noise_tokens for token in tokens)
 
 
 def check_naturalness(keyword, config):
-    text_norm = normalize_filter_text(keyword)
-    words = tokenize(keyword)
+    kw_str = keyword
+    en_kw = keyword
+    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
+        kw_str = keyword.get("Keyword", "")
+        en_kw = keyword.get("EN", kw_str)
+    else:
+        kw_str = keyword
+        en_kw = keyword
+
+    text_norm = normalize_filter_text(en_kw)
+    words = tokenize(en_kw)
     if not words:
         return "UNNATURAL", "Empty keyword"
 
