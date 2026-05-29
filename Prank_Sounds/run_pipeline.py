@@ -358,9 +358,6 @@ def load_english_vocab():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
-    if not os.path.exists(path):
-        # Fallback to legacy path
-        path = r"c:\Users\VOLIO\Documents\ASO-DEMO\Docs_and_Templates\english_words_10k.txt"
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:

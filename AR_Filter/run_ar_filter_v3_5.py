@@ -17,7 +17,7 @@ import argparse
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="ASO Keyword Planner for AR Filter")
-parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\ARFilter_US_EN.csv", help="Path to input CSV")
+parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
 parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
@@ -167,7 +167,8 @@ if market_lang in localized_data:
 # --- Google Play Scraper & Competitor Profile Builder ---
 def get_app_profile(config, seed_query):
     # Check for custom User-supplied App Profile first
-    user_profile_path = r"C:\Users\VOLIO\Documents\ASO-DEMO\AR_Filter\App_Profile.json"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    user_profile_path = os.path.join(script_dir, "App_Profile.json")
     if os.path.exists(user_profile_path):
         try:
             with open(user_profile_path, "r", encoding="utf-8") as f:
@@ -519,9 +520,6 @@ def load_english_vocab():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
-    if not os.path.exists(path):
-        # Fallback to legacy path
-        path = r"c:\Users\VOLIO\Documents\ASO-DEMO\Docs_and_Templates\english_words_10k.txt"
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:

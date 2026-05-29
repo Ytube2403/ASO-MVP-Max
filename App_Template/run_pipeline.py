@@ -360,9 +360,6 @@ def load_english_vocab():
     vocab = set()
     # Use relative path from project root for portability
     path = os.path.join(PROJECT_ROOT, "Docs_and_Templates", "english_words_10k.txt")
-    if not os.path.exists(path):
-        # Fallback to legacy path
-        path = r"c:\Users\VOLIO\Documents\ASO-DEMO\Docs_and_Templates\english_words_10k.txt"
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
