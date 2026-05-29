@@ -15,13 +15,9 @@ from openpyxl.utils import get_column_letter
 
 import argparse
 
-# Resolve script and project root directories
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-
 # Parse arguments
 parser = argparse.ArgumentParser(description="ASO Keyword Planner for Control Widget")
-parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
+parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\ControlWidget_US_EN.csv", help="Path to input CSV")
 parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
@@ -420,7 +416,13 @@ except ImportError:
 
 def load_english_vocab():
     vocab = set()
-    path = os.path.join(PROJECT_ROOT, "Docs_and_Templates", "english_words_10k.txt")
+    # Use relative path from project root for portability
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
+    if not os.path.exists(path):
+        # Fallback to legacy path
+        path = r"c:\Users\VOLIO\Documents\ASO-DEMO\Docs_and_Templates\english_words_10k.txt"
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -450,70 +452,136 @@ def get_root_word(w):
             return w[:-1]
     return w
 
-def detect_keyword_language(kw, market_lang, config):
-    kw_lower = str(kw).lower().strip()
-    if not kw_lower:
-        return market_lang.split("_")[1].lower() if "_" in market_lang else "en", 'PRIMARY'
-        
-    primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
-    
-    # Whitelist of common English words/ASO-related terms that might not be in 10k list
+def _get_language_policy(config, primary_lang):
+    """Get or auto-derive market language policy."""
+    policy = config.get('market_language_policy', {})
+    if policy.get('primary_languages'):
+        policy_primary = [l.split('-')[0].lower() for l in policy['primary_languages']]
+    else:
+        policy_primary = [primary_lang]
+    if policy.get('secondary_languages'):
+        secondary_langs = [l.split('-')[0].lower() for l in policy['secondary_languages']]
+    else:
+        secondary_langs = ['en'] if primary_lang != 'en' else []
+    return policy_primary, secondary_langs
+
+def _build_eng_words_only(config):
+    """Build English-only whitelist from config terms that were defined in English.
+    Only uses the BASE config keys, not localized extensions."""
     eng_words = {
-        'ar', 'fyp', 'app', 'apps', 'free', 'download', 'android', 'new', 'best', 'top',
+        'fyp', 'app', 'apps', 'free', 'download', 'android', 'new', 'best', 'top',
         'doggy', 'dogy', 'shrek', 'diy', 'pro', 'lite', 'tiktok', 'snapchat', 'instagram',
         'youtube', 'facebook', 'whatsapp', 'messenger', 'pinterest', 'google', 'play',
-        '3d', 'arstudio', 'augmented', 'virtual', 'scanning', 'scanner', 'doge', 'da', 'doin'
+        '3d', 'arstudio', 'augmented', 'virtual', 'scanning', 'scanner', 'doge'
     }
-    
-    # Add words from configuration terms
     for key in ['intent_core_words', 'intent_core_terms', 'feature_terms', 'style_terms', 'visual_terms', 'noise_terms']:
         if key in config:
             for term in config[key]:
                 for w in str(term).lower().split():
-                    eng_words.add(w)
-                    
-    # Clean words in keyword
+                    if all(c.isascii() for c in w):
+                        eng_words.add(w)
+    return eng_words
+
+_eng_words_cache = _build_eng_words_only(config)
+
+_LANGDETECT_CONFUSION = {
+    'no': ['en'],
+    'da': ['en'],
+    'it': ['en', 'es'],
+    'ro': ['en'],
+    'sl': ['en'],
+    'so': ['en'],
+    'tl': ['es'],
+    'pt': ['es'],
+    'id': ['en'],
+    'tr': ['es'],
+    'af': ['en'],
+    'cy': ['en'],
+    'sw': ['en'],
+}
+
+def detect_keyword_language(kw, market_lang, config):
+    kw_lower = str(kw).lower().strip()
+    primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
+    
+    if not kw_lower:
+        return primary_lang, 'PRIMARY'
+    
+    policy_primary, secondary_langs = _get_language_policy(config, primary_lang)
+    
     words = [re.sub(r'[^a-z0-9]', '', w) for w in kw_lower.split()]
     words = [w for w in words if w]
     
     if not words:
         return primary_lang, 'PRIMARY'
-        
-    # If all words in the keyword are in the English whitelist OR the 10k vocabulary, it's Primary!
-    is_primary = True
+    
+    all_english = True
     for w in words:
         root = get_root_word(w)
-        if w not in eng_words and w not in english_vocab and root not in eng_words and root not in english_vocab:
-            is_primary = False
+        if w not in _eng_words_cache and w not in english_vocab and root not in _eng_words_cache and root not in english_vocab:
+            all_english = False
             break
-            
-    if is_primary:
-        return primary_lang, 'PRIMARY'
-        
-    # If not all words are in the whitelists, use langdetect if available
+    
+    if all_english:
+        if 'en' in policy_primary:
+            return 'en', 'PRIMARY'
+        elif 'en' in secondary_langs:
+            return 'en', 'SECONDARY'
+        else:
+            return 'en', 'FOREIGN'
+    
     if HAS_LANGDETECT:
         try:
             langs = detect_langs(kw_lower)
             best_lang = langs[0].lang
             prob = langs[0].prob
             
-            if best_lang == primary_lang:
+            # Apply confusion matrix corrections for short text
+            word_count = len(words)
+            confusion_corrected = False
+            if word_count <= 3 and best_lang in _LANGDETECT_CONFUSION:
+                likely_langs = _LANGDETECT_CONFUSION[best_lang]
+                # If primary_lang is in the confusion list, prefer it
+                if primary_lang in likely_langs:
+                    best_lang = primary_lang
+                    confusion_corrected = True
+                # If any secondary lang is in the confusion list
+                elif any(s in likely_langs for s in secondary_langs):
+                    for s in secondary_langs:
+                        if s in likely_langs:
+                            best_lang = s
+                            confusion_corrected = True
+                            break
+                # If 'en' is in confusion list and primary is English
+                elif 'en' in likely_langs and 'en' in policy_primary:
+                    best_lang = 'en'
+                    confusion_corrected = True
+                # For very short keywords (1-2 words), default to primary
+                elif word_count <= 2:
+                    best_lang = primary_lang
+                    confusion_corrected = True
+            
+            # Classify the detected language
+            if best_lang == primary_lang or best_lang in policy_primary:
                 return best_lang, 'PRIMARY'
-                
-            if prob > 0.7:
-                # langdetect tends to misclassify short English words as Norwegian or Danish
-                if best_lang in ['no', 'da'] and primary_lang == 'en':
-                    return 'en', 'PRIMARY'
-                
-                # Check for secondary languages from policy
-                secondary_langs = [l.split('-')[0].lower() for l in config.get('market_language_policy', {}).get('secondary_languages', [])]
+            
+            # For confusion-corrected results, trust the correction directly
+            if confusion_corrected:
                 if best_lang in secondary_langs:
                     return best_lang, 'SECONDARY'
-                    
                 return best_lang, 'FOREIGN'
+            
+            # For non-corrected results, require higher confidence for short keywords
+            min_prob = 0.85 if word_count <= 2 else 0.7 if word_count <= 3 else 0.6
+            if prob >= min_prob:
+                if best_lang in secondary_langs:
+                    return best_lang, 'SECONDARY'
+                # Only mark as FOREIGN with sufficient confidence
+                return best_lang, 'FOREIGN'
+            
         except Exception:
             pass
-            
+    
     return primary_lang, 'PRIMARY'
 
 # Populate language columns in df
@@ -535,6 +603,56 @@ for idx, row in df.iterrows():
 
 df['DetectedLanguage'] = detected_langs
 df['LanguageGroup'] = lang_groups
+
+# Translate non-English keywords to English
+print("[Step 2.5] Translating non-English keywords to English...")
+from concurrent.futures import ThreadPoolExecutor
+
+def translate_to_english(keyword, lang):
+    if str(lang).lower() == 'en':
+        return keyword
+    try:
+        import urllib.request
+        import urllib.parse
+        import json
+        q = urllib.parse.quote(str(keyword))
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={q}"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None
+        with urllib.request.urlopen(req, timeout=3, context=ctx) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            return data[0][0][0]
+    except Exception:
+        return keyword
+
+def translate_keywords_parallel(df_in):
+    unique_translations = {}
+    to_translate = []
+    
+    for idx, row in df_in.iterrows():
+        kw = row['Keyword']
+        lang = row['DetectedLanguage']
+        if str(lang).lower() == 'en':
+            unique_translations[kw] = kw
+        else:
+            unique_translations[kw] = None
+            to_translate.append((kw, lang))
+            
+    to_translate_unique = list(set(to_translate))
+    
+    if to_translate_unique:
+        def worker(item):
+            kw, lang = item
+            return kw, translate_to_english(kw, lang)
+            
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            results = executor.map(worker, to_translate_unique)
+            for kw, translated in results:
+                unique_translations[kw] = translated
+                
+    return df_in['Keyword'].map(unique_translations).fillna(df_in['Keyword']).tolist()
+
+df['EN'] = translate_keywords_parallel(df)
 
 # Hard filters
 print("[Step 3] Hard filters...")
@@ -1259,6 +1377,11 @@ def style_sheet(ws, title, is_report=False):
             max_len = max(max_len, len(val_str))
         col_letter = get_column_letter(col[0].column)
         ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+        
+        # Hide Traffic Stability and Stability Class columns
+        col_name = ws.cell(row=1, column=col[0].column).value
+        if col_name in ['Traffic Stability', 'Stability Class']:
+            ws.column_dimensions[col_letter].hidden = True
 
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
@@ -1289,7 +1412,7 @@ ws_readme.column_dimensions['B'].width = 80
 
 # --- 01_Main_Keyword_Shortlist ---
 ws_shortlist = wb.create_sheet(title="01_Main_Keyword_Shortlist")
-cols_shortlist = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'Section', 'BalancedScore', 'RelevancyScore', 
+cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 
                   'CompetitorProven', 'ProvenDetails', 'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'WhereToUse', 'QuotaStatus', 'FillSource', 'FillReason', 'Reason']
 for col_idx, col in enumerate(cols_shortlist, 1):
     ws_shortlist.cell(row=1, column=col_idx, value=col)
@@ -1300,7 +1423,7 @@ style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
 # --- 02_Feature_Keywords ---
 ws_feature = wb.create_sheet(title="02_Feature_Keywords")
-cols_curated = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'Section', 'BalancedScore', 'RelevancyScore', 'Reason']
+cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
     ws_feature.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_feature, 2):
@@ -1320,7 +1443,7 @@ style_sheet(ws_style, "03_Style_Keywords")
 # --- 04_Dropped_Audit ---
 ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
 df_dropped = df[df['Bucket'] == 'Dropped'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
-cols_audit = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'BalancedScore', 'RelevancyScore', 'DecisionRule', 'Reason']
+cols_audit = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason']
 for col_idx, col in enumerate(cols_audit, 1):
     ws_dropped.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_dropped.iterrows(), 2):
@@ -1402,7 +1525,7 @@ ws_report.column_dimensions['E'].width = 65
 
 # --- 06_All_Candidates ---
 ws_all = wb.create_sheet(title="06_All_Candidates")
-cols_all = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'BalancedScore', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket', 
+cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket', 
             'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason']
 for col_idx, col in enumerate(cols_all, 1):
     ws_all.cell(row=1, column=col_idx, value=col)

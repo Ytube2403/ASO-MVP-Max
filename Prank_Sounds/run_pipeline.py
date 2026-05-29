@@ -16,206 +16,45 @@ from openpyxl.utils import get_column_letter
 import argparse
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="ASO Keyword Planner for AR Filter")
-parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\ARFilter_US_EN.csv", help="Path to input CSV")
-parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
+parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
+parser.add_argument("--csv", type=str, required=True, help="Path to input CSV")
+parser.add_argument("--market", type=str, default="", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
 args, unknown = parser.parse_known_args()
 
-INPUT_PATH = args.csv
+# Load configuration from app_config.py
+try:
+    from app_config import APP_CONFIG as config
+except ImportError:
+    # Fallback if run from a different directory
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        from app_config import APP_CONFIG as config
+    except ImportError:
+        print("Error: Could not import APP_CONFIG from app_config.py.")
+        sys.exit(1)
+
+INPUT_PATH = os.path.abspath(args.csv)
+market = args.market if args.market else config.get("market", "US_EN")
+config["market"] = market # Override default market with cli arg
+
 if args.output:
     OUTPUT_PATH = args.output
 else:
     # Update OUTPUT_PATH dynamically
     csv_dir = os.path.dirname(os.path.abspath(INPUT_PATH))
-    OUTPUT_PATH = os.path.join(csv_dir, "AR_Filter", f"ARFilter_{args.market.replace('_', '-')}_Output.xlsx")
-
-# AR Filter configuration
-config = {
-    "app_id": "com.filter.ar.effect.camera3d.fyp.meme",
-    "app_name": "AR Filter: FYP Dogy Filter",
-    "category": "Entertainment / Camera Filter",
-    "market": args.market,
-    "platform_mode": "google_play",
-    "semantic_mode": "ar_filter",
-    
-    "intent_core_terms": [
-        "ar filter", "ar filters", "ar camera", "face filter", "face filters",
-        "face effect", "face effects", "funny filter", "funny filters",
-        "funny face filter", "funny face filters", "weird face filter",
-        "weird face filters", "funny face effect", "funny face effects",
-        "meme filter", "meme filters", "dogy filter", "dogy filters",
-        "ar dogy filter", "dog filter", "dog filters", "ar effect", "ar effects",
-        "3d filter", "3d filters", "3d ar filter", "3d ar filters"
-    ],
-    
-    "intent_core_words": [
-        "filter", "filters", "effect", "effects", "camera", "cam", "lens", "lenses"
-    ],
-    
-    "feature_terms": [
-        "3d characters", "3d character", "ar characters", "ar character",
-        "funny video", "funny videos", "ar video", "ar videos", "short video",
-        "short videos", "dance with", "interactive", "time warp scan",
-        "time warp", "warp face", "face warp", "crying filter", "crying filters",
-        "crying face", "bald filter", "bald filters", "bald head", "dog face",
-        "puppy filter", "puppy face", "distort face", "distortion filter",
-        "funny face", "silly face", "weird face", "ugly face", "ugly filter",
-        "ugly face filter", "face morph", "morphing filter",
-        "face transformation", "face tune", "funny camera", "meme camera",
-        "funny movements", "character actions", "character control"
-    ],
-    
-    "style_terms": [
-        "fyp", "meme", "memes", "tiktok trend", "tiktok trends", "snapchat",
-        "instagram", "tiktok", "dogy", "dogy dance", "funny dance",
-        "silly dance", "crying", "bald", "dog", "puppy", "cartoon", "anime",
-        "avatar", "weird", "funny", "crazy", "hilarious", "playful"
-    ],
-    
-    "visual_terms": [
-        "camera", "video", "clip", "clips", "recording", "recorder", "lens",
-        "lenses", "selfie", "selfies", "photo", "photos", "picture", "pictures"
-    ],
-    
-    "competitor_brands": [
-        "snapchat", "tiktok", "instagram", "b612", "snow", "faceapp",
-        "youcam makeup", "youcam", "beautyplus", "beauty plus", "banuba",
-        "faceplay", "face play", "sweetsnap", "sweet snap", "facelab",
-        "faceline", "faceover", "facetime", "reface", "wombo", "camera360",
-        "camera 360", "retrica", "picsart", "pics art", "facetune", "lensa",
-        "loopsie", "face warp", "face morph", "faceapp free", "snapchat filter"
-    ],
-    
-    "typo_blacklist": [
-        "camra", "camara", "fliter", "filte", "efect", "effets", "effct",
-        "fliters", "camear", "arflter", "arfliters", "dogyf", "dogyy", "doggyy",
-        "snapcht", "instgrm", "tik tok free", "tictok"
-    ],
-    
-    "irrelevant_intent_terms": [
-        "makeup tutorial", "makeup editor", "makeup games", "beauty salon",
-        "acne remover", "teeth whitening", "hair color changer",
-        "virtual makeup", "widget", "widgets", "emulator", "emulators",
-        "retro games", "gba emulator", "nes emulator", "wallpaper pack",
-        "keyboard themes", "launcher theme", "remote control", "tv remote",
-        "smart remote", "gamepad", "controller", "hotspot"
-    ],
-    
-    "risky_platform_terms": [
-        "snapchat", "tiktok", "instagram", "facebook", "messenger", "whatsapp",
-        "facetime", "iphone", "ios", "ipad", "apple", "android"
-    ],
-    
-    "user_overrides": {
-        "force_top30_terms": [],
-        "force_consider_terms": [],
-        "force_drop_terms": []
-    },
-    
-    "balanced_weights": {
-        "VolumeN": 0.20,
-        "DifficultyN": 0.15,
-        "KEIN": 0.15,
-        "RelevancyScore": 0.30,
-        "CurrentRankN": 0.10,
-        "ExpansionValue": 0.10
-    }
-}
-
-# Add "doggy" (double g spelling variant) to base config
-config["intent_core_terms"].extend(["doggy filter", "doggy filters", "ar doggy filter"])
-config["style_terms"].append("doggy")
-
-# Save English-only config terms before localization merge
-_base_config_terms = {k: list(config.get(k, [])) for k in ['intent_core_words', 'intent_core_terms', 'feature_terms', 'style_terms', 'visual_terms', 'noise_terms']}
-
-# Apply Market-Specific Localization to Config Dictionaries
-market_lang = config["market"].split("_")[1].upper() if "_" in config["market"] else "EN"
-
-localized_data = {
-    "ES": {
-        "intent_core_words": ["filtro", "filtros", "cámara", "camara", "efecto", "efectos", "lente", "lentes"],
-        "intent_core_terms": ["filtro ar", "filtros ar", "camara ar", "cámara ar", "filtro de cara", "filtros de cara", "filtro de rostro", "filtros de rostro", "efeito ar", "efecto ar", "efectos ar", "filtro divertido", "filtros divertidos", "filtro gracioso", "filtros graciosos", "filtro de perro", "filtros de perro", "filtro de perrito", "filtros de perrito", "filtro meme", "filtros de memes", "filtro facial", "filtros faciales"],
-        "feature_terms": ["personaje 3d", "personajes 3d", "personaje ar", "personajes ar", "video divertido", "videos divertidos", "video ar", "videos ar", "broma de filtro", "filtro de broma", "deformar cara", "cara de perro", "cara de perrito", "filtro feo", "filtro de llanto", "filtro calvo", "efecto calvo", "muñeco 3d", "muñeco animado", "avatar animado", "personaje animado", "personajes animados"],
-        "style_terms": ["divertido", "gracioso", "perro", "perrito", "mascota", "mascotas", "broma", "bromas", "animado", "realidad aumentada", "virtual"],
-        "visual_terms": ["foto", "fotos", "video", "videos", "cámara", "camara", "selfie", "selfies", "imagen", "imágenes"]
-    },
-    "PT": {
-        "intent_core_words": ["filtro", "filtros", "câmera", "camera", "efeito", "efeitos", "lente", "lentes"],
-        "intent_core_terms": ["filtro ar", "filtros ar", "camera ar", "câmera ar", "filtro de cara", "filtros de cara", "filtro de rosto", "filtros de rosto", "efeito ar", "efeitos ar", "filtro divertido", "filtros divertidos", "filtro engraçado", "filtros engraçados", "filtro de cachorro", "filtros de cachorro", "filtro de cão", "filtro de pet", "filtro meme", "filtros de memes", "filtro facial", "filtros faciais"],
-        "feature_terms": ["personagem 3d", "personagens 3d", "personagem ar", "personagens ar", "video divertido", "videos divertidos", "video ar", "videos ar", "piada de filtro", "filtro de piada", "deformar rosto", "cara de cachorro", "filtro feio", "filtro de choro", "filtro careca", "efeito careca", "boneco 3d", "boneco animado", "avatar animado", "personagem animado", "personagens animados"],
-        "style_terms": ["divertido", "engraçado", "cachorro", "cão", "pet", "pets", "piada", "piadas", "animado", "realidade aumentada", "virtual"],
-        "visual_terms": ["foto", "fotos", "video", "videos", "câmera", "camera", "selfie", "selfies", "imagem", "imagens"]
-    },
-    "ID": {
-        "intent_core_words": ["filter", "kamera", "efek", "lensa"],
-        "intent_core_terms": ["filter ar", "kamera ar", "efek ar", "filter wajah", "efek wajah", "filter lucu", "efek lucu", "filter meme", "filter anjing", "filter 3d"],
-        "feature_terms": ["karakter 3d", "karakter ar", "video lucu", "video ar", "video pendek", "filter nangis", "filter botak", "muka anjing", "muka jelek", "kamera lucu", "kamera meme"],
-        "style_terms": ["fyp", "meme", "lucu", "tren tiktok", "anjing", "kartun", "anime", "avatar", "aneh"],
-        "visual_terms": ["kamera", "video", "rekaman", "selfie", "foto", "gambar"]
-    }
-}
-
-if market_lang in localized_data:
-    for key, words in localized_data[market_lang].items():
-        if key in config:
-            config[key].extend(words)
-            config[key] = list(set(config[key]))
+    app_slug = config.get("app_name", "App").replace(" ", "_")
+    OUTPUT_PATH = os.path.join(csv_dir, f"{app_slug}_{market.replace('_', '-')}_Output.xlsx")
 
 # --- Google Play Scraper & Competitor Profile Builder ---
 def get_app_profile(config, seed_query):
-    # Check for custom User-supplied App Profile first
-    user_profile_path = r"C:\Users\VOLIO\Documents\ASO-DEMO\AR_Filter\App_Profile.json"
-    if os.path.exists(user_profile_path):
-        try:
-            with open(user_profile_path, "r", encoding="utf-8") as f:
-                u_profile = json.load(f)
-            print(f"Loaded custom User App Profile from {user_profile_path}")
-            
-            # If Schema 2.0 format, adapt to version 1.0 format expected by the script
-            if "schema_version" in u_profile or "competitor_strategy" in u_profile:
-                print("Adapting Schema 2.0 Profile to pipeline compatibility format...")
-                adapted = {
-                    "app_id": u_profile.get("app_identity", {}).get("app_id", config["app_id"]),
-                    "title": u_profile.get("app_identity", {}).get("title", ""),
-                    "short_description": u_profile.get("live_store_metadata", {}).get("short_description", ""),
-                    "full_description": u_profile.get("live_store_metadata", {}).get("full_description_digest", {}).get("one_sentence_summary", ""),
-                    "competitors": [],
-                    "last_checked": datetime.now().isoformat()
-                }
-                
-                # Fetch competitors from competitor_strategy -> suggested_competitors
-                sug_comps = u_profile.get("competitor_strategy", {}).get("suggested_competitors", [])
-                for sc in sug_comps:
-                    # Check for explicit short_description and desc200
-                    s_desc = sc.get("short_description")
-                    d_200 = sc.get("desc200")
-                    
-                    if not s_desc or not d_200:
-                        # Fallback to old behavior
-                        desc_text = " ".join(sc.get("overlap_keywords", []))
-                        if sc.get("why_relevant"):
-                            desc_text += " " + sc["why_relevant"]
-                        if not s_desc:
-                            s_desc = sc.get("why_relevant", "")
-                        if not d_200:
-                            d_200 = desc_text[:200]
-                        
-                    adapted["competitors"].append({
-                        "package_id": sc.get("package_id", ""),
-                        "title": sc.get("title", ""),
-                        "short_description": s_desc,
-                        "desc200": d_200
-                    })
-                u_profile = adapted
-                
-            return u_profile
-        except Exception as e:
-            print(f"Error reading custom user profile: {e}. Falling back to default path...")
+    # Check script folder first
+    profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "App_Profile.json")
+    if not os.path.exists(profile_path):
+        profile_path = os.path.join(os.path.dirname(OUTPUT_PATH), "App_Profile.json")
 
-    profile_path = os.path.join(os.path.dirname(OUTPUT_PATH), "App_Profile.json")
     
     # Check if cached profile is fresh (< 14 days)
     if os.path.exists(profile_path):
@@ -334,8 +173,8 @@ def get_app_profile(config, seed_query):
         
     return profile
 
-# Build or load App Profile using seed query 'AR Filter'
-app_profile = get_app_profile(config, "AR Filter")
+# Build or load App Profile using seed query from config
+app_profile = get_app_profile(config, config.get("app_name", "App"))
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -566,7 +405,7 @@ def _get_language_policy(config, primary_lang):
         secondary_langs = ['en'] if primary_lang != 'en' else []
     return policy_primary, secondary_langs
 
-def _build_eng_words_only(base_terms):
+def _build_eng_words_only(config):
     """Build English-only whitelist from config terms that were defined in English.
     Only uses the BASE config keys, not localized extensions."""
     eng_words = {
@@ -577,8 +416,8 @@ def _build_eng_words_only(base_terms):
     }
     # Add words from configuration terms (these are typically English in the base config)
     for key in ['intent_core_words', 'intent_core_terms', 'feature_terms', 'style_terms', 'visual_terms', 'noise_terms']:
-        if key in base_terms:
-            for term in base_terms[key]:
+        if key in config:
+            for term in config[key]:
                 for w in str(term).lower().split():
                     # Skip words that look non-ASCII (likely localized terms)
                     if all(c.isascii() for c in w):
@@ -586,7 +425,7 @@ def _build_eng_words_only(base_terms):
     return eng_words
 
 # Pre-build the English whitelist once
-_eng_words_cache = _build_eng_words_only(_base_config_terms)
+_eng_words_cache = _build_eng_words_only(config)
 
 # langdetect confusion matrix: known misclassifications for short text
 # Maps (detected_lang) -> list of (likely_actual_lang) for correction
@@ -915,37 +754,19 @@ df['CompetitorBoost'] = competitor_boost_list
 
 def calculate_relevancy(row, config):
     kw = str(row['Keyword']).lower()
-    score = 0.30 # baseline
+    score = 0.3 # baseline
     
-    # Core intent or core words
-    has_core_term = any(term in kw for term in config['intent_core_terms'])
-    has_core_word = any(re.search(r'\b' + re.escape(w.lower()) + r'\b', kw) for w in config.get('intent_core_words', []))
-    
-    # Feature, Style, and Visual matches
-    has_feature = any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms'])
-    has_style = any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms'])
-    has_visual = any(re.search(r'\b' + re.escape(v.lower()) + r'\b', kw) for v in config.get('visual_terms', []))
-    
-    if has_core_term:
-        score += 0.40
-    elif has_core_word:
-        # Check if accompanied by relevant context (feature, style, or visual)
-        if has_feature or has_style or has_visual:
-            score += 0.40
-        else:
-            score += 0.10  # Weak bonus for generic core words without context
+    # Core intent
+    if any(term in kw for term in config['intent_core_terms']):
+        score += 0.35
         
     # Feature match
-    if has_feature:
-        score += 0.15
+    if any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms']):
+        score += 0.20
         
     # Style match
-    if has_style:
-        score += 0.10
-        
-    # Visual match
-    if has_visual:
-        score += 0.05
+    if any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms']):
+        score += 0.15
         
     # Penalties
     if row['is_competitor']:
@@ -1058,7 +879,7 @@ def classify_keyword(row, config):
         return 'Consider Keywords', 'secondary_language_handling', 'Secondary language handling'
         
     # Platform Risk
-    has_platform_risk = any(re.search(r'\b' + re.escape(term) + r'\b', kw) for term in config['risky_platform_terms'])
+    has_platform_risk = any(term in kw for term in config['risky_platform_terms'])
     if has_platform_risk:
         return 'Consider Keywords', 'platform_style_risk', 'Platform-style risk'
         
@@ -1066,25 +887,24 @@ def classify_keyword(row, config):
     has_core = any(term in kw for term in config['intent_core_terms'])
     has_feature = any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms'])
     has_style = any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms'])
-    has_core_word = any(re.search(r'\b' + re.escape(w.lower()) + r'\b', kw) for w in config.get('intent_core_words', []))
     
     if has_core:
-        return 'Core Intent Final', 'core_intent_final', 'Strong core camera filter/effect search intent'
+        return 'Core Intent Final', 'core_intent_final', 'Strong core widget/control search intent'
         
     # Check style-only held back
-    if has_style and not has_core and not has_feature and not has_core_word:
+    if has_style and not has_core and not has_feature:
         return 'Generic Style Reserve', 'style_only', 'Generic aesthetic/style-only terms held back from shortlist'
         
     if has_feature:
-        return 'Effect / Filter Type', 'feature_keywords', 'Specific features/toggles candidate'
+        return 'Feature Keywords', 'feature_keywords', 'Specific features/toggles candidate'
         
     if has_style:
-        return 'User Intent / Content Use Case', 'style_keywords', 'Aesthetic/theme candidate'
+        return 'Style Keywords', 'style_keywords', 'Aesthetic/theme candidate'
         
     if row['RelevancyScore'] < 0.45:
         return 'Dropped', 'dropped', 'Dropped: Weak app intent after scoring'
         
-    return 'Broad Expansion', 'broad_expansion', 'Broad camera filter expansion'
+    return 'Broad Expansion', 'broad_expansion', 'Broad widget expansion'
 
 classifications = df.apply(lambda r: classify_keyword(r, config), axis=1)
 df['Bucket'] = [c[0] for c in classifications]
@@ -1181,7 +1001,7 @@ def build_shortlist(df_all, config):
             
     # Core Fallback
     if len(selected_core) < 25:
-        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Effect / Filter Type', 'Broad Expansion'])]
+        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Broad Expansion'])]
         for _, row in fallback_candidates.iterrows():
             if len(selected_core) >= 25:
                 break
@@ -1223,7 +1043,7 @@ def build_shortlist(df_all, config):
             
     # Broad Fallback
     if len(selected_broad) < 5:
-        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Effect / Filter Type', 'User Intent / Content Use Case'])]
+        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Style Keywords'])]
         for _, row in fallback_candidates.iterrows():
             if len(selected_broad) >= 5:
                 break
@@ -1295,32 +1115,74 @@ def build_shortlist(df_all, config):
 
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
-def build_curated_sheet(df_all, bucket_name, sheet_name):
-    df_sorted = df_all[df_all['Bucket'] == bucket_name].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
-    selected = []
-    selected_normalized, selected_tokens = set(), set()
+def get_category_sound(kw):
+    kw_lower = str(kw).lower()
+    
+    # Hair clipper category
+    clipper_terms = ["clipper", "haircut", "hair cut", "razor", "shave", "trimmer", "barber"]
+    if any(t in kw_lower for t in clipper_terms):
+        return "hairclipper"
+        
+    # Taser category
+    taser_terms = ["taser", "stun gun", "electric shock", "shock gun"]
+    if any(t in kw_lower for t in taser_terms):
+        return "taser"
+        
+    # Gun sound category
+    gun_terms = ["gun", "weapon", "firearm", "gunshot", "shotgun", "pistol", "machine gun", "blaster"]
+    if any(t in kw_lower for t in gun_terms):
+        return "gun_sound"
+        
+    # Default/General prank sounds
+    return "prank_sound_general"
+
+def classify_by_sound_category(df_all, selected_shortlist_kws):
+    accepted_buckets = ['Core Intent Final', 'Broad Expansion', 'Feature Keywords', 'Style Keywords', 'Consider Keywords']
+    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets) & (~df_all['Keyword'].str.lower().isin(selected_shortlist_kws))]
+    df_sorted = df_candidates.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    
+    groups = {
+        "hairclipper": [],
+        "taser": [],
+        "gun_sound": [],
+        "prank_sound_general": []
+    }
+    
+    sheet_names = {
+        "hairclipper": "02_Hairclipper_Keywords",
+        "taser": "03_Taser_Keywords",
+        "gun_sound": "04_Gun_Sound_Keywords",
+        "prank_sound_general": "05_Prank_Sound_General"
+    }
+    
+    selected_normalized = {g: set() for g in groups}
+    selected_tokens = {g: set() for g in groups}
     dedup_entries = []
     
     for _, row in df_sorted.iterrows():
-        if len(selected) >= 30:
-            break
-        norm = normalize_text(row['Keyword'])
+        kw = row['Keyword']
+        g = get_category_sound(kw)
+        
+        if len(groups[g]) >= 30:
+            continue
+            
+        norm = normalize_text(kw)
         tokens = " ".join(sorted(norm.split()))
         
         is_dup = False
         reason = ""
         kept_kw = ""
         
-        if norm in selected_normalized:
+        if norm in selected_normalized[g]:
             is_dup = True
-            for item in selected:
+            for item in groups[g]:
                 if normalize_text(item['Keyword']) == norm:
                     kept_kw = item['Keyword']
                     break
             reason = f"Exact normalized duplicate of '{kept_kw}'"
-        elif tokens in selected_tokens:
+        elif tokens in selected_tokens[g]:
             is_dup = True
-            for item in selected:
+            for item in groups[g]:
                 t = " ".join(sorted(normalize_text(item['Keyword']).split()))
                 if t == tokens:
                     kept_kw = item['Keyword']
@@ -1329,28 +1191,29 @@ def build_curated_sheet(df_all, bucket_name, sheet_name):
             
         if is_dup:
             dedup_entries.append({
-                'Table': sheet_name, 'RemovedKeyword': row['Keyword'],
-                'OriginalSection': bucket_name, 'KeptKeyword': kept_kw,
+                'Table': sheet_names[g], 'RemovedKeyword': kw,
+                'OriginalSection': row['Bucket'], 'KeptKeyword': kept_kw,
                 'DedupReason': reason, 'BalancedScore': row['BalancedScore'],
                 'Note': 'Keyword remains in All Candidates pool'
             })
         else:
-            selected_normalized.add(norm)
-            selected_tokens.add(tokens)
+            selected_normalized[g].add(norm)
+            selected_tokens[g].add(tokens)
             entry = row.to_dict()
-            entry['Section'] = bucket_name
+            entry['Section'] = row['Bucket']
             entry['QuotaStatus'] = 'EXACT'
             entry['FillSource'] = ''
             entry['FillReason'] = ''
-            selected.append(entry)
+            groups[g].append(entry)
             
-    return selected, dedup_entries
+    return groups["hairclipper"], groups["taser"], groups["gun_sound"], groups["prank_sound_general"], dedup_entries
 
-selected_feature, dedup_feat = build_curated_sheet(df, 'Effect / Filter Type', '02_Effect_Filter_Type')
-selected_style, dedup_style = build_curated_sheet(df, 'User Intent / Content Use Case', '03_User_Intent_Content_UseCase')
+# Headless classification of sound categories
+all_shortlist = selected_core + selected_broad + selected_consider
+shortlist_kws = {item['Keyword'].lower() for item in all_shortlist}
+selected_clipper, selected_taser, selected_gun, selected_general_prank, dedup_categories = classify_by_sound_category(df, shortlist_kws)
 
-dedup_log_list.extend(dedup_feat)
-dedup_log_list.extend(dedup_style)
+dedup_log_list.extend(dedup_categories)
 df_dedup_log = pd.DataFrame(dedup_log_list)
 
 # Metadata assignment
@@ -1415,27 +1278,26 @@ if confirmed_selection:
                 entry['Section'] = 'Consider Keywords'
                 selected_consider.append(entry)
                 
-    selected_feature = []
-    for kw in user_feature:
+    selected_clipper, selected_taser, selected_gun, selected_general_prank = [], [], [], []
+    user_all_kws = user_feature + user_style
+    for kw in user_all_kws:
         if kw in df_lookup.index:
             row = df_lookup.loc[kw]
             if isinstance(row, pd.DataFrame):
                 row = row.iloc[0]
             entry = row.to_dict()
             entry['Keyword'] = kw
-            entry['Section'] = 'Effect / Filter Type'
-            selected_feature.append(entry)
+            entry['Section'] = row.get('Bucket', 'Feature/Style Keywords')
             
-    selected_style = []
-    for kw in user_style:
-        if kw in df_lookup.index:
-            row = df_lookup.loc[kw]
-            if isinstance(row, pd.DataFrame):
-                row = row.iloc[0]
-            entry = row.to_dict()
-            entry['Keyword'] = kw
-            entry['Section'] = 'User Intent / Content Use Case'
-            selected_style.append(entry)
+            cat = get_category_sound(kw)
+            if cat == "hairclipper":
+                selected_clipper.append(entry)
+            elif cat == "taser":
+                selected_taser.append(entry)
+            elif cat == "gun_sound":
+                selected_gun.append(entry)
+            else:
+                selected_general_prank.append(entry)
             
     config["app_title_draft"] = confirmed_selection.get("title", "")
     config["short_desc_draft"] = confirmed_selection.get("short_description", "")
@@ -1516,9 +1378,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.3 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.4"),
+    ("Pipeline Version", "ASO Keyword Planner v3.3"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1551,27 +1413,45 @@ for row_idx, entry in enumerate(all_shortlist, 2):
         ws_shortlist.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
 style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
-# --- 02_Effect_Filter_Type ---
-ws_feature = wb.create_sheet(title="02_Effect_Filter_Type")
+# --- 02_Hairclipper_Keywords ---
+ws_clipper = wb.create_sheet(title="02_Hairclipper_Keywords")
 cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_feature.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_feature, 2):
+    ws_clipper.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_clipper, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_feature.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_feature, "02_Effect_Filter_Type")
+        ws_clipper.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_clipper, "02_Hairclipper_Keywords")
 
-# --- 03_User_Intent_Content_UseCase ---
-ws_style = wb.create_sheet(title="03_User_Intent_Content_UseCase")
+# --- 03_Taser_Keywords ---
+ws_taser = wb.create_sheet(title="03_Taser_Keywords")
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_style.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_style, 2):
+    ws_taser.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_taser, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_style.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_style, "03_User_Intent_Content_UseCase")
+        ws_taser.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_taser, "03_Taser_Keywords")
 
-# --- 04_Dropped_Audit ---
-ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
+# --- 04_Gun_Sound_Keywords ---
+ws_gun = wb.create_sheet(title="04_Gun_Sound_Keywords")
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_gun.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_gun, 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_gun.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_gun, "04_Gun_Sound_Keywords")
+
+# --- 05_Prank_Sound_General ---
+ws_general = wb.create_sheet(title="05_Prank_Sound_General")
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_general.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_general_prank, 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_general.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_general, "05_Prank_Sound_General")
+
+# --- 06_Dropped_Audit ---
+ws_dropped = wb.create_sheet(title="06_Dropped_Audit")
 df_dropped = df[df['Bucket'] == 'Dropped'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 cols_audit = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason']
 for col_idx, col in enumerate(cols_audit, 1):
@@ -1579,10 +1459,10 @@ for col_idx, col in enumerate(cols_audit, 1):
 for row_idx, (_, row) in enumerate(df_dropped.iterrows(), 2):
     for col_idx, col in enumerate(cols_audit, 1):
         ws_dropped.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_dropped, "04_Dropped_Audit")
+style_sheet(ws_dropped, "06_Dropped_Audit")
 
-# --- 05_Report_Summary ---
-ws_report = wb.create_sheet(title="05_Report_Summary")
+# --- 07_Report_Summary ---
+ws_report = wb.create_sheet(title="07_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
 ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
@@ -1593,23 +1473,25 @@ metrics = [
     ("Core Intent Selected", len(selected_core)),
     ("Broad Expansion Selected", len(selected_broad)),
     ("Consider Selected", len(selected_consider)),
-    ("Effect / Filter Type Curated (02)", len(selected_feature)),
-    ("User Intent / Content Use Case Curated (03)", len(selected_style)),
+    ("Hairclipper Keywords Curated (02)", len(selected_clipper)),
+    ("Taser Keywords Curated (03)", len(selected_taser)),
+    ("Gun Sound Keywords Curated (04)", len(selected_gun)),
+    ("General Prank Keywords Curated (05)", len(selected_general_prank)),
     ("Duplicates Filtered (Dedup Log)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=val)
 
-ws_report.cell(row=15, column=1, value="Language Summary").font = Font(size=12, bold=True)
+ws_report.cell(row=17, column=1, value="Language Summary").font = Font(size=12, bold=True)
 lang_counts = df['LanguageGroup'].value_counts()
-for idx, (lang_g, count) in enumerate(lang_counts.items(), 17):
+for idx, (lang_g, count) in enumerate(lang_counts.items(), 19):
     ws_report.cell(row=idx, column=1, value=lang_g).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=count)
 
-ws_report.cell(row=24, column=1, value="Naturalness Summary").font = Font(size=12, bold=True)
+ws_report.cell(row=26, column=1, value="Naturalness Summary").font = Font(size=12, bold=True)
 nat_counts = df['NaturalnessFlag'].value_counts()
-for idx, (flag, count) in enumerate(nat_counts.items(), 26):
+for idx, (flag, count) in enumerate(nat_counts.items(), 28):
     ws_report.cell(row=idx, column=1, value=flag).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=count)
 
@@ -1617,17 +1499,19 @@ ws_report.cell(row=3, column=4, value="Sheet Index").font = Font(size=12, bold=T
 sheets_info = [
     ("00_README_CONFIG", "App configuration parameters and run metadata"),
     ("01_Main_Keyword_Shortlist", "Top 25 Core + 5 Broad + 10 Consider shortlist for metadata allocation"),
-    ("02_Effect_Filter_Type", "Curated effect and filter type specific candidates (capped <= 30)"),
-    ("03_User_Intent_Content_UseCase", "Curated user intent and content use case specific candidates (capped <= 30)"),
-    ("04_Dropped_Audit", "Dropped keywords with detailed reasons"),
-    ("05_Report_Summary", "Summary stats, language breakdowns, and sheet indices"),
-    ("06_All_Candidates", "Full candidate pool with detailed score and policy values"),
-    ("07_Language_Mismatch", "Audit sheet for keywords mismatching US_EN market language"),
-    ("08_Generic_Style_Reserve", "Broad style-only keywords held back from metadata shortlist"),
-    ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
-    ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
-    ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("12_Text_Dedup_Log", "Log of text-level duplicates and variants pruned during optimization")
+    ("02_Hairclipper_Keywords", "Curated hair clipper and razor sound candidates (capped <= 30)"),
+    ("03_Taser_Keywords", "Curated electric taser stun gun sound candidates (capped <= 30)"),
+    ("04_Gun_Sound_Keywords", "Curated gun simulator and weapon sound candidates (capped <= 30)"),
+    ("05_Prank_Sound_General", "Curated general prank sounds (air horn, fart, glass breaking, etc.) (capped <= 30)"),
+    ("06_Dropped_Audit", "Dropped keywords with detailed reasons"),
+    ("07_Report_Summary", "Summary stats, language breakdowns, and sheet indices"),
+    ("08_All_Candidates", "Full candidate pool with detailed score and policy values"),
+    ("09_Language_Mismatch", "Audit sheet for keywords mismatching US_EN market language"),
+    ("10_Generic_Style_Reserve", "Broad style-only keywords held back from metadata shortlist"),
+    ("11_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
+    ("12_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
+    ("13_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
+    ("14_Text_Dedup_Log", "Log of text-level duplicates and variants pruned during optimization")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1635,13 +1519,13 @@ for idx, (title, purpose) in enumerate(sheets_info, 5):
 
 thin_border = Border(left=Side(style='thin', color='C0C0C0'), right=Side(style='thin', color='C0C0C0'), 
                      top=Side(style='thin', color='C0C0C0'), bottom=Side(style='thin', color='C0C0C0'))
-for r in range(4, 13):
+for r in range(4, 15):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
-for r in range(17, 17 + len(lang_counts)):
+for r in range(19, 19 + len(lang_counts)):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
-for r in range(26, 26 + len(nat_counts)):
+for r in range(28, 28 + len(nat_counts)):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
 for r in range(5, 5 + len(sheets_info)):
@@ -1653,8 +1537,8 @@ ws_report.column_dimensions['B'].width = 15
 ws_report.column_dimensions['D'].width = 25
 ws_report.column_dimensions['E'].width = 65
 
-# --- 06_All_Candidates ---
-ws_all = wb.create_sheet(title="06_All_Candidates")
+# --- 08_All_Candidates ---
+ws_all = wb.create_sheet(title="08_All_Candidates")
 cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket', 
             'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason']
 for col_idx, col in enumerate(cols_all, 1):
@@ -1662,60 +1546,60 @@ for col_idx, col in enumerate(cols_all, 1):
 for row_idx, (_, row) in enumerate(df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).iterrows(), 2):
     for col_idx, col in enumerate(cols_all, 1):
         ws_all.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_all, "06_All_Candidates")
+style_sheet(ws_all, "08_All_Candidates")
 
-# --- 07_Language_Mismatch ---
-ws_lang_m = wb.create_sheet(title="07_Language_Mismatch")
+# --- 09_Language_Mismatch ---
+ws_lang_m = wb.create_sheet(title="09_Language_Mismatch")
 df_lang_m = df[df['Bucket'] == 'Language Mismatch Audit'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_lang_m.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_lang_m.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_lang_m.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_lang_m, "07_Language_Mismatch")
+style_sheet(ws_lang_m, "09_Language_Mismatch")
 
-# --- 08_Generic_Style_Reserve ---
-ws_reserve = wb.create_sheet(title="08_Generic_Style_Reserve")
+# --- 10_Generic_Style_Reserve ---
+ws_reserve = wb.create_sheet(title="10_Generic_Style_Reserve")
 df_reserve = df[df['Bucket'] == 'Generic Style Reserve'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_reserve.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_reserve.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_reserve.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_reserve, "08_Generic_Style_Reserve")
+style_sheet(ws_reserve, "10_Generic_Style_Reserve")
 
-# --- 09_Manual_Review ---
-ws_mrev = wb.create_sheet(title="09_Manual_Review")
+# --- 11_Manual_Review ---
+ws_mrev = wb.create_sheet(title="11_Manual_Review")
 df_mrev = df[df['Bucket'] == 'Manual Review'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_mrev.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_mrev.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_mrev.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_mrev, "09_Manual_Review")
+style_sheet(ws_mrev, "11_Manual_Review")
 
-# --- 10_Top_By_Score ---
-ws_tps = wb.create_sheet(title="10_Top_By_Score")
+# --- 12_Top_By_Score ---
+ws_tps = wb.create_sheet(title="12_Top_By_Score")
 df_tps = df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(50)
 for col_idx, col in enumerate(cols_curated, 1):
     ws_tps.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_tps.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_tps.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_tps, "10_Top_By_Score")
+style_sheet(ws_tps, "12_Top_By_Score")
 
-# --- 11_Secondary_Language ---
-ws_seclang = wb.create_sheet(title="11_Secondary_Language")
+# --- 13_Secondary_Language ---
+ws_seclang = wb.create_sheet(title="13_Secondary_Language")
 df_seclang = df[df['LanguageGroup'] == 'SECONDARY'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_seclang.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_seclang.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_seclang, "11_Secondary_Language")
+style_sheet(ws_seclang, "13_Secondary_Language")
 
-# --- 12_Text_Dedup_Log ---
-ws_dedup = wb.create_sheet(title="12_Text_Dedup_Log")
+# --- 14_Text_Dedup_Log ---
+ws_dedup = wb.create_sheet(title="14_Text_Dedup_Log")
 cols_dedup = ['Table', 'RemovedKeyword', 'OriginalSection', 'KeptKeyword', 'DedupReason', 'BalancedScore', 'Note']
 for col_idx, col in enumerate(cols_dedup, 1):
     ws_dedup.cell(row=1, column=col_idx, value=col)
@@ -1723,13 +1607,13 @@ if not df_dedup_log.empty:
     for row_idx, (_, row) in enumerate(df_dedup_log.iterrows(), 2):
         for col_idx, col in enumerate(cols_dedup, 1):
             ws_dedup.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_dedup, "12_Text_Dedup_Log")
+style_sheet(ws_dedup, "14_Text_Dedup_Log")
 
 # Save
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)
-    print("Pipeline for AR Filter complete!")
+    print("Pipeline for Pranky complete!")
 except PermissionError:
     alt_path = OUTPUT_PATH.replace(".xlsx", "_temp.xlsx")
     print(f"WARNING: Permission denied to write to {OUTPUT_PATH} (file is likely open in another program).")

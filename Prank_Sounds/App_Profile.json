@@ -1,0 +1,278 @@
+{
+  "schema_version": "2.0",
+  "profile_type": "aso_app_profile",
+  "last_checked": "2026-05-28",
+  "source_url": "https://play.google.com/store/apps/details?id=com.prank.sound.airhorn.haircut.razor.clipper",
+  "app_identity": {
+    "app_id": "com.prank.sound.airhorn.haircut.razor.clipper",
+    "package_id": "com.prank.sound.airhorn.haircut.razor.clipper",
+    "title": "Prank Sounds: Haircut & Taser",
+    "developer": "Mobile Innovate X",
+    "category": "Entertainment",
+    "content_rating": "Rated for 7+",
+    "monetization": {
+      "contains_ads": true,
+      "in_app_purchases": true
+    },
+    "installs": "5M+",
+    "updated_on": "2026-05-26"
+  },
+  "live_store_metadata": {
+    "short_description": "100+ prank sounds with taser zaps and buzzing clippers.",
+    "full_description_digest": {
+      "one_sentence_summary": "A fast and responsive prank soundboard with 18 categories highlighting realistic hair clipper buzzes, electric taser zaps, gun sound simulators, and trending memes.",
+      "description_sections": [
+        "Prank Sounds: Haircut & Taser",
+        "Key features",
+        "Prank Soundboard",
+        "How to use",
+        "Use cases",
+        "Friendly reminder"
+      ],
+      "main_feature_claims": [
+        "18 prank categories for instant fun",
+        "Vivid, easy-to-scan icons for quick find and play",
+        "One-tap, low-delay playback for sharp timing",
+        "Favorites and custom lists for rapid-fire combos",
+        "Meme board with trending audio and viral sounds",
+        "Realistic hair clipper and razor buzz for haircut pranks",
+        "Crisp crackling electric taser stun gun simulator",
+        "Diverse gun sound simulator featuring multiple firearms",
+        "Big, brash blasts for an air horn prank",
+        "A library of comic pops and squeaks for fart gags"
+      ],
+      "how_to_use_flow": [
+        "Pick a category from the dashboard",
+        "Tap an icon to play the sound instantly",
+        "Save favorites and arrange custom lists for smooth, rapid-fire pranks"
+      ]
+    },
+    "data_safety_summary": {
+      "may_share_data_types": [
+        "Location",
+        "App activity",
+        "Device or other IDs"
+      ],
+      "may_collect_data_types": [
+        "Location",
+        "App activity",
+        "Device or other IDs"
+      ],
+      "encrypted_in_transit": true,
+      "user_can_request_data_deletion": true
+    }
+  },
+  "corrected_positioning": {
+    "primary_positioning": "Fast and responsive prank soundboard featuring buzzing hair clippers, crackling tasers, loud gun simulators, and trending memes.",
+    "secondary_positioning": [
+      "Light-hearted simulator soundboard for friendly jokes and social settings",
+      "Quick-access sound effect board for content creators needing audio cues",
+      "Trending meme audio reaction soundboard"
+    ],
+    "not_the_right_positioning": [
+      "Not a voice changer or voice modifier app",
+      "Not an audio recorder or full editor tool",
+      "Not a real clipper, razor, or stun gun weapon utility",
+      "Not a broad social networking platform"
+    ],
+    "strongest_differentiators": [
+      "Broad variety of 18 distinct sound categories",
+      "Optimized one-tap, low-delay playback for perfect timing",
+      "Robust gun sound simulator with realistic gunshot effects integrated inside the soundboard",
+      "Integration of electric stun gun zaps and trending memes alongside classic barber clippers"
+    ]
+  },
+  "user_intent_insights": {
+    "core_user_jobs": [
+      "I want to surprise/prank my friends with clipper or taser sounds",
+      "I want a fast soundboard app for parties and gatherings",
+      "I want realistic hair trimmer buzzes to fake a haircut",
+      "I want realistic gun sounds and weapon firing effects",
+      "I want quick-play audio buttons for reaction clips or memes"
+    ],
+    "likely_audience": [
+      "Gen Z and young casual mobile users",
+      "Social media content creators and streamers",
+      "Users looking for quick jokes, icebreakers, and casual fun"
+    ],
+    "emotional_drivers": [
+      "Hilarious",
+      "Surprising",
+      "Silly",
+      "Playful",
+      "Quick and easy",
+      "Energetic"
+    ],
+    "conversion_hooks": [
+      "Barber Clipper haircut prank simulation",
+      "Crackling electric taser stun gun visual and sound effect",
+      "Realistic gun sound simulator with gunshots",
+      "Meme board with viral trending sounds",
+      "One-tap rapid play with zero delay"
+    ]
+  },
+  "aso_keyword_strategy": {
+    "primary_keyword_cluster": [
+      "prank sounds",
+      "haircut prank",
+      "taser prank",
+      "hair clipper",
+      "gun sounds",
+      "gun simulator",
+      "fart sounds",
+      "air horn",
+      "funny sounds",
+      "clipper prank",
+      "prank soundboard"
+    ],
+    "feature_keyword_cluster": [
+      "hair clipper sound",
+      "stun gun simulator",
+      "taser sounds",
+      "gunshot sounds",
+      "weapon simulator",
+      "airhorn prank",
+      "fart noise maker",
+      "meme soundboard",
+      "barber prank",
+      "razor prank"
+    ],
+    "trend_intent_cluster": [
+      "funny pranks",
+      "joke sounds",
+      "troll sounds",
+      "meme soundboard",
+      "trending audio",
+      "social prank clips"
+    ],
+    "avoid_or_use_carefully": [
+      {
+        "keyword": "taser weapon",
+        "note": "Avoid implying the app acts as a real weapon or protection tool; restrict to simulator/prank contexts."
+      },
+      {
+        "keyword": "hair cut",
+        "note": "Make sure to pair with 'prank' or 'simulator' to set proper expectations."
+      }
+    ],
+    "semantic_weighting_recommendation": {
+      "haircut_clipper_razor": 0.25,
+      "taser_stun_gun": 0.25,
+      "gun_sound_simulator": 0.25,
+      "meme_soundboard_variety": 0.25
+    }
+  },
+  "competitor_strategy": {
+    "recommended_competitor_types": [
+      {
+        "type": "Direct soundboard competitors",
+        "description": "Apps focusing on haircut pranks, air horns, fart noises, and electric stun gun effects."
+      },
+      {
+        "type": "Specific sound simulators",
+        "description": "Barber clipper trimmer simulators or dedicated electric taser prank games."
+      }
+    ],
+    "suggested_competitors": [
+      {
+        "package_id": "com.meowclawstudio.prankapp",
+        "title": "Prank - Funny Sounds,Simulator",
+        "developer": "Meowclaw Studio",
+        "relationship": "direct external competitor",
+        "why_relevant": "Combines prop noises like electric razors, toy guns, taser simulations, fart sounds, and voice changer tools.",
+        "short_description": "Prank Everything! Tons of Crazy Sounds, Voice Changer & AI Face Dance !",
+        "desc200": "Unleash your inner prankster with our revolutionary sound effects app! Packed with realistic prop noises like toy guns, laser blasters, electric razors, and more, this app is designed for endless entertainment.",
+        "overlap_keywords": [
+          "prank simulator",
+          "funny sounds",
+          "electric razor",
+          "taser sound",
+          "prank app"
+        ]
+      },
+      {
+        "package_id": "com.funny.prank.sounds.airhorn.haircut",
+        "title": "Haircut Prank: Taser & Fart",
+        "developer": "Era Games Studio",
+        "relationship": "direct external competitor",
+        "why_relevant": "Direct mapping of core haircut, taser, air horn, and fart categories. Highly optimized soundboard interface.",
+        "short_description": "100+ prank sounds with haircut prank, fart sounds & taser soundboard!",
+        "desc200": "😂 Haircut Prank: Taser &amp; Fart is a fun prank sounds app packed with realistic haircut prank sounds, shocking taser sound effects, hilarious fart sounds, and loud air horn prank sounds in one power.",
+        "overlap_keywords": [
+          "haircut prank",
+          "taser soundboard",
+          "fart sounds",
+          "air horn prank",
+          "prank sounds"
+        ]
+      },
+      {
+        "package_id": "pranksounds.airhorn.haircut.fart.funnysounds",
+        "title": "Funny Prank Sounds: Fart, Horn",
+        "developer": "Falcon Global",
+        "relationship": "direct external competitor",
+        "why_relevant": "Features air horns, fart sounds, haircut clippers, and various other funny prank sounds for quick jokes.",
+        "short_description": "Prank your friends with Air Horn, Fart and other funny sounds.",
+        "desc200": "Tired of boring sound effect apps? Look no further than funny prank sounds offline App! If you want a prank your friends, try to add funny sound effects to your mobile. You can find a wide range of funny sounds.",
+        "overlap_keywords": [
+          "funny prank sounds",
+          "air horn",
+          "fart sounds",
+          "haircut clipper",
+          "funny sounds"
+        ]
+      },
+      {
+        "package_id": "pranksounds.airhornfartsoundhaircutclipper.funnyjoke.hiprank",
+        "title": "Haha Prank - Funny Prank Sound",
+        "developer": "HiPrank Studio",
+        "relationship": "direct external competitor",
+        "why_relevant": "Combines classic fart, haircut, air horn, and taser soundboards. Features simple one-tap controls and loops.",
+        "short_description": "Troll friend with funny prank sound like: fart, haircut, air horn or scary sound",
+        "desc200": "Make every moment more fun with Haha Prank Sound 🎉 Prank Sounds app is a fun and entertaining application designed to provide users with a wide range of amusing and realistic sound effects. Tap once to play.",
+        "overlap_keywords": [
+          "haha prank",
+          "funny prank sound",
+          "troll friend",
+          "clipper sound",
+          "scary sound"
+        ]
+      }
+    ]
+  },
+  "content_direction": {
+    "recommended_store_message": "Turn your phone into a funny prank soundboard! Try realistic haircut razor clippers, shocking stun gun zaps, loud gun sound simulators, and trending memes.",
+    "recommended_first_screen_message": [
+      "100+ Prank Sounds",
+      "Hair Clipper Prank",
+      "Stun Gun Taser Simulator",
+      "Realistic Gun Simulator",
+      "Trending Meme Sounds"
+    ],
+    "recommended_screenshot_angles": [
+      "Barber haircut prank with vibrations",
+      "Realistic electric shock stun gun simulator",
+      "Loud gun sound effects simulator",
+      "Trending meme audio board reactions",
+      "Quick tap-to-play favorites dashboard"
+    ],
+    "recommended_localization_notes": [
+      "Ensure terms like 'hair clipper', 'razor', and 'haircut' are translated to local variations of barber/clipper/hair trimmer.",
+      "Translate 'taser' or 'stun gun' to local words describing electric shockers (e.g. 'súng phóng điện', 'chích điện' in Vietnamese).",
+      "Translate 'gun sounds' or 'gun simulator' to local variations describing guns (e.g. 'âm thanh súng', 'mô phỏng súng' in Vietnamese)."
+    ]
+  },
+  "pipeline_usage_notes": {
+    "best_for": [
+      "Prank sounds app keyword strategy",
+      "Competitor keyword overlay and score boosting",
+      "Barber clipper, gun sound simulator, and electric stun gun semantic cluster research",
+      "Screenshot visual planning"
+    ],
+    "do_not_use_as": [
+      "Barber training application reference",
+      "Stun gun/weapon compliance guide"
+    ],
+    "recommended_next_step": "Deploy the config file and run ASO Keyword Filter orchestrator to extract high-performing clean keywords."
+  }
+}

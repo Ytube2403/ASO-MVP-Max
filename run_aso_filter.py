@@ -69,6 +69,9 @@ def main():
     elif "gameemulator" in app_lower or "gameretro" in app_lower or "emulator" in app_lower:
         app_folder = "Game_Emulator"
         target_script = os.path.join(script_dir, "Game_Emulator", "run_game_emulator_v3_4.py")
+    elif "prank" in app_lower or "pranky" in app_lower:
+        app_folder = "Prank_Sounds"
+        target_script = os.path.join(script_dir, "Prank_Sounds", "run_pipeline.py")
     else:
         app_folder = "Control_Widget"
         target_script = os.path.join(script_dir, "Control_Widget", "run_control_widget_v3_4.py")
