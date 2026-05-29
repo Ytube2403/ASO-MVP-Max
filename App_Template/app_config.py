@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration File
-Version: 3.4
+Version: 3.5
 Purpose: Configuration file for deploying ASO Keyword Planner on a new application (Photo Editor template).
 """
 

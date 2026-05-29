@@ -16,8 +16,8 @@ from openpyxl.utils import get_column_letter
 import argparse
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="ASO Keyword Planner for Game Emulator")
-parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\GameEmulator_US_EN.csv", help="Path to input CSV")
+parser = argparse.ArgumentParser(description="ASO Keyword Planner for Control Widget")
+parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\ControlWidget_US_EN.csv", help="Path to input CSV")
 parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
@@ -29,214 +29,80 @@ if args.output:
 else:
     # Update OUTPUT_PATH dynamically
     csv_dir = os.path.dirname(os.path.abspath(INPUT_PATH))
-    OUTPUT_PATH = os.path.join(csv_dir, "Game_Emulator", f"GameEmulator_{args.market.replace('_', '-')}_Output.xlsx")
+    OUTPUT_PATH = os.path.join(csv_dir, "Control_Widget", f"ControlWidget_{args.market.replace('_', '-')}_Output.xlsx")
 
-# Game Emulator configuration
+# Control Widget configuration
 config = {
-    "app_id": "com.game.emulator.gb4.retro.gameboy.collection",
-    "app_name": "Game Emulator: GB4 Retro Games",
-    "category": "Game Emulator",
+    "app_id": "com.control.widget.custom.panel.wallpaper.pack",
+    "app_name": "Control Widget: Theme & Panels",
+    "category": "Personalization / Widget",
     "market": args.market,
     "platform_mode": "google_play",
-    "semantic_mode": "game_emulator",
+    "semantic_mode": "personalization_widget",
     
     "intent_core_terms": [
-        "game emulator", "retro game emulator", "retro games emulator", 
-        "gba emulator", "gameboy emulator", "arcade emulator", "handheld emulator",
-        "gb4 emulator", "gb4 emulador", "gb4", "gba4 emulator", "gba4 emulador", "gba4"
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "volume control", "shortcut widget",
+        "android panel", "settings panel", "control menu", "control hub panel",
+        "panel android", "panels control center", "simple control center",
+        "control widgets", "widget control", "shortcut widget"
     ],
     
     "feature_terms": [
-        # Nintendo
-        'gameboy', 'gba', 'gbc', 'gb', 'game boy', 'game boy advance', 'gb advance',
-        'nes', 'snes', 'n64', 'super nintendo',
-        '3ds', 'ds', 'nds', 'nintendo ds',
-        'gamecube', 'wii', 'wii u', 'nintendo',
-        # Sony
-        'ps2', 'ps3', 'ps4', 'ps5', 'playstation', 'playstation 2', 'playstation 3',
-        'playstation 4', 'playstation 5',
-        'psp', 'psx', 'ps vita',
-        # Microsoft/Sega/Others
-        'xbox', 'sega', 'dreamcast', 'arcade', 'fliperama',
-        'handheld', 'console', 'portable',
-        # Retro/Classic indicators
-        'retro', 'retrô', 'classic', 'classicos', 'clássico', 'klasik',
-        '8bit', '8-bit', '16bit', '16-bit', '32bit',
-        'old', 'vintage', 'nostalgic', 'nostalgia', 'nostálgia',
-        'jadul', 'lawas', 'advance', 'collection'
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "control menu", "settings",
+        "shortcut", "shortcuts", "toggle", "switch", "fast settings",
+        "panel android", "brightness", "volume", "wifi", "wi-fi", "bluetooth",
+        "flashlight", "screen recorder", "screenshot", "airplane mode",
+        "do not disturb", "control hub", "panel", "android panel", "widget control"
     ],
     
     "style_terms": [
-        # Nintendo IP
-        'pokemon', 'pokémon', 'pokemon red', 'pokemon blue', 'pokemon fire red',
-        'pokemon emerald', 'pokemon yellow', 'pokemon gold', 'pokemon silver',
-        'mario', 'super mario', 'mario kart', 'zelda', 'legend of zelda',
-        'metroid', 'kirby', 'donkey kong', 'star fox', 'fire emblem',
-        'animal crossing', 'smash bros', 'super smash bros',
-        # Sega/Sonic
-        'sonic', 'sonic the hedgehog', 'tails', 'knuckles',
-        'golden axe', 'streets of rage', 'shinobi',
-        # Capcom/Konami/Square
-        'street fighter', 'mega man', 'rockman',
-        'castlevania', 'metal gear', 'silent hill',
-        'final fantasy', 'dragon quest', 'chrono trigger',
-        'resident evil', 'devil may cry', 'monster hunter',
-        # Namco/Others
-        'pacman', 'pac-man', 'galaga', 'dig dug',
-        'tekken', 'soulcalibur', 'ridge racer',
-        'naruto', 'dragon ball', 'dbz', 'bleach', 'one piece',
-        'tetris', 'puzzle',
-        # Sony IP
-        'god of war', 'crash', 'crash bandicoot', 'spyro',
-        'gran turismo', 'twisted metal', 'parappa',
-        # Fighting/Shooters
-        'mortal kombat', 'mk', 'killer instinct',
-        'doom', 'quake', 'wolfenstein', 'duke nukem',
-        'contra', 'metal slug', 'gunstar heroes',
-        # RPG/JRPG
-        'earthbound', 'mother', 'undertale',
-        'persona', 'shin megami tensei', 'smt',
-        'suikoden', 'wild arms', 'vagrant story',
-        # Platform/Adventure
-        'banjo kazooie', 'conker', 'rareware',
-        'banjo-tooie', 'perfect dark',
-        # Misc classic
-        'bomberman', 'ice climber', 'excitebike',
-        'duck hunt', 'punch out', 'kid icarus',
-        'wario', 'waluigi', 'yoshi', 'luigi'
+        "theme", "themes", "themed", "style", "styles", "aesthetic", "cute",
+        "kawaii", "anime", "cartoon", "k-pop", "neon", "gradient", "glass",
+        "color", "colorful", "pastel", "minimal", "simple", "wallpaper",
+        "home screen", "icon", "custom", "customize", "personalize",
+        "personalization", "iphone", "ios", "os 17", "os 18"
     ],
     
     "competitor_brands": [
-        # Major multi-system
-        'ppsspp', 'ppsspp gold', 'dolphin', 'dolphin emulator',
-        'retroarch', 'retroarch emulator',
-        'delta', 'delta emulator', 'delta nintendo emulator',
-        'citra', 'citra emulator', 'lime3ds', 'lime3ds emulator',
-        'aethersx2', 'aethersx2 emulator',
-        'lemuroid', 'lemuroid emulator',
-        # GBA specific
-        'my boy', 'my boy emulator', 'my boy free', 'my boy gba',
-        'john gba', 'john gba lite', 'john gba emulator',
-        'gameboid', 'gameboid emulator',
-        'gba4ios', 'gba4ios emulator',
-        'vgbanext', 'vgbanext emulator',
-        'gamma emulator', 'gamma game emulator',
-        # NDS/3DS
-        'drastic', 'drastic emulator', 'drastic ds',
-        'melonDS', 'melon ds', 'desmume',
-        # NES/SNES
-        'snes9x', 'snes9x ex', 'zsnes',
-        'nestopia', 'fceux', 'quicknes',
-        'super retro 16', 'super retro 16 plus',
-        # PS1/PS2
-        'epsxe', 'epsxe emulator',
-        'fpse', 'fpse emulator',
-        'pcsx2', 'pcsx2 emulator', 'damonps2', 'damon ps2',
-        'play!', 'play emulator',
-        # N64
-        'mupen64plus', 'mupen64', 'mupen',
-        'project64', 'project 64', 'n64oid',
-        # Arcade/MAME
-        'mame', 'mame4droid', 'mame4ios',
-        'fba', 'fbneo', 'final burn alpha', 'final burn neo',
-        'kawaks',
-        # All-in-one
-        'classicboy', 'classicboy lite',
-        'super retro 16', 'retro game boy',
-        'emu', 'emu games', 'emu paradise',
-        'roms', 'romsmania', 'loveroms', 'romhustler',
-        # Cloud/Remote
-        'netboom', 'netboom cloud gaming',
-        'airconsole', 'air console',
-        'starparks', 'chikii', 'chikii cloud',
-        'psplay', 'psplay remote play',
-        'xbplay', 'xbplay remote play',
-        # Misc
-        'superpsx', 'super psx',
-        'bitboy', 'bitboy emulator',
-        'onecast', 'onecast xbox',
-        'happy chick', 'happy chick emulator',
-        'pizza emulator', 'pizza boy', 'pizza boy gba',
-        'easy emu', 'mock emulator', 'lucky emulator',
-        'gk emulator', 'gas emulator', 'folium emulator', 'jeans emulator',
-        'emulsio', 'emulator guia', 'emulator md2',
-        'emulator anak permainan', 'emulator juegos pro',
-        'retro game master', 'retro game hub',
-        # Browser/Non-emulator
-        'dolphin browser', '870 fitness'
-    ],
-    
-    "noise_terms": [
-        'game', 'games', 'gaming', 'gamer', 'gamers', 'gameplay',
-        'video game', 'videogame', 'video games', 'computer game',
-        'android game', 'mobile game', 'phone game', 'tablet game',
-        'play', 'playing', 'player', 'fun', 'entertainment',
-        'download', 'free', 'gratis', 'grátis', 'premium', 'pro', 'lite',
-        'best', 'top', 'new', 'old', 'latest', 'update', 'version',
-        'android', 'ios', 'iphone', 'ipad', 'phone', 'mobile', 'tablet',
-        'app', 'application', 'software', 'tool', 'utility', 'program',
-        'device', 'system', 'platform', 'technology', 'digital',
-        'emulator', 'emulador', 'emulation', 'emu', 'emulators', 'emuladores',
-        'simulador', 'simulator', 'simulate', 'virtual', 'virtual machine',
-        'rom', 'roms', 'iso', 'bios', 'cheat', 'cheats', 'hack', 'mod',
-        'save', 'load', 'state', 'slot', 'backup', 'restore',
-        'controller', 'control', 'controle', 'kontrol', 'kontroler',
-        'gamepad', 'joypad', 'joystick', 'pad', 'button', 'buttons',
-        'd-pad', 'dpad', 'analog', 'stick', 'trigger', 'bumper',
-        'bluetooth controller', 'wireless controller', 'usb controller',
-        'remote', 'remoto', 'remote play', 'second screen',
-        'cloud', 'cloud gaming', 'streaming', 'stream', 'remote',
-        'geforce now', 'xbox cloud', 'playstation now', 'stadia',
-        'nvidia', 'shadow', 'boosteroid', 'blacknut',
-        'screen', 'display', 'monitor', 'resolution', 'fps', 'hz',
-        'battery', 'storage', 'memory', 'ram', 'cpu', 'gpu',
-        'speed', 'fast', 'slow', 'lag', 'latency', 'ping',
-        'online', 'offline', 'multiplayer', 'coop', 'pvp', 'pve',
-        'wifi', 'internet', 'network', 'connection', 'server',
-        'account', 'login', 'register', 'profile', 'avatar',
-        'chat', 'message', 'friend', 'social', 'community', 'forum',
-        'rate', 'review', 'feedback', 'support', 'help', 'faq',
-        'guide', 'tutorial', 'walkthrough', 'tips', 'tricks',
-        'news', 'blog', 'update', 'patch', 'dlc', 'expansion',
-        'skin', 'theme', 'wallpaper', 'icon', 'font', 'sound',
-        'music', 'song', 'audio', 'soundtrack', 'ost', 'bgm',
-        'record', 'recording', 'screenshot', 'capture', 'clip',
-        'share', 'export', 'import', 'sync', 'backup', 'transfer',
-        'the', 'a', 'an', 'and', 'or', 'but', 'for', 'with', 'without',
-        'in', 'on', 'at', 'to', 'from', 'by', 'of', 'about', 'into',
-        'through', 'during', 'before', 'after', 'above', 'below',
-        'between', 'among', 'within', 'against', 'under', 'over',
-        'good', 'great', 'awesome', 'amazing', 'excellent', 'perfect',
-        'bad', 'terrible', 'awful', 'horrible', 'worst',
-        'big', 'small', 'huge', 'tiny', 'large', 'mini',
-        'easy', 'hard', 'difficult', 'simple', 'complex',
-        'first', 'last', 'next', 'previous', 'final',
-        '1990', '1995', '2000', '2005', '2010', '2015', '2020',
-        '90s', '80s', '00s', 'year', 'years', 'decade',
-        'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'
+        "mi control center", "power shade", "one shade", "volume styles",
+        "super status bar", "bottom quick settings", "assistive touch",
+        "dynamic island", "dynamic spot", "notiguy", "edge action", "sidebar",
+        "theme kit", "themekit", "widgetkit", "widget lab", "magic widget",
+        "widcon", "skycenter", "themepack", "simple photo widget", "themify",
+        "themix", "themex", "themepack", "themedy", "themepack", "themica",
+        "themehub"
     ],
     
     "typo_blacklist": [
-        'gretro', 'restro', 'gaem', 'gam emulador', 'imulator', 'gbã', 'gbã emulator', 'emulsio',
-        '0s5', 'pspusado', 'ps4ps5', 'ps ps ps', 'ps5ps4', 'pxp', 'pps', 'pc5', 'eio', 'psdp', 'pspp', 'ppsp', 'ssip', 'ds3',
-        'pintasan', '870 fitness', 'maldives', 'dolphin browser', 'restaurați poza', 'memperlambat',
-        'ukuran panjang', 'seperti apa', 'seperti apa itu', 'tujuan', 'posisi', 'tercepat',
-        'calculator', 'calendar', 'weather', 'clock', 'alarm', 'reminder',
-        'note', 'notes', 'file manager', 'gallery', 'camera', 'video player',
-        'music player', 'audio player', 'podcast', 'radio', 'news', 'magazine',
-        'shopping', 'delivery', 'food', 'restaurant', 'hotel', 'travel',
-        'booking', 'ticket', 'flight', 'train', 'bus', 'map', 'navigation',
-        'gps', 'tracker', 'fitness', 'health', 'medical', 'diet', 'yoga',
-        'meditation', 'sleep', 'water', 'step', 'calorie', 'workout',
-        'education', 'learning', 'course', 'lesson', 'quiz', 'exam', 'study',
-        'language', 'dictionary', 'translator', 'keyboard', 'input method',
-        'launcher', 'home screen', 'lock screen', 'live wallpaper', 'widget',
-        'keyboard theme', 'icon pack', 'font', 'ringtone', 'notification sound'
+        "contol", "controll", "pannel", "widgit", "widjet", "wiget", "widg",
+        "custon", "custome", "setings", "sttings", "notifcation", "notificaion",
+        "brigthness", "volum", "togel", "toggl", "shotcut", "shorcut", "shrtcut",
+        "tontrol", "conditioners wi", "customize cstyle call", "bring icontrol"
+    ],
+    
+    "irrelevant_intent_terms": [
+        "call widget", "call theme", "price widget", "usage widget", "calculator",
+        "keyboard", "launcher", "ringtones", "compass", "remote", "hotspot",
+        "lock screen widget", "app icon aesthetic", "icon changer", "stable diffusion",
+        "redmi", "inoty", "control net", "multiplicat", "app specially",
+        "control designed", "control partner", "control drops", "control content",
+        "control enjoy", "control lay", "control bars", "control unlimited",
+        "control convenient", "control transform", "stylish apps control",
+        "control pack", "control changer", "control change", "control set",
+        "control unique", "mob quick"
     ],
     
     "risky_platform_terms": [
-        "ios", "iphone", "apple", "os 17", "os 18", "os17", "os18", "ipad"
+        "iphone", "ios", "ipad", "apple", "os 17", "os 18", "os17", "os18", "icontrol"
     ],
+    
+    "user_overrides": {
+        "force_top30_terms": [],
+        "force_consider_terms": [],
+        "force_drop_terms": []
+    },
     
     "balanced_weights": {
         "VolumeN": 0.20,
@@ -369,8 +235,8 @@ def get_app_profile(config, seed_query):
         
     return profile
 
-# Build or load App Profile using seed query 'Game Emulator'
-app_profile = get_app_profile(config, "Game Emulator")
+# Build or load App Profile using seed query 'Control Widget'
+app_profile = get_app_profile(config, "Control Widget")
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -462,8 +328,8 @@ def start_interactive_server(df, config, app_profile):
 
 
 
-# Step 1: Load and Clean
-print("[Step 1] Loading raw candidates...")
+# Load and Clean
+print("[Step 1] Loading candidates...")
 df_raw = pd.read_csv(INPUT_PATH, encoding="utf-8-sig")
 
 df = pd.DataFrame()
@@ -538,7 +404,7 @@ def normalize_text(text):
 
 df['keyword_normalized'] = df['Keyword'].apply(normalize_text)
 
-# Step 2: Language Detection
+# Language classification
 print("[Step 2] Language classification...")
 
 try:
@@ -865,7 +731,7 @@ def translate_keywords_parallel(df_in):
 
 df['EN'] = translate_keywords_parallel(df)
 
-# Step 3: Hard filters
+# Hard filters
 print("[Step 3] Hard filters...")
 df['is_competitor'] = df['Keyword'].apply(
     lambda x: any(re.search(r'\b' + re.escape(brand.lower()) + r'\b', str(x).lower()) 
@@ -875,7 +741,10 @@ df['is_typo'] = df['Keyword'].apply(
     lambda x: any(re.search(r'\b' + re.escape(typo.lower()) + r'\b', str(x).lower()) 
                   for typo in config['typo_blacklist'])
 )
-df['is_irrelevant'] = False
+df['is_irrelevant'] = df['Keyword'].apply(
+    lambda x: any(re.search(r'\b' + re.escape(term.lower()) + r'\b', str(x).lower()) 
+                  for term in config['irrelevant_intent_terms'])
+)
 
 def is_noise_only(kw, config):
     kw_lower = str(kw).lower().strip()
@@ -897,6 +766,9 @@ def is_noise_only(kw, config):
             return True
     return False
 
+# Setup default noise if missing in script
+if 'noise_terms' not in config:
+    config['noise_terms'] = ['app', 'apps', 'free', 'download', 'android', 'for android', 'new', 'best', 'top', '2026', '2025']
 df['is_noise'] = df['Keyword'].apply(lambda x: is_noise_only(x, config))
 
 # Naturalness Filter
@@ -920,7 +792,7 @@ def check_naturalness(kw, config):
         else:
             return 'TOO_LONG', f'Keyword has too many words ({len(words)})'
     grammar_patterns = [
-        r"\b(game game|emulator emulator|play play)\b",
+        r"\b(game game|widget widget|theme theme)\b",
         r"\b(what is|how to|why do|when is|where is)\b"
     ]
     for pat in grammar_patterns:
@@ -931,11 +803,15 @@ def check_naturalness(kw, config):
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
-naturalness = df['Keyword'].apply(lambda x: check_naturalness(x, config))
-df['NaturalnessFlag'] = [n[0] for n in naturalness]
-df['NaturalnessReason'] = [n[1] for n in naturalness]
+if 'NaturalnessFlag' in df_raw.columns:
+    df['NaturalnessFlag'] = df_raw['NaturalnessFlag'].fillna('OK')
+    df['NaturalnessReason'] = df_raw.get('NaturalnessReason', 'Natural enough for keyword research')
+else:
+    naturalness = df['Keyword'].apply(lambda x: check_naturalness(x, config))
+    df['NaturalnessFlag'] = [n[0] for n in naturalness]
+    df['NaturalnessReason'] = [n[1] for n in naturalness]
 
-# Scoring Logic (Game Emulator spec formulas)
+# Scoring Logic
 print("[Step 5] Relevancy Scoring...")
 
 # Pre-calculate competitor-proven keywords and score boost
@@ -1005,54 +881,38 @@ df['CompetitorBoost'] = competitor_boost_list
 
 def calculate_relevancy(row, config):
     kw = str(row['Keyword']).lower()
-    score = 0.3  # Base score
+    score = 0.3 # baseline
     
-    # +0.40: Core emulator intent
-    if 'emulator' in kw or 'emulador' in kw:
-        score += 0.40
+    # Core intent
+    if any(term in kw for term in config['intent_core_terms']):
+        score += 0.35
         
-    # +0.15: Specific Console/Feature
-    feature_match = [
-        'gameboy', 'gba', 'gbc', 'nes', 'snes', 'n64',
-        'ps2', 'psp', '3ds', 'sega', 'arcade', 'gamecube', 'dreamcast', 'fliperama',
-        'gb4', 'gba4'
-    ]
-    if any(c in kw for c in feature_match):
+    # Feature match
+    if any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms']):
+        score += 0.20
+        
+    # Style match
+    if any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms']):
         score += 0.15
-        
-    # +0.10: Retro/Classic style
-    retro_match = [
-        'retro', 'retrô', 'classic', 'klasik', 'clássico',
-        '8bit', '8-bit', '16bit', '16-bit',
-        'old', 'nostalgic', 'nostalgia', 'nostálgia', 'vintage', 'jadul', 'lawas'
-    ]
-    if any(r in kw for r in retro_match):
-        score += 0.10
-        
-    # +0.05: Game title IP
-    ip_match = [
-        'pokemon', 'pokémon', 'mario', 'zelda', 'naruto', 'sonic',
-        'tetris', 'pacman', 'metroid', 'street fighter', 'crash',
-        'god of war', 'gta', 'tekken', 'wwe', 'super smash bros'
-    ]
-    if any(g in kw for g in ip_match):
-        score += 0.05
         
     # Penalties
     if row['is_competitor']:
-        score -= 0.25
-    if row['is_noise']:
         score -= 0.20
+    if row['is_irrelevant']:
+        score -= 0.25
     if row['LanguageGroup'] == 'FOREIGN':
-        score -= 0.35
-    if row['NaturalnessFlag'] != 'OK':
-        score -= 0.35
+        score -= 0.30
+        
     # Competitor Boost
     score += row.get('CompetitorBoost', 0.0)
         
     return max(0.0, min(1.0, score))
 
-df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
+if 'RelevancyScore' in df_raw.columns:
+    df['RelevancyScore'] = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
+else:
+    df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
 
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
@@ -1077,7 +937,7 @@ def get_rank_n(rank_val):
         return 0.0
 df['CurrentRankN'] = df['Rank'].apply(get_rank_n)
 
-def calculate_expansion(row):
+def calculate_expansion(row, config):
     kw = str(row['Keyword']).lower()
     words = kw.split()
     n = len(words)
@@ -1089,17 +949,14 @@ def calculate_expansion(row):
         score = 0.5
     else:
         score = 0.3
-    if 'emulator' in kw or 'emulador' in kw:
+        
+    if 'widget' in kw or 'control' in kw:
         score += 0.1
     if row['is_competitor']:
         score = 0.1
-    # Check if keyword has style/game IP
-    has_style = any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms'])
-    if has_style:
-        score = min(score, 0.3)
     return max(0.0, min(1.0, score))
 
-df['ExpansionValue'] = df.apply(calculate_expansion, axis=1)
+df['ExpansionValue'] = df.apply(lambda r: calculate_expansion(r, config), axis=1)
 
 bw = config['balanced_weights']
 df['BalancedScore'] = (
@@ -1123,7 +980,7 @@ def get_language_bonus(row):
 df['BalancedScore'] = (df['BalancedScore'] + df.apply(get_language_bonus, axis=1)).round(4)
 df['RelevancyScore'] = df['RelevancyScore'].round(4)
 
-# Bucket classification (Game Emulator Mode)
+# Bucket classification
 print("[Step 7] Bucket classification...")
 def classify_keyword(row, config):
     kw = str(row['Keyword']).lower()
@@ -1133,51 +990,81 @@ def classify_keyword(row, config):
         return 'Dropped', 'competitor_brand', 'Dropped: Competitor brand'
     if row['is_typo']:
         return 'Dropped', 'typo_truncated_broken', 'Dropped: Typo, truncated, or broken'
+    if row['is_irrelevant']:
+        return 'Dropped', 'irrelevant_intent', 'Dropped: Irrelevant category/intent'
     if row['is_noise']:
         return 'Dropped', 'noise_only', 'Dropped: Noise-only generic term'
     if row['NaturalnessFlag'] != 'OK':
         return 'Dropped', 'unnatural', f"Dropped: Unnatural phrase ({row['NaturalnessReason']})"
         
-    # Language Policy
+    # Language Mismatches
     if row['LanguageGroup'] == 'FOREIGN':
         return 'Language Mismatch Audit', 'foreign_language_mismatch', 'Foreign language mismatch'
     if row['LanguageGroup'] in ['MIXED', 'UNKNOWN']:
         return 'Manual Review', 'manual_review', 'Mixed or unknown language'
     if row['LanguageGroup'] == 'SECONDARY':
-        return 'Consider Keywords', 'secondary_language_handling', 'Spanish keyword for US_EN (Secondary language)'
+        return 'Consider Keywords', 'secondary_language_handling', 'Secondary language handling'
         
     # Platform Risk
     has_platform_risk = any(term in kw for term in config['risky_platform_terms'])
     if has_platform_risk:
-        return 'Consider Keywords', 'platform_style_risk', 'Platform-style risk; keep for review only'
+        return 'Consider Keywords', 'platform_style_risk', 'Platform-style risk'
         
-    # Check console/feature and game titles
+    # Core, Feature, Style
     has_core = any(term in kw for term in config['intent_core_terms'])
     has_feature = any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms'])
     has_style = any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms'])
     
     if has_core:
-        return 'Core Intent Final', 'core_intent_final', 'Strong core game emulator search intent'
+        return 'Core Intent Final', 'core_intent_final', 'Strong core widget/control search intent'
+        
+    # Check style-only held back
+    if has_style and not has_core and not has_feature:
+        return 'Generic Style Reserve', 'style_only', 'Generic aesthetic/style-only terms held back from shortlist'
+        
+    if has_feature:
+        return 'Feature Keywords', 'feature_keywords', 'Specific features/toggles candidate'
         
     if has_style:
-        generic_game_terms = ["retro games", "classic games", "gba games", "arcade games", "jogos retrô", "jogos gba", "game emulator"]
-        if any(term in kw for term in generic_game_terms):
-            return 'Broad Expansion', 'broad_expansion', 'Generic game/emulator variant'
-        else:
-            return 'Game Keywords', 'game_keywords', 'Game Title/Franchise candidate (Research Only)'
-            
-    if has_feature:
-        return 'System Keywords', 'system_keywords', 'System/Console candidate'
+        return 'Style Keywords', 'style_keywords', 'Aesthetic/theme candidate'
         
     if row['RelevancyScore'] < 0.45:
         return 'Dropped', 'dropped', 'Dropped: Weak app intent after scoring'
         
-    return 'Broad Expansion', 'broad_expansion', 'Moderately relevant emulator expansion'
+    return 'Broad Expansion', 'broad_expansion', 'Broad widget expansion'
 
 classifications = df.apply(lambda r: classify_keyword(r, config), axis=1)
 df['Bucket'] = [c[0] for c in classifications]
 df['DecisionRule'] = [c[1] for c in classifications]
 df['Reason'] = [c[2] for c in classifications]
+
+# Apply user overrides
+def apply_user_overrides(row, config):
+    kw = str(row['Keyword']).lower().strip()
+    uo = config.get('user_overrides', {})
+    
+    if row['is_competitor'] or row['is_typo'] or row['LanguageGroup'] == 'FOREIGN':
+        return row['Bucket'], row['DecisionRule'], row['Reason']
+        
+    force_drops = [t.lower().strip() for t in uo.get('force_drop_terms', [])]
+    if kw in force_drops:
+        return 'Dropped', 'user_override_force_drop', 'Dropped: Force drop by user override'
+        
+    force_top30 = [t.lower().strip() for t in uo.get('force_top30_terms', [])]
+    if kw in force_top30:
+        return 'Core Intent Final', 'user_override_force_top30', 'Core Intent Final: Forced by user override'
+        
+    force_consider = [t.lower().strip() for t in uo.get('force_consider_terms', [])]
+    if kw in force_consider:
+        return 'Consider Keywords', 'user_override_force_consider', 'Consider Keywords: Forced by user override'
+        
+    return row['Bucket'], row['DecisionRule'], row['Reason']
+
+def override_row(row):
+    bucket, rule, reason = apply_user_overrides(row, config)
+    return pd.Series([bucket, rule, reason])
+
+df[['Bucket', 'DecisionRule', 'Reason']] = df.apply(override_row, axis=1)
 
 # Shortlist building & duplicate checking
 print("[Step 8] Near-Duplicate Cleanup & Shortlist building...")
@@ -1241,7 +1128,7 @@ def build_shortlist(df_all, config):
             
     # Core Fallback
     if len(selected_core) < 25:
-        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['System Keywords', 'Broad Expansion'])]
+        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Broad Expansion'])]
         for _, row in fallback_candidates.iterrows():
             if len(selected_core) >= 25:
                 break
@@ -1283,7 +1170,7 @@ def build_shortlist(df_all, config):
             
     # Broad Fallback
     if len(selected_broad) < 5:
-        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['System Keywords', 'Game Keywords'])]
+        fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Style Keywords'])]
         for _, row in fallback_candidates.iterrows():
             if len(selected_broad) >= 5:
                 break
@@ -1406,10 +1293,8 @@ def build_curated_sheet(df_all, bucket_name, sheet_name):
             
     return selected, dedup_entries
 
-# System Keywords (capped <=30, no fallback fill)
-selected_feature, dedup_feat = build_curated_sheet(df, 'System Keywords', '02_System_Keywords')
-# Game Keywords (capped <=30, no fallback fill)
-selected_style, dedup_style = build_curated_sheet(df, 'Game Keywords', '03_Game_Keywords')
+selected_feature, dedup_feat = build_curated_sheet(df, 'Feature Keywords', '02_Feature_Keywords')
+selected_style, dedup_style = build_curated_sheet(df, 'Style Keywords', '03_Style_Keywords')
 
 dedup_log_list.extend(dedup_feat)
 dedup_log_list.extend(dedup_style)
@@ -1485,7 +1370,7 @@ if confirmed_selection:
                 row = row.iloc[0]
             entry = row.to_dict()
             entry['Keyword'] = kw
-            entry['Section'] = 'System Keywords'
+            entry['Section'] = 'Feature Keywords'
             selected_feature.append(entry)
             
     selected_style = []
@@ -1496,7 +1381,7 @@ if confirmed_selection:
                 row = row.iloc[0]
             entry = row.to_dict()
             entry['Keyword'] = kw
-            entry['Section'] = 'Game Keywords'
+            entry['Section'] = 'Style Keywords'
             selected_style.append(entry)
             
     config["app_title_draft"] = confirmed_selection.get("title", "")
@@ -1578,9 +1463,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.4"),
+    ("Pipeline Version", "ASO Keyword Planner v3.5"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1613,24 +1498,24 @@ for row_idx, entry in enumerate(all_shortlist, 2):
         ws_shortlist.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
 style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
-# --- 02_System_Keywords ---
-ws_system = wb.create_sheet(title="02_System_Keywords")
+# --- 02_Feature_Keywords ---
+ws_feature = wb.create_sheet(title="02_Feature_Keywords")
 cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_system.cell(row=1, column=col_idx, value=col)
+    ws_feature.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_feature, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_system.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_system, "02_System_Keywords")
+        ws_feature.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_feature, "02_Feature_Keywords")
 
-# --- 03_Game_Keywords ---
-ws_game = wb.create_sheet(title="03_Game_Keywords")
+# --- 03_Style_Keywords ---
+ws_style = wb.create_sheet(title="03_Style_Keywords")
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_game.cell(row=1, column=col_idx, value=col)
+    ws_style.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_style, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_game.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_game, "03_Game_Keywords")
+        ws_style.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_style, "03_Style_Keywords")
 
 # --- 04_Dropped_Audit ---
 ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
@@ -1646,7 +1531,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1655,8 +1540,8 @@ metrics = [
     ("Core Intent Selected", len(selected_core)),
     ("Broad Expansion Selected", len(selected_broad)),
     ("Consider Selected", len(selected_consider)),
-    ("System Keywords Curated (02)", len(selected_feature)),
-    ("Game Keywords Curated (03)", len(selected_style)),
+    ("Feature Keywords Curated (02)", len(selected_feature)),
+    ("Style Keywords Curated (03)", len(selected_style)),
     ("Duplicates Filtered (Dedup Log)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
@@ -1679,8 +1564,8 @@ ws_report.cell(row=3, column=4, value="Sheet Index").font = Font(size=12, bold=T
 sheets_info = [
     ("00_README_CONFIG", "App configuration parameters and run metadata"),
     ("01_Main_Keyword_Shortlist", "Top 25 Core + 5 Broad + 10 Consider shortlist for metadata allocation"),
-    ("02_System_Keywords", "Curated system, console, and platform candidates (capped <= 30)"),
-    ("03_Game_Keywords", "Curated game title and franchise candidates (capped <= 30, Research Only)"),
+    ("02_Feature_Keywords", "Curated feature and control center specific candidates (capped <= 30)"),
+    ("03_Style_Keywords", "Curated aesthetic, theme, and styling specific candidates (capped <= 30)"),
     ("04_Dropped_Audit", "Dropped keywords with detailed reasons"),
     ("05_Report_Summary", "Summary stats, language breakdowns, and sheet indices"),
     ("06_All_Candidates", "Full candidate pool with detailed score and policy values"),
@@ -1791,7 +1676,7 @@ style_sheet(ws_dedup, "12_Text_Dedup_Log")
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)
-    print("Pipeline for Game Emulator complete!")
+    print("Pipeline for Control Widget complete!")
 except PermissionError:
     alt_path = OUTPUT_PATH.replace(".xlsx", "_temp.xlsx")
     print(f"WARNING: Permission denied to write to {OUTPUT_PATH} (file is likely open in another program).")
