@@ -551,19 +551,90 @@ def get_root_word(w):
             return w[:-1]
     return w
 
+# --- Dynamic Google Play Country-Language Mapping Loader ---
+_COUNTRY_LANG_MAP = None
+
+def _load_country_language_map():
+    global _COUNTRY_LANG_MAP
+    if _COUNTRY_LANG_MAP is not None:
+        return _COUNTRY_LANG_MAP
+    mapping = {}
+    try:
+        import openpyxl
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        map_path = os.path.join(script_dir, "google_play_country_language_map.xlsx")
+        if not os.path.exists(map_path):
+            map_path = os.path.join(os.path.dirname(script_dir), "google_play_country_language_map.xlsx")
+        
+        if os.path.exists(map_path):
+            wb = openpyxl.load_workbook(map_path, read_only=True)
+            if 'Country-Language Map' in wb.sheetnames:
+                ws = wb['Country-Language Map']
+                for row in ws.iter_rows(min_row=5, values_only=True):
+                    if len(row) >= 7:
+                        country = str(row[3] or '').strip().upper()
+                        primary_locale = str(row[4] or '').strip()
+                        secondary_locale = str(row[6] or '').strip()
+                        if not country:
+                            continue
+                        
+                        p_langs = [primary_locale.split('-')[0].lower()] if primary_locale else []
+                        s_langs = []
+                        if secondary_locale and secondary_locale.lower() != 'none':
+                            for s in secondary_locale.split(';'):
+                                s = s.strip()
+                                if s:
+                                    s_langs.append(s.split('-')[0].lower())
+                        mapping[country] = {'primary': p_langs, 'secondary': s_langs}
+            wb.close()
+    except Exception as e:
+        print(f"Warning loading country-language map: {e}")
+    _COUNTRY_LANG_MAP = mapping
+    return _COUNTRY_LANG_MAP
+
 def _get_language_policy(config, primary_lang):
-    """Get or auto-derive market language policy."""
+    """Get or auto-derive market language policy, incorporating the spreadsheet mapping."""
     policy = config.get('market_language_policy', {})
-    if policy.get('primary_languages'):
-        policy_primary = [l.split('-')[0].lower() for l in policy['primary_languages']]
+    
+    # 1. If explicit policy exists in the configuration, use it
+    if policy.get('primary_languages') or policy.get('secondary_languages'):
+        policy_primary = [l.split('-')[0].lower() for l in policy.get('primary_languages', [])]
+        secondary_langs = [l.split('-')[0].lower() for l in policy.get('secondary_languages', [])]
+        if not policy_primary:
+            policy_primary = [primary_lang]
+        return policy_primary, secondary_langs
+    
+    # 2. Derive policy dynamically from the Country-Language map
+    market = config.get('market', 'US_EN')
+    if "_" in market:
+        parts = market.split("_")
+        country_code = parts[0].upper()
+        target_lang = parts[1].lower()
     else:
-        # Auto-derive: market language is primary
-        policy_primary = [primary_lang]
-    if policy.get('secondary_languages'):
-        secondary_langs = [l.split('-')[0].lower() for l in policy['secondary_languages']]
+        country_code = market.upper()
+        target_lang = primary_lang
+        
+    cmap = _load_country_language_map()
+    if cmap and country_code in cmap:
+        sheet_primary = cmap[country_code]['primary']
+        sheet_secondary = cmap[country_code]['secondary']
+        
+        # If the target language is part of the spreadsheet's primary languages
+        if target_lang in sheet_primary:
+            policy_primary = [target_lang]
+            secondary_langs = [l for l in sheet_secondary if l != target_lang]
+        else:
+            policy_primary = [target_lang]
+            # Include the spreadsheet's primary and other secondary languages as secondary for this run
+            secondary_langs = [l for l in (sheet_primary + sheet_secondary) if l != target_lang]
+            
+        # Ensure secondary_langs is deduplicated and doesn't contain target_lang
+        secondary_langs = list(dict.fromkeys(secondary_langs))
     else:
-        # Auto-derive: if primary is not English, English is secondary (common in global ASO)
-        secondary_langs = ['en'] if primary_lang != 'en' else []
+        # Fallback to standard derivation if spreadsheet is not loaded or country not found
+        policy_primary = [target_lang]
+        secondary_langs = ['en'] if target_lang != 'en' else []
+        
     return policy_primary, secondary_langs
 
 def _build_eng_words_only(base_terms):
@@ -607,6 +678,10 @@ _LANGDETECT_CONFUSION = {
 }
 
 def detect_keyword_language(kw, market_lang, config):
+    def lang_match(l1, l2):
+        l1, l2 = str(l1).lower(), str(l2).lower()
+        return l1 == l2 or (l1 == 'fil' and l2 == 'tl') or (l1 == 'tl' and l2 == 'fil')
+
     kw_lower = str(kw).lower().strip()
     primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
     
@@ -632,9 +707,9 @@ def detect_keyword_language(kw, market_lang, config):
     
     if all_english:
         # Classify English based on market language policy
-        if 'en' in policy_primary:
+        if any(lang_match('en', p) for p in policy_primary):
             return 'en', 'PRIMARY'
-        elif 'en' in secondary_langs:
+        elif any(lang_match('en', s) for s in secondary_langs):
             return 'en', 'SECONDARY'
         else:
             return 'en', 'FOREIGN'
@@ -652,18 +727,18 @@ def detect_keyword_language(kw, market_lang, config):
             if word_count <= 3 and best_lang in _LANGDETECT_CONFUSION:
                 likely_langs = _LANGDETECT_CONFUSION[best_lang]
                 # If primary_lang is in the confusion list, prefer it
-                if primary_lang in likely_langs:
+                if any(lang_match(primary_lang, l) for l in likely_langs):
                     best_lang = primary_lang
                     confusion_corrected = True
                 # If any secondary lang is in the confusion list
-                elif any(s in likely_langs for s in secondary_langs):
+                elif any(any(lang_match(s, l) for l in likely_langs) for s in secondary_langs):
                     for s in secondary_langs:
-                        if s in likely_langs:
+                        if any(lang_match(s, l) for l in likely_langs):
                             best_lang = s
                             confusion_corrected = True
                             break
                 # If 'en' is in confusion list and primary is English
-                elif 'en' in likely_langs and 'en' in policy_primary:
+                elif any(lang_match('en', l) for l in likely_langs) and any(lang_match('en', p) for p in policy_primary):
                     best_lang = 'en'
                     confusion_corrected = True
                 # For very short keywords (1-2 words), default to primary
@@ -672,19 +747,19 @@ def detect_keyword_language(kw, market_lang, config):
                     confusion_corrected = True
             
             # Classify the detected language
-            if best_lang == primary_lang or best_lang in policy_primary:
+            if lang_match(best_lang, primary_lang) or any(lang_match(best_lang, p) for p in policy_primary):
                 return best_lang, 'PRIMARY'
             
             # For confusion-corrected results, trust the correction directly
             if confusion_corrected:
-                if best_lang in secondary_langs:
+                if any(lang_match(best_lang, s) for s in secondary_langs):
                     return best_lang, 'SECONDARY'
                 return best_lang, 'FOREIGN'
             
             # For non-corrected results, require higher confidence for short keywords
             min_prob = 0.85 if word_count <= 2 else 0.7 if word_count <= 3 else 0.6
             if prob >= min_prob:
-                if best_lang in secondary_langs:
+                if any(lang_match(best_lang, s) for s in secondary_langs):
                     return best_lang, 'SECONDARY'
                 # Only mark as FOREIGN with sufficient confidence
                 return best_lang, 'FOREIGN'

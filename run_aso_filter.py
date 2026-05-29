@@ -29,11 +29,11 @@ def main():
         sys.exit(1)
 
     filename = os.path.basename(csv_path)
-    # Match AppName_Country_Language.csv (e.g. GameEmulator_US_EN.csv)
-    match = re.match(r'^([A-Za-z0-9]+)_([A-Za-z]{2}_[A-Za-z]{2})\.csv$', filename)
+    # Match AppName_Country_Language.csv (e.g. GameEmulator_US_EN.csv, Pranky_PH_fil.csv)
+    match = re.match(r'^([A-Za-z0-9]+)_([A-Za-z]{2}_[A-Za-z]{2,3})\.csv$', filename)
     if not match:
         # Fallback if filename is just Country_Language.csv (e.g. US_EN.csv)
-        match_fallback = re.match(r'^([A-Za-z]{2}_[A-Za-z]{2})\.csv$', filename)
+        match_fallback = re.match(r'^([A-Za-z]{2}_[A-Za-z]{2,3})\.csv$', filename)
         if match_fallback:
             app_name = "ControlWidget" # Default fallback
             try:
