@@ -68,9 +68,11 @@ LANG_LEXICONS = {
     "pt": {
         "de", "da", "do", "para", "com", "sem", "gratis", "som", "sons", "brincadeira",
         "foto", "fotos", "editor", "camera", "filtro", "filtros", "jogo", "jogos",
-        "barulho", "barulhos", "maquina", "corte", "cabelo", "peido", "peidos",
+        "barulho", "barulhos", "maquina", "cortar", "corte", "cabelo", "peido", "peidos",
         "buzina", "buzinas", "risada", "risadas", "engracado", "engracada", "engracados",
-        "choque", "choques", "pegadinha", "pegadinhas", "pum"
+        "choque", "choques", "pegadinha", "pegadinhas", "pum", "barbeador", "barbeiro",
+        "simulador", "trote", "sirene", "arma", "armas", "vidro", "quebrado", "tosse",
+        "porta", "campainha"
     },
     "vi": {
         "ung", "dung", "mien", "phi", "anh", "chinh", "sua", "tro", "choi", "am",
@@ -247,6 +249,7 @@ def _classify_by_policy(lang, policy):
 def _classify_latin_tokens(tokens, policy, config=None, english_vocab=None):
     english_words = _build_english_words(config, english_vocab)
     token_langs = []
+    lexicon_order = _dedupe_langs(policy.get("primary", []) + policy.get("secondary", []) + list(LANG_LEXICONS.keys()))
 
     # Determine search order for language lexicons: check policy's primary languages first
     primary_langs = policy.get("primary", [])
@@ -255,12 +258,21 @@ def _classify_latin_tokens(tokens, policy, config=None, english_vocab=None):
 
     for token in tokens:
         root = _get_root_word(token)
+        primary_matched = None
+        for lang in policy.get("primary", []):
+            lexicon = LANG_LEXICONS.get(lang, set())
+            if token in lexicon or root in lexicon:
+                primary_matched = lang
+                break
+        if primary_matched:
+            token_langs.append(primary_matched)
+            continue
         if token in english_words or root in english_words:
             token_langs.append("en")
             continue
         matched = None
         for lang in check_order:
-            lexicon = LANG_LEXICONS.get(lang, {})
+            lexicon = LANG_LEXICONS.get(lang, set())
             if token in lexicon or root in lexicon:
                 matched = lang
                 break

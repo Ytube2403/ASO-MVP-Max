@@ -334,9 +334,10 @@ def normalize_text(text):
     words = text.split()
     normalized_words = []
     for w in words:
-        if w.endswith('s') and len(w) > 3:
-            if w in ['themes', 'widgets', 'panels', 'settings', 'shortcuts', 'icons', 'styles', 'games', 'emulators', 'consoles']:
-                w = w[:-1]
+        if w.endswith('ns') and len(w) > 2:
+            w = w[:-2] + 'm'
+        elif w.endswith('s') and len(w) > 3 and not w.endswith('ss') and not w.endswith('us') and not w.endswith('is'):
+            w = w[:-1]
         normalized_words.append(w)
     return " ".join(normalized_words)
 
@@ -687,7 +688,13 @@ def translate_keywords_parallel(df_in):
                 
     return df_in['Keyword'].map(unique_translations).fillna(df_in['Keyword']).tolist()
 
-df['EN'] = translate_keywords_parallel(df)
+if 'EN' in df_raw.columns:
+    df['EN'] = df_raw['EN'].fillna('').astype(str)
+    missing_en = df['EN'].str.strip() == ''
+    if missing_en.any():
+        df.loc[missing_en, 'EN'] = pd.Series(translate_keywords_parallel(df.loc[missing_en]), index=df.index[missing_en])
+else:
+    df['EN'] = translate_keywords_parallel(df)
 
 try:
     from shared import keyword_filter as _shared_keyword_filter
@@ -878,10 +885,15 @@ def calculate_relevancy(row, config):
     return max(0.0, min(1.0, score))
 
 if 'RelevancyScore' in df_raw.columns:
-    df['RelevancyScore'] = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    raw_relevancy = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    if _shared_keyword_filter:
+        shared_relevancy = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
+        df['RelevancyScore'] = np.maximum(raw_relevancy, shared_relevancy)
+    else:
+        df['RelevancyScore'] = raw_relevancy
     df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
 else:
-    df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
+    df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config) if _shared_keyword_filter else calculate_relevancy(r, config), axis=1)
 
 
 
@@ -1213,8 +1225,8 @@ def build_shortlist(df_all, config):
 
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
-def get_category_sound(kw):
-    kw_lower = str(kw).lower()
+def get_category_sound(kw, en=""):
+    kw_lower = f"{kw} {en}".lower()
     
     # Hair clipper category
     clipper_terms = ["clipper", "haircut", "hair cut", "razor", "shave", "trimmer", "barber"]
@@ -1234,8 +1246,10 @@ def get_category_sound(kw):
     # Default/General prank sounds
     return "prank_sound_general"
 
-def classify_by_sound_category(df_all, selected_shortlist_kws):
+def classify_by_sound_category(df_all):
     accepted_buckets = ['Core Intent Final', 'Broad Expansion', 'Feature Keywords', 'Style Keywords', 'Consider Keywords']
+    # Topic sheets are independent views. A strong keyword may appear in the
+    # main shortlist and again in its topic sheet; dedup is local to each sheet.
     df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)]
     df_sorted = df_candidates.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     
@@ -1259,7 +1273,7 @@ def classify_by_sound_category(df_all, selected_shortlist_kws):
     
     for _, row in df_sorted.iterrows():
         kw = row['Keyword']
-        g = get_category_sound(kw)
+        g = get_category_sound(kw, row.get('EN', ''))
         
         if len(groups[g]) >= 30:
             continue
@@ -1307,9 +1321,7 @@ def classify_by_sound_category(df_all, selected_shortlist_kws):
     return groups["hairclipper"], groups["taser"], groups["gun_sound"], groups["prank_sound_general"], dedup_entries
 
 # Headless classification of sound categories
-all_shortlist = selected_core + selected_broad + selected_consider
-shortlist_kws = {item['Keyword'].lower() for item in all_shortlist}
-selected_clipper, selected_taser, selected_gun, selected_general_prank, dedup_categories = classify_by_sound_category(df, shortlist_kws)
+selected_clipper, selected_taser, selected_gun, selected_general_prank, dedup_categories = classify_by_sound_category(df)
 
 dedup_log_list.extend(dedup_categories)
 df_dedup_log = pd.DataFrame(dedup_log_list)

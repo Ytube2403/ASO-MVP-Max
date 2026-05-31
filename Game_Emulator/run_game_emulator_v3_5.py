@@ -530,9 +530,10 @@ def normalize_text(text):
     words = text.split()
     normalized_words = []
     for w in words:
-        if w.endswith('s') and len(w) > 3:
-            if w in ['themes', 'widgets', 'panels', 'settings', 'shortcuts', 'icons', 'styles', 'games', 'emulators', 'consoles']:
-                w = w[:-1]
+        if w.endswith('ns') and len(w) > 2:
+            w = w[:-2] + 'm'
+        elif w.endswith('s') and len(w) > 3 and not w.endswith('ss') and not w.endswith('us') and not w.endswith('is'):
+            w = w[:-1]
         normalized_words.append(w)
     return " ".join(normalized_words)
 

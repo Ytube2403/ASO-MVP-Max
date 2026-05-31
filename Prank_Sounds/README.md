@@ -84,3 +84,7 @@ Quy tắc cần nhớ:
 - `SECONDARY` giữ ở `Consider Keywords`.
 - Naturalness không hard-drop non-Latin/script khác bằng `LANGUAGE_BLEED`; ngôn ngữ do language detector xử lý.
 - `selected_keywords.json` chỉ được dùng lại khi metadata market và input file khớp run hiện tại.
+
+### Quy tắc overlap giữa các sheet
+
+`01_Main_Keyword_Shortlist` và các sheet chủ đề (`02_Hairclipper_Keywords`, `03_Taser_Keywords`, `04_Gun_Sound_Keywords`, `05_Prank_Sound_General`) là các danh sách độc lập. Keyword mạnh được phép xuất hiện lại ở Main List và sheet chủ đề phù hợp. Dedup chỉ áp dụng bên trong từng sheet để loại exact duplicate hoặc token-set duplicate.

@@ -14,6 +14,8 @@ DEFAULT_NOISE_TERMS = [
     "new", "best", "top", "2026", "2025",
 ]
 
+FILTER_LOGIC_VERSION = "v3.5_topic_sheets_allow_main_overlap"
+
 QUERY_PATTERNS = [
     r"\bwhat\s+is\b",
     r"\bhow\s+to\b",
@@ -55,26 +57,35 @@ def has_term(text, terms):
     return False
 
 
+def _row_texts(value):
+    if hasattr(value, "get") and not isinstance(value, str):
+        texts = [value.get("Keyword", ""), value.get("EN", "")]
+    else:
+        texts = [value]
+    out = []
+    seen = set()
+    for text in texts:
+        normalized = normalize_filter_text(text)
+        if normalized and normalized not in seen:
+            out.append(text)
+            seen.add(normalized)
+    return out
+
+
+def has_any_term(value, terms):
+    return any(has_term(text, terms) for text in _row_texts(value))
+
+
 def has_core_intent(keyword, config):
-    # Support dict/Series/row or string
-    kw_str = keyword
-    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
-        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
-    return has_term(kw_str, config.get("intent_core_terms", [])) or has_term(kw_str, config.get("intent_core_words", []))
+    return has_any_term(keyword, config.get("intent_core_terms", [])) or has_any_term(keyword, config.get("intent_core_words", []))
 
 
 def has_feature_intent(keyword, config):
-    kw_str = keyword
-    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
-        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
-    return has_term(kw_str, config.get("feature_terms", []))
+    return has_any_term(keyword, config.get("feature_terms", []))
 
 
 def has_style_intent(keyword, config):
-    kw_str = keyword
-    if isinstance(keyword, (dict, object)) and hasattr(keyword, 'get'):
-        kw_str = keyword.get("EN", keyword.get("Keyword", ""))
-    return has_term(kw_str, config.get("style_terms", []))
+    return has_any_term(keyword, config.get("style_terms", []))
 
 
 def is_competitor_keyword(keyword, config):
@@ -188,14 +199,14 @@ def calculate_expansion(row, config):
     else:
         score = 0.35
 
-    if has_core_intent(keyword, config):
+    if has_core_intent(row, config):
         score += 0.10
-    elif has_feature_intent(keyword, config):
+    elif has_feature_intent(row, config):
         score += 0.05
 
     if row.get("is_competitor"):
         score = 0.10
-    if has_style_intent(keyword, config) and not has_core_intent(keyword, config):
+    if has_style_intent(row, config) and not has_core_intent(row, config):
         score = min(score, 0.35)
 
     return max(0.0, min(1.0, score))
@@ -222,9 +233,9 @@ def _app_mode(config):
 def classify_keyword(row, config):
     keyword = row.get("Keyword", "")
     app_mode = _app_mode(config)
-    has_core = has_core_intent(keyword, config)
-    has_feature = has_feature_intent(keyword, config)
-    has_style = has_style_intent(keyword, config)
+    has_core = has_core_intent(row, config)
+    has_feature = has_feature_intent(row, config)
+    has_style = has_style_intent(row, config)
     core_override = bool(config.get("risk_policy", {}).get("core_intent_override", False))
 
     if row.get("is_competitor"):
@@ -255,7 +266,7 @@ def classify_keyword(row, config):
     if language_group == "SECONDARY":
         return "Consider Keywords", "secondary_language_handling", "Secondary language handling"
 
-    if has_term(keyword, config.get("risky_platform_terms", [])):
+    if has_any_term(row, config.get("risky_platform_terms", [])):
         return "Consider Keywords", "platform_style_risk", "Platform-style risk"
 
     if has_core:
@@ -268,7 +279,7 @@ def classify_keyword(row, config):
     if app_mode == "game":
         if has_style:
             generic_terms = ["retro games", "classic games", "gba games", "arcade games", "game emulator"]
-            if has_term(keyword, generic_terms):
+            if has_any_term(row, generic_terms):
                 return "Broad Expansion", "broad_expansion", "Generic game/emulator variant"
             return "Game Keywords", "game_keywords", "Game Title/Franchise candidate (Research Only)"
         if has_feature:
@@ -298,6 +309,27 @@ def classify_keyword(row, config):
     return "Broad Expansion", "broad_expansion", "Broad app expansion"
 
 
+def calculate_relevancy(row, config):
+    score = float(config.get("relevancy_weights", {}).get("base", 0.30))
+
+    if has_core_intent(row, config):
+        score += 0.35
+    if has_feature_intent(row, config):
+        score += 0.20
+    if has_style_intent(row, config):
+        score += 0.15
+
+    if row.get("is_competitor"):
+        score -= 0.20
+    if row.get("is_irrelevant"):
+        score -= 0.25
+    if str(row.get("LanguageGroup", "")).upper() == "FOREIGN":
+        score -= 0.30
+
+    score += float(row.get("CompetitorBoost", 0.0) or 0.0)
+    return max(0.0, min(1.0, score))
+
+
 def file_md5(path):
     try:
         hash_md5 = hashlib.md5()
@@ -311,6 +343,7 @@ def file_md5(path):
 
 def build_selection_cache_meta(input_path, market):
     return {
+        "filter_version": FILTER_LOGIC_VERSION,
         "market": str(market or ""),
         "input_file": os.path.basename(str(input_path or "")),
         "input_hash": file_md5(input_path) if input_path else "",

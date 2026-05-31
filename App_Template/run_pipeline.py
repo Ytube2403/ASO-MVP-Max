@@ -338,9 +338,10 @@ def normalize_text(text):
     words = text.split()
     normalized_words = []
     for w in words:
-        if w.endswith('s') and len(w) > 3:
-            if w in ['themes', 'widgets', 'panels', 'settings', 'shortcuts', 'icons', 'styles', 'games', 'emulators', 'consoles']:
-                w = w[:-1]
+        if w.endswith('ns') and len(w) > 2:
+            w = w[:-2] + 'm'
+        elif w.endswith('s') and len(w) > 3 and not w.endswith('ss') and not w.endswith('us') and not w.endswith('is'):
+            w = w[:-1]
         normalized_words.append(w)
     return " ".join(normalized_words)
 
@@ -679,7 +680,13 @@ def translate_keywords_parallel(df_in):
                 
     return df_in['Keyword'].map(unique_translations).fillna(df_in['Keyword']).tolist()
 
-df['EN'] = translate_keywords_parallel(df)
+if 'EN' in df_raw.columns:
+    df['EN'] = df_raw['EN'].fillna('').astype(str)
+    missing_en = df['EN'].str.strip() == ''
+    if missing_en.any():
+        df.loc[missing_en, 'EN'] = pd.Series(translate_keywords_parallel(df.loc[missing_en]), index=df.index[missing_en])
+else:
+    df['EN'] = translate_keywords_parallel(df)
 
 try:
     from shared import keyword_filter as _shared_keyword_filter
@@ -870,10 +877,15 @@ def calculate_relevancy(row, config):
     return max(0.0, min(1.0, score))
 
 if 'RelevancyScore' in df_raw.columns:
-    df['RelevancyScore'] = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    raw_relevancy = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    if _shared_keyword_filter:
+        shared_relevancy = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
+        df['RelevancyScore'] = np.maximum(raw_relevancy, shared_relevancy)
+    else:
+        df['RelevancyScore'] = raw_relevancy
     df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
 else:
-    df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
+    df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config) if _shared_keyword_filter else calculate_relevancy(r, config), axis=1)
 
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
@@ -1434,9 +1446,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.3 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.3"),
+    ("Pipeline Version", "ASO Keyword Planner v3.5"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1502,7 +1514,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.3 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),

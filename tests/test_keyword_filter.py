@@ -82,6 +82,11 @@ class KeywordFilterTests(unittest.TestCase):
             ("Consider Keywords", "irrelevant_intent_core_override", "Consider: Core intent with broad irrelevant-risk term"),
         )
 
+    def test_translated_en_text_can_drive_primary_market_core_intent(self):
+        item = row("maquina de cortar cabelo", "PRIMARY", EN="hair clipper prank")
+        self.assertEqual(keyword_filter.classify_keyword(item, BASE_CONFIG)[0], "Core Intent Final")
+        self.assertGreaterEqual(keyword_filter.calculate_relevancy(item, BASE_CONFIG), 0.65)
+
     def test_selection_cache_requires_matching_metadata(self):
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(b"Keyword,Volume\nprank sounds,100\n")

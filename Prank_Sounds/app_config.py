@@ -58,7 +58,13 @@ APP_CONFIG = {
         "trimmer", "horn", "sound effects", "fake sound", "fake sounds", 
         "fun sound", "fun sounds", "hair cut", "hair cutting", "joke sound", "joke sounds", "barber"
     ],
-    
+
+    "intent_core_words": [
+        "prank", "haircut", "clipper", "clippers", "razor", "trimmer", "taser",
+        "stun", "shock", "airhorn", "air horn", "soundboard", "fart", "gun",
+        "weapon", "firearm", "siren"
+    ],
+
     "feature_terms": [
         # Các từ khóa mô tả tính năng / chức năng cụ thể của ứng dụng
         "clipper sound", "taser sounds", "fart noise", "airhorn prank", "broken glass", 
