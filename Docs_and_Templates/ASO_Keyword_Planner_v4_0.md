@@ -1,6 +1,6 @@
 # ASO Keyword Planner
 
-**Phiên bản:** 3.5  
+**Phiên bản:** 4.0
 **Tên cũ:** ASO Keyword Master Pipeline — Universal Template  
 **Tên mới:** ASO Keyword Planner  
 **Mục đích:** Lọc, chấm điểm, phân nhóm và xuất shortlist keyword ASO theo từng app, từng market, từng ngôn ngữ và từng nền tảng metadata.  
@@ -53,13 +53,14 @@ Top keyword phải là keyword có thể dùng được, đúng intent, đúng n
 | `Keyword` | String (Text) | **Bắt buộc** | Từ khóa cần đánh giá. Phải là văn bản không chứa ký tự lạ. Nếu dòng bị rỗng sẽ tự động bị bỏ qua. |
 | `Volume` | Integer (Số nguyên) | Tùy chọn | Lượng tìm kiếm hiện tại của từ khóa. Nếu không có, mặc định gán = `0`. |
 | `Max. Volume` hoặc `Max Volume` | Integer (Số nguyên) | Tùy chọn | Lượng tìm kiếm cao nhất trong 12 tháng qua. Nếu không có, mặc định lấy bằng giá trị cột `Volume`. |
+| `MaximumReach` hoặc `Maximum Reach` | Integer (Số nguyên) | Tùy chọn | Lượng impression tối đa ước tính. Nếu có, pipeline ưu tiên dùng cột này để normalize volume theo traffic thực tế. |
 | `Difficulty` | Integer (Số nguyên) | Tùy chọn | Điểm độ khó của từ khóa ($0 - 100$). Nếu không có, mặc định gán = `0`. |
 | `KEI` | Float (Số thập phân) | Tùy chọn | Chỉ số hiệu quả từ khóa. Nếu không có, mặc định gán = `0.0`. |
 | `Rank` hoặc `CurrentRank` | String hoặc Integer | Tùy chọn | Thứ hạng hiện tại của app cho từ khóa này. Nếu không có, mặc định gán = `"Unranked"`. |
 
 ### 0.1.4 Chuẩn hóa kiểu dữ liệu tự động
 Khi đọc dữ liệu, pipeline sẽ tự động thực hiện ép kiểu và chuẩn hóa:
-1. Ép các cột `Volume`, `Max. Volume`, `Difficulty` sang dạng số nguyên nguyên bản, điền `0` nếu gặp dữ liệu lỗi (`NaN` hoặc lỗi định dạng).
+1. Ép các cột `Volume`, `Max. Volume`, `MaximumReach`, `Difficulty` sang dạng số, điền `0` nếu gặp dữ liệu lỗi (`NaN` hoặc lỗi định dạng).
 2. Ép cột `KEI` sang dạng số thực, điền `0.0` nếu lỗi.
 3. Nếu cột `Max. Volume` bị thiếu, hệ thống tự động gán dữ liệu từ cột `Volume` để tính toán tỉ lệ `Traffic Stability`.
 
@@ -433,11 +434,23 @@ APP_CONFIG = {
 
     # ─── Scoring Normalization ───
     "scoring_normalization": {
-        "volume": "log_minmax",
+        "volume": "maximum_reach_or_exponential_search_popularity",
         "difficulty": "inverse_0_100",
         "kei": "log_minmax",
         "rank": "tiered_rank_score",
         "unranked_rank_score": 0.0
+    },
+
+    "volume_score_policy": {
+        "search_popularity_floor": 5.0,
+        "search_popularity_ceiling": 100.0,
+        "exponential_curve_factor": 4.0,
+        "current_volume_weight": 0.85,
+        "historical_max_volume_weight": 0.15,
+        "low_tier_threshold": 5.0,
+        "low_tier_score_cap": 0.05,
+        "exclude_low_tier_from_metadata_shortlist": True,
+        "max_low_tier_consider_keywords": 3
     },
 
     # ─── Metadata Slots by Platform ───
@@ -817,17 +830,15 @@ BalancedScore =
 
 #### VolumeN
 
-Dùng log scale dựa trên lượng tìm kiếm đỉnh (`Max. Volume` trong 12 tháng qua) để tránh keyword volume lớn áp đảo quá mạnh và loại bỏ ảnh hưởng từ sự biến động ngắn hạn:
+`Volume` từ AppTweak là Search Popularity theo thang phi tuyến `5–100`, không phải số lượt tìm kiếm tuyệt đối. Pipeline ưu tiên `MaximumReach` nếu CSV có cột này. Nếu CSV không có `MaximumReach`, pipeline dùng proxy exponential trên thang Search Popularity tuyệt đối:
 
 ```text
-VolumeN = log(Max. Volume + 1) / log(max_of_max_volumes + 1)
+CurrentVolumeN = exp_curve(Volume, floor=5, ceiling=100)
+HistoricalVolumeN = exp_curve(Max. Volume, floor=5, ceiling=100)
+VolumeN = 0.85 * CurrentVolumeN + 0.15 * HistoricalVolumeN
 ```
 
-Nếu không có Max. Volume hoặc max_of_max_volumes = 0:
-
-```text
-VolumeN = 0
-```
+Nếu `Volume <= 5`, `VolumeN` bị giới hạn tối đa ở `0.05`. Keyword tier thấp vẫn còn trong pool nghiên cứu, nhưng mặc định không tự động đi vào Core/Broad metadata shortlist. Danh sách Consider chỉ giữ tối đa `3` keyword tier thấp để review.
 
 #### DifficultyN
 
@@ -1368,11 +1379,23 @@ APP_CONFIG = {
     },
 
     "scoring_normalization": {
-        "volume": "log_minmax",
+        "volume": "maximum_reach_or_exponential_search_popularity",
         "difficulty": "inverse_0_100",
         "kei": "log_minmax",
         "rank": "tiered_rank_score",
         "unranked_rank_score": 0.0
+    },
+
+    "volume_score_policy": {
+        "search_popularity_floor": 5.0,
+        "search_popularity_ceiling": 100.0,
+        "exponential_curve_factor": 4.0,
+        "current_volume_weight": 0.85,
+        "historical_max_volume_weight": 0.15,
+        "low_tier_threshold": 5.0,
+        "low_tier_score_cap": 0.05,
+        "exclude_low_tier_from_metadata_shortlist": True,
+        "max_low_tier_consider_keywords": 3
     },
 
     "metadata_slots": {
@@ -1750,8 +1773,8 @@ Cách sửa:
 
 ---
 
-*ASO Keyword Planner v3.6*
-*Updated for single-workbook Excel output, strict language policy, rule precedence, scoring normalization, quota fallback, consider sub-quota, platform-specific metadata assignment, global text-level dedup, and Game Emulator semantic mode.*
+*ASO Keyword Planner v4.0*
+*Updated for the shared hard-filter platform, compiled matcher runtime, indexed multilingual dedup, reliable translation/profile services, exact app registry, scoped cache and concurrent batch execution.*
 
 
 ---
@@ -1779,13 +1802,13 @@ Bước này chạy sau scoring/bucket classification nhưng trước khi xuất
 
 ### 24.2 Phạm vi áp dụng
 
-Bắt buộc áp dụng cho tất cả bảng curated:
+Từ v4.0, dedup chỉ áp dụng cho:
 
 ```text
 01_Main_Keyword_Shortlist
-02_Feature_Keywords hoặc 02_System_Keywords
-03_Style_Keywords hoặc 03_Game_Keywords
 ```
+
+Các sheet tính năng, style, system, game và chủ đề âm thanh không lọc trùng. Các sheet này xếp hạng keyword theo score/rank/KEI/difficulty như bình thường để giữ đầy đủ dữ liệu đánh giá.
 
 Các sheet audit/raw sau vẫn giữ dữ liệu đầy đủ để truy vết:
 
@@ -1797,13 +1820,13 @@ Các sheet audit/raw sau vẫn giữ dữ liệu đầy đủ để truy vết:
 11_Secondary_Language
 ```
 
-Nếu có keyword bị loại khỏi sheet curated vì trùng gần, keyword đó không bị xóa khỏi `06_All_Candidates`.
+Nếu có keyword bị merge khỏi main shortlist vì tương đương chắc chắn, keyword đó không bị xóa khỏi `06_All_Candidates`.
 
 ### 24.3 Quy tắc text-level dedup
 
 Dedup này không phải semantic clustering quá rộng. Chỉ loại keyword khi bề mặt chữ quá gần nhau.
 
-Phạm vi dedup là **nội bộ từng sheet curated**, không phải global uniqueness giữa mọi sheet. Một keyword mạnh được phép xuất hiện đồng thời trong `01_Main_Keyword_Shortlist` và một sheet chủ đề như `05_Prank_Sound_General`. Các sheet chủ đề là các góc nhìn độc lập để người dùng lọc từ trên xuống dưới theo từng nhóm intent.
+Phạm vi dedup là **nội bộ `01_Main_Keyword_Shortlist`**. Một keyword mạnh được phép xuất hiện đồng thời trong main shortlist và một sheet chủ đề như `05_Prank_Sound_General`. Các sheet chủ đề là các góc nhìn độc lập để người dùng lọc từ trên xuống dưới theo từng nhóm intent.
 
 Chuẩn hóa trước khi so sánh:
 
@@ -1824,7 +1847,7 @@ Tự động loại nếu:
 3. Same stemmed token set theo locale
 ```
 
-Accent-fold chỉ tạo candidate cần review mặc định. Không tự động loại `retrô` chỉ vì gần `retro`.
+Accent-fold, token overlap cao hoặc các biến thể chỉ gần giống không tạo `ReviewVariants` và không bị loại mặc định. Ví dụ `retrô` và `retro` được giữ như hai keyword độc lập, trừ khi locale chủ động opt-in accent-fold auto-merge.
 
 Ví dụ phải loại bớt:
 
@@ -1855,12 +1878,12 @@ Cột bắt buộc:
 | Column | Purpose |
 |---|---|
 | `Table` | Sheet bị lọc trùng |
-| `Action` | `PRUNED` hoặc `REVIEW` |
-| `ClusterId` | ID cluster hoặc review pair |
-| `DedupRule` | Rule tạo cluster/review |
+| `Action` | `PRUNED` |
+| `ClusterId` | ID cluster |
+| `DedupRule` | Rule tạo cluster |
 | `Confidence` | Độ tin cậy rule |
 | `RemovedKeyword` | Keyword bị bỏ khỏi curated table |
-| `RemovedVolume` | Volume hiện tại của keyword bị loại/review |
+| `RemovedVolume` | Volume hiện tại của keyword bị merge khỏi main shortlist |
 | `OriginalSection` | Section/bucket ban đầu |
 | `KeptKeyword` | Keyword được giữ làm đại diện |
 | `KeptVolume` | Volume hiện tại của keyword được giữ |
@@ -1898,13 +1921,13 @@ Nói cách khác:
 Dedup xong thì fill tiếp bằng keyword đủ điều kiện, không dừng ở under-quota.
 ```
 
-#### Sheet 02 và Sheet 03
+#### Sheet 02, Sheet 03 và các sheet chủ đề
 
 ```text
-02 và 03 không bắt buộc đủ 30 keyword.
+Các sheet phụ không chạy dedup và không bắt buộc đủ 30 keyword.
 ```
 
-Nếu sau dedup chỉ còn ít hơn 30 keyword nhưng đúng intent:
+Nếu bucket chỉ có ít hơn 30 keyword đúng intent:
 
 ```text
 Dừng lại.
@@ -1917,12 +1940,14 @@ Không thêm keyword yếu chỉ để đủ số lượng.
 
 Phiên bản 3.5 chuẩn hóa lại toàn bộ pipeline hiện tại (bao gồm `AR_Filter`, `Control_Widget`, `Game_Emulator`, `Prank_Sounds` và `App_Template`) nhằm tối ưu hóa độ chính xác và tính thực tiễn của dữ liệu:
 
-### 25.1 Loại bỏ điểm phạt và chuẩn hóa theo Peak Volume (Peak Volume Normalization)
-Để khuyến khích các từ khóa có lượng tìm kiếm đỉnh trong quá khứ tốt (thể hiện tiềm năng thực tế cao mà không bị phạt bởi các biến động thuật toán hoặc thị trường ngắn hạn):
+### 25.1 Chuẩn hóa Search Popularity phi tuyến
+Để tránh keyword tier thấp được chấm quá cao do peak volume lịch sử:
 1. **Loại bỏ điểm phạt**: Hệ thống không còn áp dụng điểm phạt dựa trên tỷ lệ `Traffic Stability` vào điểm Volume chuẩn hóa. Cột `Traffic Stability` và phân loại `Stability Class` vẫn được giữ lại làm siêu dữ liệu xuất ra báo cáo để người dùng tham khảo, nhưng không ảnh hưởng tiêu cực đến điểm xếp hạng.
-2. **Hiệu chỉnh công thức VolumeN**: Điểm Volume chuẩn hóa được tính trực tiếp dựa trên giá trị lượng tìm kiếm lớn nhất trong 12 tháng qua (`Max. Volume`):
-   $$\text{VolumeN} = \frac{\ln(1 + \text{Max. Volume})}{\ln(1 + \text{max\_of\_max\_volumes})}$$
-3. **Ý nghĩa**: Các từ khóa có tiềm năng cao trong quá khứ (kể cả khi lượng tìm kiếm hiện tại tạm thời sụt giảm do thuật toán Google thay đổi) vẫn được chấm điểm cao để người dùng giữ lại xem xét và tối ưu hóa lâu dài.
+2. **Ưu tiên dữ liệu reach**: Nếu CSV có `MaximumReach`, hệ thống dùng tỷ lệ reach thực tế để phản ánh bản chất exponential của Search Popularity.
+3. **Fallback exponential**: Nếu thiếu `MaximumReach`, hệ thống dùng proxy exponential trên thang Search Popularity tuyệt đối `5–100`, thay vì log-minmax theo keyword mạnh nhất trong file.
+4. **Giữ peak volume ở vai trò phụ**: `Volume` hiện tại chiếm `85%`, còn `Max. Volume` lịch sử chiếm `15%`.
+5. **Cap tier thấp**: Keyword có `Volume <= 5` chỉ nhận tối đa `0.05` điểm `VolumeN`.
+6. **Không ép đủ quota bằng keyword yếu**: Tier `5` mặc định không được tự động đưa vào Core/Broad metadata shortlist; Consider chỉ giữ tối đa `3` keyword để review.
 
 ### 25.2 Nhận diện ngôn ngữ lai (Hybrid Language Detection Heuristic)
 Nhằm ngăn ngừa hiện tượng loại bỏ sai các cụm từ ASO tiếng Anh ngắn do các thư viện tự động nhận diện ngôn ngữ gắn cờ nhầm là ngôn ngữ lạ (Language Bleed):
@@ -1952,8 +1977,8 @@ Phien ban v3.5 tach logic nhan dien ngon ngu va loc keyword dung chung cho 5 pip
 
 ### 26.1 Module dung chung
 1. `shared/language_detector.py` la nguon chinh cho `detect_keyword_language(keyword, market_lang, config=None, english_vocab=None)`.
-2. `shared/keyword_filter.py` la nguon chinh cho cac rule loc keyword: `is_noise_only`, `is_irrelevant_keyword`, `check_naturalness`, `calculate_expansion`, `classify_keyword`.
-3. Cac pipeline goi shared module truoc. Neu import shared module bi loi, pipeline fallback ve logic legacy de tranh vo quy trinh chay.
+2. Tai v3.5, `shared/keyword_filter.py` la nguon chinh cho cac rule loc keyword: `is_noise_only`, `is_irrelevant_keyword`, `check_naturalness`, `calculate_expansion`, `classify_keyword`.
+3. Ghi chu lich su: v3.5 tung cho phep fallback legacy. Tu v4.0, file nay da duoc tach thanh package `shared/keyword_filter/` va fallback local da bi loai bo.
 
 ### 26.2 Language bucket policy
 `LanguageGroup` duoc xu ly theo policy thi truong:
@@ -1989,14 +2014,14 @@ Khi sua logic shared, can chay:
 
 ```powershell
 python -m unittest discover -s ASO-DEMO\tests -p "test_*.py"
-python -m py_compile ASO-DEMO\shared\language_detector.py ASO-DEMO\shared\keyword_filter.py ASO-DEMO\shared\text_dedup.py ASO-DEMO\Prank_Sounds\run_pipeline.py ASO-DEMO\App_Template\run_pipeline.py ASO-DEMO\AR_Filter\run_ar_filter_v3_6.py ASO-DEMO\Control_Widget\run_control_widget_v3_6.py ASO-DEMO\Game_Emulator\run_game_emulator_v3_6.py
+python -m py_compile ASO-DEMO\shared\language_detector.py ASO-DEMO\shared\text_dedup.py ASO-DEMO\Prank_Sounds\run_pipeline.py ASO-DEMO\App_Template\run_pipeline.py ASO-DEMO\AR_Filter\run_ar_filter_v4_0.py ASO-DEMO\Control_Widget\run_control_widget_v4_0.py ASO-DEMO\Game_Emulator\run_game_emulator_v4_0.py
 ```
 
 ---
 
-## 27. Cap nhat v3.6 - Multilingual Text Dedup
+## 27. Lich su v3.6 - Multilingual Text Dedup
 
-Phien ban 3.6 nang cap text-level dedup cho Unicode va ngon ngu khong Latin:
+Phien ban 3.6 tung nang cap text-level dedup cho Unicode va ngon ngu khong Latin. Day la baseline lich su; hanh vi hien tai da duoc thay the boi muc `28.5 Indexed near-duplicate clustering`.
 
 1. `shared/text_dedup.py` dung `NFKC` + `casefold()` de nhan dien cac bien the Unicode tuong duong.
 2. Combining marks co y nghia duoc bao toan; Hindi, Arabic, Thai va cac he chu tuong tu khong con bi mat dau cau tao.
@@ -2005,7 +2030,7 @@ Phien ban 3.6 nang cap text-level dedup cho Unicode va ngon ngu khong Latin:
    `Volume DESC`, `Max. Volume DESC`, `BalancedScore DESC`, `Rank_numeric ASC`, `KEI DESC`, `original_row_order ASC`.
 5. Topic sheets doc lap voi main shortlist.
 6. `MergedVariants` ghi alias da prune; `ReviewVariants` ghi bien the chi can xem lai.
-7. Accent-fold chi tao `Action=REVIEW` mac dinh. Config `dedup_policy.accent_fold_auto_merge_locales` cho phep opt-in theo locale.
+7. Accent-fold tao `Action=REVIEW` mac dinh. Config `dedup_policy.accent_fold_auto_merge_locales` cho phep opt-in theo locale.
 8. `12_Text_Dedup_Log` ghi ca `PRUNED` va `REVIEW`.
 9. `TokenizerAdapter` da san sang de tich hop ICU tokenizer o release tiep theo; v3.6 chua bat buoc `PyICU`.
 
@@ -2014,3 +2039,265 @@ Dependencies:
 ```powershell
 pip install flask openpyxl pandas langdetect snowballstemmer
 ```
+
+---
+
+## 28. Cap nhat v4.0 - Hard Filter Platform & Scale Hardening
+
+Phien ban 4.0 chuyen pipeline tu cac script loc keyword rieng le sang mot nen tang dung chung de co the van hanh toi 100 app, moi locale toi 10.000 keyword. Logic scoring va workbook curated dac thu cua tung app van duoc giu nguyen.
+
+### 28.1 Shared hard-filter package
+
+`shared/keyword_filter.py` da duoc tach thanh package `shared/keyword_filter/`:
+
+```text
+matcher.py
+hard_filters.py
+classifier.py
+validator.py
+audit.py
+cache.py
+runtime.py
+version.py
+```
+
+Tat ca runner bat buoc dung shared engine. Khong con fallback local khi import shared logic loi.
+
+`build_filter_runtime(config)` compile matcher mot lan theo `config_hash` va tai su dung cho toan bo row. API cu nhan `config` van duoc giu de tuong thich voi test va script ngoai repo.
+
+### 28.2 Hard-filter policy
+
+Hard filter chay doi xung tren keyword raw va cot `EN`:
+
+```text
+competitor
+irrelevant
+noise
+risky IP
+ambiguous brand
+platform affiliation
+truncation
+```
+
+Audit workbook ghi:
+
+| Column | Purpose |
+|---|---|
+| `HardFilterRule` | Rule quyet dinh |
+| `HardFilterTerm` | Term da match |
+| `HardFilterSource` | `raw`, `EN`, hoac `raw+EN` |
+| `PolicyFlags` | Cac co policy lien quan |
+
+`force_top30` khong duoc phep nang keyword risk hoac hard-drop len Core. Truncation detection theo huong conservative de bat cac query dang do nhu `prank so`, `prank sou`.
+
+### 28.3 Config rieng theo app va registry
+
+Moi app co `app_config.py` rieng. Shared package khong chua term dac thu niche.
+
+Config bat buoc khai bao ro:
+
+```text
+semantic_mode
+ambiguous_brand_terms
+platform_affiliation_terms
+truncation_policy
+```
+
+Validator fail-fast khi competitor overlap voi feature/platform hoac config co duplicate.
+
+`shared/app_registry.py` map chinh xac:
+
+```text
+alias -> app folder -> runner -> config
+```
+
+`run_aso_filter.py` khong con routing theo substring va khong fallback mac dinh sang Control Widget. App chua dang ky se fail ro rang.
+
+### 28.4 Cache scoped va locale parser
+
+Selection cache duoc scope theo:
+
+```text
+app_id
+market
+input_hash
+config_hash
+engine_version
+```
+
+Cache ghi atomic de tranh hai locale chay song song ghi de len nhau.
+
+`shared/locale_parser.py` la parser locale dung chung cho orchestrator, exporter, Keyword Tracker va batch runner. Parser ho tro cac format nhu:
+
+```text
+US_EN
+PH_FIL
+BR_PT-BR
+```
+
+### 28.5 Indexed near-duplicate clustering
+
+`shared/text_dedup.py` khong con so sanh moi cap keyword O(n^2) trong auto-merge.
+
+Auto-merge dung index theo:
+
+```text
+surface_key
+accent-fold key
+stem sequence
+token-bag key
+```
+
+Dedup chi chay cho `01_Main_Keyword_Shortlist`. Cac sheet tinh nang, style, system, game va chu de am thanh chi sort theo uu tien thong thuong.
+
+Winner priority va `MergedVariants` van duoc giu. Bien the chi gan giong khong tao `ReviewVariants`; chung duoc giu lai de danh gia nhu keyword doc lap.
+
+### 28.6 Shared translation service
+
+`shared/translation_service.py` gom toan bo logic dich keyword sang EN:
+
+```text
+Provider: Google GTX
+Cache: .cache/translations.sqlite3
+SQLite mode: WAL
+TLS verification: bat buoc
+Retry: toi da 3 lan
+Backoff: 0.5s, 1s, 2s
+Timeout mac dinh: 5s
+Global rate limit mac dinh: 5 request/giay
+```
+
+Cache key gom provider, source language, target language va normalized keyword.
+
+Service van ghi trang thai noi bo de test va audit ky thuat:
+
+| Column | Values |
+|---|---|
+| `TranslationStatus` | `NOT_REQUIRED`, `PROVIDED_EN`, `CACHE_HIT`, `TRANSLATED`, `FAILED_RAW_FALLBACK` |
+| `TranslationError` | Loi cuoi sau retry neu co |
+
+Neu dich loi sau retry, pipeline tiep tuc dung raw keyword thay vi fail locale. `TranslationStatus` va `TranslationError` khong hien thi trong workbook review thong thuong.
+
+### 28.7 Shared profile service
+
+`shared/profile_service.py` gom logic profile va Google Play scraping:
+
+```text
+Custom profile: <app_folder>/App_Profile.json
+Generated cache: <app_folder>/.cache/profiles/generated_profile.json
+TTL mac dinh: 14 ngay
+TLS verification: bat buoc
+Generated cache write: atomic
+```
+
+Custom profile co uu tien tuyet doi va chi doc. Generated cache khong bao gio ghi de custom profile.
+
+Workbook ghi `ProfileStatus`:
+
+| Status | Meaning |
+|---|---|
+| `CUSTOM` | Dang dung profile custom |
+| `GENERATED_FRESH` | Generated cache con moi hoac vua fetch |
+| `GENERATED_STALE_FALLBACK` | Fetch loi, dang dung cache cu |
+| `EMPTY_FETCH_FAILED` | Fetch loi va khong co cache |
+
+### 28.8 Batch runner
+
+`run_aso_batch.py` chay nhieu app/locale tu JSON manifest:
+
+```json
+{
+  "jobs": [
+    {"app": "Pranky", "csv": "path/to/Pranky_US_EN.csv"},
+    {"app": "ARFilter", "csv": "path/to/ARFilter_BR_PT.csv"}
+  ]
+}
+```
+
+Quy tac:
+
+```text
+- app bat buoc la alias trong registry
+- locale lay tu filename bang shared locale parser
+- locale-only filename van hop le vi manifest da ghi app
+- validate toan bo manifest truoc khi chay
+- mac dinh --max-workers 3
+- khong ho tro interactive mode trong batch
+- mot locale loi khong chan job khac
+- exit code khac 0 neu co it nhat mot job loi
+```
+
+Report JSON gom:
+
+```text
+app
+locale
+input
+output
+elapsed time
+status
+exit code
+error excerpt
+```
+
+### 28.9 Downstream va workbook audit
+
+Downstream khong phu thuoc so thu tu sheet. Exporter tim sheet theo suffix:
+
+```text
+Dropped_Audit
+All_Candidates
+```
+
+Master Keywords loai toan bo hard-drop va van giu `Consider Keywords`.
+
+Workbook giu nguyen curated sheets dac thu niche. Cac cot review chinh bat dau lien nhau theo thu tu:
+
+```text
+Keyword
+EN
+Volume
+Max. Volume
+Difficulty
+KEI
+Rank
+BalancedScore
+```
+
+Workbook khong hien thi cac cot ky thuat:
+
+```text
+TranslationStatus
+TranslationError
+VolumeN
+ReviewVariants
+```
+
+Audit hard-filter van giu:
+
+```text
+HardFilterRule
+HardFilterTerm
+HardFilterSource
+PolicyFlags
+```
+
+### 28.10 Kiem thu v4.0
+
+Lenh regression chuan:
+
+```powershell
+python -m unittest discover -s tests -v
+python -m py_compile (rg --files -g "*.py")
+```
+
+Smoke bat buoc truoc release:
+
+```text
+AR Filter: BR_PT
+Pranky: US_EN
+Control Widget: US_EN
+Batch: it nhat 3 locale chay dong thoi
+```
+
+Runner hien tai da dong bo ten file `*_v4_0.py`. `Prank_Sounds` va `App_Template` tiep tuc dung ten trung tinh `run_pipeline.py`.

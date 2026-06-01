@@ -69,13 +69,15 @@ Kết quả sẽ được xuất thành một file Excel duy nhất chứa đầ
 
 ---
 
-## Shared filter logic từ v3.6
+## Shared platform logic từ v4.0
 
 Pipeline hiện sử dụng các module chung trong `ASO-DEMO/shared/`:
 
 - `shared/language_detector.py`: detect ngôn ngữ theo market policy và phân nhóm `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, `UNKNOWN`.
-- `shared/keyword_filter.py`: lọc noise-only, irrelevant, naturalness, expansion score, bucket classification và selection cache metadata.
-- `shared/text_dedup.py`: dedup Unicode `NFKC` + `casefold()`, stemming theo locale, và tách `MergedVariants` / `ReviewVariants`.
+- `shared/keyword_filter/`: package matcher precompiled, hard filter, classifier, validator, audit, cache và version.
+- `shared/text_dedup.py`: dedup Unicode indexed `NFKC` + `casefold()`, stemming theo locale, và ghi `MergedVariants` cho main shortlist.
+- `shared/translation_service.py`: dịch EN với SQLite WAL cache, retry, global rate limit và TLS verification.
+- `shared/profile_service.py`: ưu tiên tuyệt đối `App_Profile.json`, generated cache atomic và stale fallback.
 
 Quy tắc cần nhớ:
 
@@ -84,9 +86,10 @@ Quy tắc cần nhớ:
 - `MIXED` vào `Consider Keywords` nếu market cho phép `mixed_allowed=True`.
 - `SECONDARY` giữ ở `Consider Keywords`.
 - Naturalness không hard-drop non-Latin/script khác bằng `LANGUAGE_BLEED`; ngôn ngữ do language detector xử lý.
-- `selected_keywords.json` chỉ được dùng lại khi metadata market và input file khớp run hiện tại.
-- Accent-fold chỉ tạo review candidate mặc định; không tự động loại keyword có dấu.
+- Selection cache chỉ được dùng lại khi metadata `app_id`, market, input hash, config hash và engine version khớp run hiện tại.
+- Dedup chỉ áp dụng cho `01_Main_Keyword_Shortlist`. Các sheet âm thanh chỉ sort theo ưu tiên thông thường.
+- Accent-fold và keyword chỉ gần giống được giữ như keyword độc lập; không còn `ReviewVariants`.
 
 ### Quy tắc overlap giữa các sheet
 
-`01_Main_Keyword_Shortlist` và các sheet chủ đề (`02_Hairclipper_Keywords`, `03_Taser_Keywords`, `04_Gun_Sound_Keywords`, `05_Prank_Sound_General`) là các danh sách độc lập. Keyword mạnh được phép xuất hiện lại ở Main List và sheet chủ đề phù hợp. Dedup chỉ áp dụng bên trong từng sheet để loại exact duplicate hoặc token-set duplicate.
+`01_Main_Keyword_Shortlist` và các sheet chủ đề (`02_Hairclipper_Keywords`, `03_Taser_Keywords`, `04_Gun_Sound_Keywords`, `05_Prank_Sound_General`) là các danh sách độc lập. Keyword mạnh được phép xuất hiện lại ở Main List và sheet chủ đề phù hợp. Dedup chỉ áp dụng trong Main List; sheet chủ đề giữ đầy đủ keyword để đánh giá.

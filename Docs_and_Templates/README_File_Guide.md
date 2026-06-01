@@ -9,7 +9,7 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 ### 1. [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/run_aso_filter.py)
 * **Tác dụng:** **Bộ điều phối trung tâm (Orchestrator)**. 
 * **Cách hoạt động:** Khi bạn chạy file này từ dòng lệnh với file CSV đầu vào, nó sẽ:
-  1. Tự động nhận dạng tên ứng dụng (`ARFilter`, `ControlWidget`, `GameEmulator`, `PrankSounds`/`Pranky`) và thị trường (`Market` như `US_EN`) từ tên file CSV.
+  1. Parse thị trường (`Market` như `US_EN`) từ tên file CSV và resolve alias ứng dụng chính xác qua `shared/app_registry.py`. Với filename chỉ có locale như `US_EN.csv`, truyền thêm `--app <RegisteredAlias>`.
   2. Sao chép file CSV đầu vào vào đúng thư mục lưu trữ (`Input/[Tháng]/`); file gốc không bị xóa.
   3. Kích hoạt đúng script xử lý tương ứng của ứng dụng đó với các cờ cấu hình phù hợp.
   4. Xuất kết quả ra đúng thư mục (`Output/[Tháng]/`).
@@ -20,14 +20,14 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ### 3. [export_master_keywords.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/export_master_keywords.py)
 * **Tác dụng:** **Script xuất danh sách Master Keywords (Module B - Độc lập)**.
-* **Cách hoạt động:** Quét toàn bộ các từ khóa thu thập được trong thư mục `Input/` của app, đối chiếu với danh sách bị loại bỏ trong sheet `04_Dropped_Audit` của thư mục `Output/` để loại bỏ các từ khóa không liên quan (`irrelevant_intent` hoặc `noise_only`). Kết quả xuất ra tệp Excel riêng biệt cho từng app lưu trong thư mục `Master_Keywords/` phân chia theo từng locale làm các sheet riêng lẻ.
+* **Cách hoạt động:** Quét toàn bộ các từ khóa thu thập được trong thư mục `Input/` của app, tìm sheet theo suffix `Dropped_Audit` trong thư mục `Output/` để loại toàn bộ hard-drop nhưng vẫn giữ `Consider Keywords`. Kết quả xuất ra tệp Excel riêng biệt cho từng app lưu trong thư mục `Master_Keywords/` phân chia theo từng locale làm các sheet riêng lẻ.
 
 ---
 
 ## 📂 Thư Mục `Docs_and_Templates/` (Tài liệu & File mẫu)
 
-### 4. [ASO_Keyword_Planner_v3_6.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_6.md)
-* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.6 mới nhất**.
+### 4. [ASO_Keyword_Planner_v4_0.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v4_0.md)
+* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 4.0 mới nhất**.
 * **Nội dung:** Giải thích chi tiết quy trình 10 bước của ASO Keyword Planner: chuẩn hóa dữ liệu đầu vào, lọc cứng chặn đối thủ/typo/noise, phân tích chính sách ngôn ngữ thị trường, lọc độ tự nhiên ngôn ngữ, chấm điểm Relevancy và tính điểm cân bằng Balanced Score, phân nhóm quota cho Top 30 và 10 Consider, cơ chế đa dạng hóa Word Overlap, và xuất duy nhất 01 file Excel tổng gồm các sheet quy chuẩn từ 00 đến 12.
 
 ### 5. [App_Config_Template.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/App_Config_Template.py)
@@ -69,13 +69,12 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`, `Prank_Sounds/`)
 
-### 14. `run_[tên_app]_v3_6.py` hoặc `run_pipeline.py`
-* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng script `v3_6`; `Prank_Sounds` dùng `run_pipeline.py`. Tất cả đều ưu tiên lấy language/filter/dedup logic từ `shared/`.
+### 14. `run_[tên_app]_v4_0.py` hoặc `run_pipeline.py`
+* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng runner `v4_0`; `Prank_Sounds` và `App_Template` dùng `run_pipeline.py`. Tất cả runner bắt buộc dùng language/filter/dedup/translation/profile logic từ `shared/`.
 * **Routing hiện tại của `run_aso_filter.py`:**
-  * Tên file chứa `filter` -> `AR_Filter/run_ar_filter_v3_6.py`.
-  * Tên file chứa `emulator` -> `Game_Emulator/run_game_emulator_v3_6.py`.
-  * Tên file chứa `prank` hoặc `pranky` -> `Prank_Sounds/run_pipeline.py`.
-  * Các trường hợp còn lại -> `Control_Widget/run_control_widget_v3_6.py`.
+  * Alias app được resolve chính xác qua `shared/app_registry.py`.
+  * Registry map alias -> app folder -> runner -> config.
+  * App chưa đăng ký sẽ fail rõ ràng; không còn routing theo substring hoặc fallback mặc định sang Control Widget.
 
 ### 15. `App_Profile.json`
 * **Tác dụng:** **Hồ sơ cấu hình thực tế của ứng dụng** (được script xử lý đọc trực tiếp khi chạy).
@@ -107,19 +106,33 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ---
 
-## Shared Modules v3.6
+## Shared Modules v4.0
 
 ### 21. [shared/language_detector.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/language_detector.py)
 * **Tac dung:** Module nhan dien ngon ngu dung chung cho toan bo pipeline. Ham chinh la `detect_keyword_language`, tra ve ngon ngu duoc detect va nhom `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, hoac `UNKNOWN`.
 * **Luu y:** Market policy nam trong shared module; vi du `PH_FIL` cho phep mixed Filipino/Tagalog + English vao `Consider Keywords`.
 
-### 22. [shared/keyword_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/keyword_filter.py)
-* **Tac dung:** Module loc keyword dung chung, gom noise-only, irrelevant, naturalness, expansion score, language bucket classification va selection cache metadata.
-* **Luu y:** Tu v3.5, cac pipeline `Prank_Sounds`, `App_Template`, `AR_Filter`, `Control_Widget`, va `Game_Emulator` nen goi module nay truoc khi dung fallback legacy.
+### 22. [shared/keyword_filter/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/keyword_filter)
+* **Tac dung:** Package loc keyword dung chung, gom matcher precompiled, hard filter, classifier, validator, audit, cache atomic va version.
+* **Luu y:** Tu v4.0, cac pipeline `Prank_Sounds`, `App_Template`, `AR_Filter`, `Control_Widget`, va `Game_Emulator` bat buoc goi shared engine. Khong con fallback local.
 
 ### 23. [shared/text_dedup.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/text_dedup.py)
 * **Tac dung:** Module dedup Unicode dung chung. Module dung `NFKC`, `casefold()`, tokenizer bao toan combining marks, Snowball stemmer theo locale, va interface adapter san sang cho ICU o release tiep theo.
-* **Luu y:** Accent-fold chi tao `REVIEW` mac dinh; cac alias da prune va cac bien the can review duoc tach vao `MergedVariants` va `ReviewVariants`.
+* **Luu y:** Dedup chi ap dung cho `01_Main_Keyword_Shortlist`. `MergedVariants` ghi alias da merge; accent-fold va bien the chi gan giong duoc giu nhu keyword doc lap. Cac sheet phu chi sort theo uu tien thong thuong.
 
 ### 24. [tests/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/tests)
 * **Tac dung:** Chua regression test cho shared modules, bao gom non-Latin, Philippines mixed language, Spanish mismatch, noise phrase, stale selection cache va multilingual text dedup.
+
+### 25. [shared/translation_service.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/translation_service.py)
+* **Tac dung:** Dich keyword sang EN qua Google GTX, dung SQLite WAL cache tai `.cache/translations.sqlite3`, retry, timeout, global rate limit va TLS verification.
+* **Audit nội bộ:** Service giữ `TranslationStatus` và `TranslationError` để test kỹ thuật. Workbook review không hiển thị hai cột này. Nếu dịch lỗi sau retry, pipeline giữ raw keyword với status nội bộ `FAILED_RAW_FALLBACK`.
+
+### 26. [shared/profile_service.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/profile_service.py)
+* **Tac dung:** Doc `App_Profile.json` custom voi uu tien tuyet doi; generated profile duoc cache atomic tai `<app_folder>/.cache/profiles/generated_profile.json`.
+* **Audit:** Workbook ghi `ProfileStatus`: `CUSTOM`, `GENERATED_FRESH`, `GENERATED_STALE_FALLBACK`, hoac `EMPTY_FETCH_FAILED`.
+
+### 27. [shared/app_registry.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/app_registry.py)
+* **Tac dung:** Registry trung tam map alias app chinh xac toi folder, runner va config.
+
+### 28. [run_aso_batch.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/run_aso_batch.py)
+* **Tac dung:** Chay toi da nhieu locale song song tu JSON manifest. Mac dinh `--max-workers 3`; tung locale loi khong chan job khac va report JSON ghi status rieng.

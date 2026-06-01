@@ -2,17 +2,14 @@ import os
 import re
 import csv
 import argparse
+import sys
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from shared.locale_parser import extract_locale_from_filename
 
 def normalize_locale(filename):
-    base = os.path.splitext(filename)[0]
-    # Match _CC_LL or _CC-LL at the end of the filename (with optional _Output or _master suffixes)
-    match = re.search(r'_([a-zA-Z]{2})[_-]([a-zA-Z]{2})(?:_Output|_master)?$', base)
-    if match:
-        return f"{match.group(1).upper()}_{match.group(2).upper()}"
-    return None
+    return extract_locale_from_filename(filename)
 
 def scan_apps(aso_demo_dir):
     # Any directory inside aso_demo_dir that contains an "Input" folder is an app
@@ -91,10 +88,12 @@ def get_excluded_keywords_from_excel(app_dir):
                     if locale not in excluded_by_locale:
                         excluded_by_locale[locale] = set()
                         
+                    wb = None
                     try:
                         wb = load_workbook(excel_path, read_only=True, data_only=True)
-                        if "04_Dropped_Audit" in wb.sheetnames:
-                            ws = wb["04_Dropped_Audit"]
+                        audit_sheet = next((name for name in wb.sheetnames if name.endswith("Dropped_Audit")), None)
+                        if audit_sheet:
+                            ws = wb[audit_sheet]
                             
                             # Read headers to find columns
                             headers = []
@@ -106,35 +105,27 @@ def get_excluded_keywords_from_excel(app_dir):
                                 continue
                                 
                             kw_idx = -1
-                            rule_idx = -1
-                            
                             for idx, h in enumerate(headers):
                                 if h:
                                     clean_h = str(h).strip().lower()
                                     if clean_h == "keyword":
                                         kw_idx = idx
-                                    elif clean_h == "decisionrule":
-                                        rule_idx = idx
                                         
-                            if kw_idx == -1 or rule_idx == -1:
+                            if kw_idx == -1:
                                 continue
                                 
                             # Read data rows
                             row_iter = ws.iter_rows(min_row=2, values_only=True)
                             for row in row_iter:
-                                if len(row) > max(kw_idx, rule_idx):
+                                if len(row) > kw_idx:
                                     kw = row[kw_idx]
-                                    rule = row[rule_idx]
-                                    
-                                    if kw and rule:
-                                        kw_str = str(kw).strip()
-                                        rule_str = str(rule).strip().lower()
-                                        
-                                        # Filter criteria: irrelevant_intent or noise_only
-                                        if rule_str in ("irrelevant_intent", "noise_only"):
-                                            excluded_by_locale[locale].add(kw_str.lower())
+                                    if kw:
+                                        excluded_by_locale[locale].add(str(kw).strip().lower())
                     except Exception as e:
                         print(f"  [Warning] Error parsing Excel {file_name}: {e}")
+                    finally:
+                        if wb is not None:
+                            wb.close()
                         
     return excluded_by_locale
 

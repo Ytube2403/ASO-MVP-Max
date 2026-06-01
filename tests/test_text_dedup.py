@@ -29,7 +29,7 @@ class TextDedupTests(unittest.TestCase):
             text_dedup.normalize_text("\u062a\u0637\u0628\u064a\u0642"),
         )
 
-    def test_accent_fold_creates_review_instead_of_pruning(self):
+    def test_accent_fold_variants_remain_independent_by_default(self):
         result = text_dedup.deduplicate_candidates(
             [
                 {"Keyword": "retro", "Volume": 10, "Bucket": "Core Intent Final"},
@@ -39,8 +39,8 @@ class TextDedupTests(unittest.TestCase):
             "pt",
         )
         self.assertEqual(len(result.records), 2)
-        self.assertTrue(any(entry["Action"] == "REVIEW" and entry["DedupRule"] == "accent_fold_review" for entry in result.log_entries))
-        self.assertIn("retr\u00f4", result.records[0]["ReviewVariants"])
+        self.assertEqual(result.log_entries, [])
+        self.assertTrue(all("ReviewVariants" not in record for record in result.records))
 
     def test_accent_fold_can_be_enabled_for_explicit_locale_allowlist(self):
         result = text_dedup.deduplicate_candidates(
@@ -55,14 +55,14 @@ class TextDedupTests(unittest.TestCase):
         self.assertEqual([record["Keyword"] for record in result.records], ["retro"])
         self.assertEqual(result.log_entries[0]["DedupRule"], "accent_fold_allowlist")
 
-    def test_mixed_latin_cyrillic_keyword_is_review_only(self):
+    def test_mixed_latin_cyrillic_keyword_remains_independent(self):
         result = text_dedup.deduplicate_candidates(
             [{"Keyword": "\u0430r filter", "Volume": 10, "Bucket": "Core Intent Final"}],
             "sheet",
             "en",
         )
         self.assertEqual(len(result.records), 1)
-        self.assertTrue(any(entry["DedupRule"] == "mixed_script_review" for entry in result.log_entries))
+        self.assertEqual(result.log_entries, [])
 
     def test_cluster_keeps_current_volume_winner_across_buckets(self):
         result = text_dedup.deduplicate_candidates(
