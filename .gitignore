@@ -35,7 +35,8 @@ apps/*/.cache/
 .cache/
 
 # ── IDE & Editor ──
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo

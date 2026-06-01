@@ -73,6 +73,7 @@ DICTIONARY_SEGMENTATION_SCRIPTS = {
 }
 
 _STEMMER_CACHE = {}
+_FALLBACK_INFLECTION_LANGUAGES = {"en", "es", "pt"}
 
 
 def _policy(config=None):
@@ -211,14 +212,47 @@ def _stemmer(language):
     return _STEMMER_CACHE[algorithm]
 
 
+def _fallback_stem_word(word, language):
+    """Collapse common plural variants when the optional Snowball package is absent."""
+    code = _lang_code(language)
+    if code not in _FALLBACK_INFLECTION_LANGUAGES:
+        return word
+
+    if code == "pt":
+        if len(word) > 3 and word.endswith("ões"):
+            return word[:-3] + "ão"
+        if len(word) > 3 and word.endswith("ns"):
+            return word[:-2] + "m"
+        if len(word) > 3 and word.endswith("s") and word[-2] in "aáâãeéêiíoóôõuú":
+            return word[:-1]
+        return word
+
+    if code == "es":
+        if len(word) > 3 and word.endswith("s") and word[-2] in "aáeéiíoóuú":
+            return word[:-1]
+        return word
+
+    if len(word) > 4 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 3 and word.endswith("s") and not word.endswith(("ss", "us", "is")):
+        return word[:-1]
+    return word
+
+
+def _fallback_stem_tokens(tokens, language):
+    if _lang_code(language) not in _FALLBACK_INFLECTION_LANGUAGES:
+        return ()
+    return tuple(_fallback_stem_word(token, language) for token in tokens)
+
+
 def _stem_tokens(tokens, language):
     stemmer = _stemmer(language)
     if not stemmer:
-        return ()
+        return _fallback_stem_tokens(tokens, language)
     try:
         return tuple(stemmer.stemWords(list(tokens)))
     except Exception:
-        return ()
+        return _fallback_stem_tokens(tokens, language)
 
 
 @dataclass(frozen=True)

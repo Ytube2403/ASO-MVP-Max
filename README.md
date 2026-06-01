@@ -33,9 +33,12 @@ ASO-MVP/
 |
 |-- docs/                         # Dac ta, template, guide va tu dien
 |   |-- ASO_Keyword_Planner_v4_0.md
+|   |-- SETUP_WINDOWS.md
 |   |-- README_File_Guide.md
 |   `-- english_words_10k.txt
 |
+|-- .vscode/                      # Extension VS Code de xuat
+|-- requirements.txt              # Python packages cho moi truong day du
 |-- data/                         # Tai nguyen dung chung va output tong hop
 |   |-- google_play_country_language_map.xlsx
 |   `-- master_keywords/          # Generated, khong commit len Git
@@ -57,8 +60,23 @@ ASO-MVP/
 
 ## Cai dat
 
+Huong dan day du cho may Windows moi:
+
+- [Checklist phan mem, extension va cong cu](docs/SETUP_WINDOWS.md)
+
+Tao virtual environment va cai day du Python packages:
+
 ```powershell
-pip install flask openpyxl pandas langdetect snowballstemmer
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Kiem tra nhanh:
+
+```powershell
+python -c "import flask, langdetect, numpy, openpyxl, pandas, snowballstemmer; print('Python environment OK')"
 ```
 
 ## Chay pipeline
@@ -116,5 +134,6 @@ python -m compileall -q .
 ## Tai lieu
 
 - [Dac ta pipeline v4.0](docs/ASO_Keyword_Planner_v4_0.md)
+- [Cai dat Windows day du](docs/SETUP_WINDOWS.md)
 - [Huong dan cac file](docs/README_File_Guide.md)
 - [Template app moi](apps/App_Template/README.md)

@@ -46,6 +46,16 @@ def _app_mode(config):
     return "generic"
 
 
+def _is_explicit_core_term(row, config):
+    keyword = normalize_filter_text(row.get("Keyword", ""))
+    core_terms = {
+        normalize_filter_text(term)
+        for term in config.get("intent_core_terms", []) or []
+        if normalize_filter_text(term)
+    }
+    return bool(keyword and keyword in core_terms)
+
+
 def _action_result(action, rule, label):
     if action == "drop":
         return "Dropped", rule, f"Dropped: {label}"
@@ -90,6 +100,8 @@ def classify_keyword(row, config):
             return "Consider Keywords", "mixed_language_consider", "Mixed language allowed for this market"
         return "Manual Review", "manual_review", "Mixed language needs review"
     if language_group == "SECONDARY":
+        if _is_explicit_core_term(row, config):
+            return "Core Intent Final", "secondary_explicit_core_intent", "Explicit core intent term retained across market languages"
         return "Consider Keywords", "secondary_language_handling", "Secondary language handling"
 
     if flags["is_platform_affiliation"]:

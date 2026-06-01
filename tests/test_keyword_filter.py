@@ -75,6 +75,24 @@ class KeywordFilterTests(unittest.TestCase):
             "Consider Keywords",
         )
 
+    def test_secondary_explicit_core_term_can_enter_core_shortlist(self):
+        config = dict(BASE_CONFIG, market="BR_PT-BR")
+        self.assertEqual(
+            keyword_filter.classify_keyword(row("prank sounds", "SECONDARY"), config),
+            ("Core Intent Final", "secondary_explicit_core_intent", "Explicit core intent term retained across market languages"),
+        )
+        self.assertEqual(
+            keyword_filter.classify_keyword(row("hair clipper", "SECONDARY"), config)[0],
+            "Consider Keywords",
+        )
+
+    def test_secondary_translation_does_not_implicitly_promote_to_core(self):
+        config = dict(BASE_CONFIG, market="BR_PT-BR")
+        self.assertEqual(
+            keyword_filter.classify_keyword(row("sonidos de broma", "SECONDARY", EN="prank sounds"), config)[0],
+            "Consider Keywords",
+        )
+
     def test_noise_only_respects_phrases_and_core_intent(self):
         self.assertTrue(keyword_filter.is_noise_only("free", BASE_CONFIG))
         self.assertTrue(keyword_filter.is_noise_only("download", BASE_CONFIG))
@@ -127,6 +145,7 @@ class KeywordFilterTests(unittest.TestCase):
     def test_conservative_truncation_detection(self):
         self.assertTrue(keyword_filter.is_truncated_keyword(row("prank so"), BASE_CONFIG))
         self.assertTrue(keyword_filter.is_truncated_keyword(row("prank sou"), BASE_CONFIG))
+        self.assertTrue(keyword_filter.is_truncated_keyword(row("pegadinhas de"), BASE_CONFIG))
         self.assertFalse(keyword_filter.is_truncated_keyword(row("prank sounds"), BASE_CONFIG))
 
     def test_force_top30_cannot_promote_risk_or_hard_drop(self):
