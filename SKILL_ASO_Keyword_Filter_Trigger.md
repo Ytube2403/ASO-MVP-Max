@@ -53,10 +53,11 @@ Sau khi script hoàn thành thành công:
    * *Ví dụ link Game Emulator:* [GameEmulator_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Game_Emulator/Output/052026/GameEmulator_US-EN_Output.xlsx)
    * *Ví dụ link Prank Sounds:* [PrankSounds_PH-FIL_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Prank_Sounds/Output/052026/PrankSounds_PH-FIL_Output.xlsx)
 
-### Ghi chu logic v3.5
+### Ghi chu logic v3.6
 Pipeline hien dung shared logic:
 - `shared/language_detector.py` cho `detect_keyword_language`.
 - `shared/keyword_filter.py` cho noise, irrelevant, naturalness, expansion, classification va selection cache metadata.
+- `shared/text_dedup.py` cho Unicode `NFKC` + `casefold()`, stemming theo locale, `MergedVariants`, va `ReviewVariants`.
 
 Khi doc ket qua, can hieu bucket ngon ngu nhu sau:
 - `FOREIGN` -> `Language Mismatch Audit`.

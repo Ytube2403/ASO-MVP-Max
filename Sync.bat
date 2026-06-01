@@ -142,7 +142,7 @@ echo   Buoc 4: Clone du an:
 echo     git clone https://github.com/Ytube2403/ASO-MVP.git
 echo.
 echo   Buoc 5: Cai dat Python packages:
-echo     pip install flask openpyxl pandas langdetect
+echo     pip install flask openpyxl pandas langdetect snowballstemmer
 echo.
 echo  ────────────────────────────────────────────────
 echo.

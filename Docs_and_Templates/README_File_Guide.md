@@ -26,8 +26,8 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ## 📂 Thư Mục `Docs_and_Templates/` (Tài liệu & File mẫu)
 
-### 4. [ASO_Keyword_Planner_v3_5.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_5.md)
-* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.5 mới nhất**.
+### 4. [ASO_Keyword_Planner_v3_6.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_6.md)
+* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.6 mới nhất**.
 * **Nội dung:** Giải thích chi tiết quy trình 10 bước của ASO Keyword Planner: chuẩn hóa dữ liệu đầu vào, lọc cứng chặn đối thủ/typo/noise, phân tích chính sách ngôn ngữ thị trường, lọc độ tự nhiên ngôn ngữ, chấm điểm Relevancy và tính điểm cân bằng Balanced Score, phân nhóm quota cho Top 30 và 10 Consider, cơ chế đa dạng hóa Word Overlap, và xuất duy nhất 01 file Excel tổng gồm các sheet quy chuẩn từ 00 đến 12.
 
 ### 5. [App_Config_Template.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/App_Config_Template.py)
@@ -69,13 +69,13 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`, `Prank_Sounds/`)
 
-### 14. `run_[tên_app]_v3_5.py` hoặc `run_pipeline.py`
-* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng script `v3_5`; `Prank_Sounds` dùng `run_pipeline.py`. Tất cả đều ưu tiên lấy language/filter logic từ `shared/`.
+### 14. `run_[tên_app]_v3_6.py` hoặc `run_pipeline.py`
+* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng script `v3_6`; `Prank_Sounds` dùng `run_pipeline.py`. Tất cả đều ưu tiên lấy language/filter/dedup logic từ `shared/`.
 * **Routing hiện tại của `run_aso_filter.py`:**
-  * Tên file chứa `filter` -> `AR_Filter/run_ar_filter_v3_5.py`.
-  * Tên file chứa `emulator` -> `Game_Emulator/run_game_emulator_v3_5.py`.
+  * Tên file chứa `filter` -> `AR_Filter/run_ar_filter_v3_6.py`.
+  * Tên file chứa `emulator` -> `Game_Emulator/run_game_emulator_v3_6.py`.
   * Tên file chứa `prank` hoặc `pranky` -> `Prank_Sounds/run_pipeline.py`.
-  * Các trường hợp còn lại -> `Control_Widget/run_control_widget_v3_5.py`.
+  * Các trường hợp còn lại -> `Control_Widget/run_control_widget_v3_6.py`.
 
 ### 15. `App_Profile.json`
 * **Tác dụng:** **Hồ sơ cấu hình thực tế của ứng dụng** (được script xử lý đọc trực tiếp khi chạy).
@@ -107,7 +107,7 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ---
 
-## Shared Modules v3.5
+## Shared Modules v3.6
 
 ### 21. [shared/language_detector.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/language_detector.py)
 * **Tac dung:** Module nhan dien ngon ngu dung chung cho toan bo pipeline. Ham chinh la `detect_keyword_language`, tra ve ngon ngu duoc detect va nhom `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, hoac `UNKNOWN`.
@@ -117,5 +117,9 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 * **Tac dung:** Module loc keyword dung chung, gom noise-only, irrelevant, naturalness, expansion score, language bucket classification va selection cache metadata.
 * **Luu y:** Tu v3.5, cac pipeline `Prank_Sounds`, `App_Template`, `AR_Filter`, `Control_Widget`, va `Game_Emulator` nen goi module nay truoc khi dung fallback legacy.
 
-### 23. [tests/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/tests)
-* **Tac dung:** Chua regression test cho `shared/language_detector.py` va `shared/keyword_filter.py`, bao gom case non-Latin, Philippines mixed language, Spanish mismatch, noise phrase va stale selection cache.
+### 23. [shared/text_dedup.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/text_dedup.py)
+* **Tac dung:** Module dedup Unicode dung chung. Module dung `NFKC`, `casefold()`, tokenizer bao toan combining marks, Snowball stemmer theo locale, va interface adapter san sang cho ICU o release tiep theo.
+* **Luu y:** Accent-fold chi tao `REVIEW` mac dinh; cac alias da prune va cac bien the can review duoc tach vao `MergedVariants` va `ReviewVariants`.
+
+### 24. [tests/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/tests)
+* **Tac dung:** Chua regression test cho shared modules, bao gom non-Latin, Philippines mixed language, Spanish mismatch, noise phrase, stale selection cache va multilingual text dedup.

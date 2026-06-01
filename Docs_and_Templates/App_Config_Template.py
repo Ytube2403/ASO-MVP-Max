@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration Template
-Version: 3.5
+Version: 3.6
 Purpose: Template configuration for deploying ASO Keyword Planner on a new application.
 """
 
@@ -238,6 +238,12 @@ APP_CONFIG = {
     },
 
     "max_word_overlap": 0.5,  # Tỷ lệ trùng lặp từ tối đa giữa các keyword trong Top N (tránh lặp ý)
+    "dedup_policy": {
+        "auto_merge_token_bag": True,
+        "review_overlap_threshold": 0.80,
+        "accent_fold_auto_merge_locales": [],
+        "enable_review_log": True,
+    },
     "output_prefix": "ASO_Keyword_Planner",
     "output_mode": "excel_workbook",
     "output_workbook": {

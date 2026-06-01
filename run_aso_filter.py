@@ -65,16 +65,16 @@ def main():
     
     if "arfilter" in app_lower or "ar_filter" in app_lower or "filter" in app_lower:
         app_folder = "AR_Filter"
-        target_script = os.path.join(script_dir, "AR_Filter", "run_ar_filter_v3_5.py")
+        target_script = os.path.join(script_dir, "AR_Filter", "run_ar_filter_v3_6.py")
     elif "gameemulator" in app_lower or "gameretro" in app_lower or "emulator" in app_lower:
         app_folder = "Game_Emulator"
-        target_script = os.path.join(script_dir, "Game_Emulator", "run_game_emulator_v3_5.py")
+        target_script = os.path.join(script_dir, "Game_Emulator", "run_game_emulator_v3_6.py")
     elif "prank" in app_lower or "pranky" in app_lower:
         app_folder = "Prank_Sounds"
         target_script = os.path.join(script_dir, "Prank_Sounds", "run_pipeline.py")
     else:
         app_folder = "Control_Widget"
-        target_script = os.path.join(script_dir, "Control_Widget", "run_control_widget_v3_5.py")
+        target_script = os.path.join(script_dir, "Control_Widget", "run_control_widget_v3_6.py")
 
     if not os.path.exists(target_script):
         print(f"Error: Target script '{target_script}' does not exist.")

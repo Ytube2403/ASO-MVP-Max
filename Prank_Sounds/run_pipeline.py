@@ -14,6 +14,12 @@ from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 import argparse
+import sys
+
+_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _SHARED_ROOT not in sys.path:
+    sys.path.insert(0, _SHARED_ROOT)
+from shared import text_dedup as _shared_text_dedup
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
@@ -325,21 +331,7 @@ df['Rank_numeric'] = pd.to_numeric(df['Rank'], errors='coerce').fillna(999)
 
 # Singularization / Normalization
 def normalize_text(text):
-    if not isinstance(text, str):
-        return ""
-    text = text.lower().strip()
-    text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-    text = re.sub(r'[-_]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    words = text.split()
-    normalized_words = []
-    for w in words:
-        if w.endswith('ns') and len(w) > 2:
-            w = w[:-2] + 'm'
-        elif w.endswith('s') and len(w) > 3 and not w.endswith('ss') and not w.endswith('us') and not w.endswith('is'):
-            w = w[:-1]
-        normalized_words.append(w)
-    return " ".join(normalized_words)
+    return _shared_text_dedup.normalize_text(text)
 
 df['keyword_normalized'] = df['Keyword'].apply(normalize_text)
 
@@ -1052,10 +1044,12 @@ df[['Bucket', 'DecisionRule', 'Reason']] = df.apply(override_row, axis=1)
 # Shortlist building & duplicate checking
 print("[Step 8] Near-Duplicate Cleanup & Shortlist building...")
 def build_shortlist(df_all, config):
-    df_sorted = df_all.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    eligible_buckets = ['Core Intent Final', 'Feature Keywords', 'Broad Expansion', 'Style Keywords', 'Consider Keywords']
+    df_candidates = df_all[df_all['Bucket'].isin(eligible_buckets)]
+    df_sorted, dedup_log = _shared_text_dedup.prepare_dataframe(df_candidates, '01_Main_Keyword_Shortlist', config)
+    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
     selected_normalized, selected_tokens = set(), set()
-    dedup_log = []
     
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
@@ -1250,8 +1244,8 @@ def classify_by_sound_category(df_all):
     accepted_buckets = ['Core Intent Final', 'Broad Expansion', 'Feature Keywords', 'Style Keywords', 'Consider Keywords']
     # Topic sheets are independent views. A strong keyword may appear in the
     # main shortlist and again in its topic sheet; dedup is local to each sheet.
-    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)]
-    df_sorted = df_candidates.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)].copy()
+    df_candidates['_TopicGroup'] = df_candidates.apply(lambda row: get_category_sound(row['Keyword'], row.get('EN', '')), axis=1)
     
     groups = {
         "hairclipper": [],
@@ -1267,50 +1261,17 @@ def classify_by_sound_category(df_all):
         "prank_sound_general": "05_Prank_Sound_General"
     }
     
-    selected_normalized = {g: set() for g in groups}
-    selected_tokens = {g: set() for g in groups}
     dedup_entries = []
-    
-    for _, row in df_sorted.iterrows():
-        kw = row['Keyword']
-        g = get_category_sound(kw, row.get('EN', ''))
-        
-        if len(groups[g]) >= 30:
-            continue
-            
-        norm = normalize_text(kw)
-        tokens = " ".join(sorted(norm.split()))
-        
-        is_dup = False
-        reason = ""
-        kept_kw = ""
-        
-        if norm in selected_normalized[g]:
-            is_dup = True
-            for item in groups[g]:
-                if normalize_text(item['Keyword']) == norm:
-                    kept_kw = item['Keyword']
-                    break
-            reason = f"Exact normalized duplicate of '{kept_kw}'"
-        elif tokens in selected_tokens[g]:
-            is_dup = True
-            for item in groups[g]:
-                t = " ".join(sorted(normalize_text(item['Keyword']).split()))
-                if t == tokens:
-                    kept_kw = item['Keyword']
-                    break
-            reason = f"Same normalized token set as '{kept_kw}'"
-            
-        if is_dup:
-            dedup_entries.append({
-                'Table': sheet_names[g], 'RemovedKeyword': kw,
-                'OriginalSection': row['Bucket'], 'KeptKeyword': kept_kw,
-                'DedupReason': reason, 'BalancedScore': row['BalancedScore'],
-                'Note': 'Keyword remains in All Candidates pool'
-            })
-        else:
-            selected_normalized[g].add(norm)
-            selected_tokens[g].add(tokens)
+
+    for g in groups:
+        df_group, group_log = _shared_text_dedup.prepare_dataframe(
+            df_candidates[df_candidates['_TopicGroup'] == g].drop(columns=['_TopicGroup']),
+            sheet_names[g],
+            config,
+        )
+        dedup_entries.extend(group_log)
+        df_group = df_group.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(30)
+        for _, row in df_group.iterrows():
             entry = row.to_dict()
             entry['Section'] = row['Bucket']
             entry['QuotaStatus'] = 'EXACT'
@@ -1324,7 +1285,7 @@ def classify_by_sound_category(df_all):
 selected_clipper, selected_taser, selected_gun, selected_general_prank, dedup_categories = classify_by_sound_category(df)
 
 dedup_log_list.extend(dedup_categories)
-df_dedup_log = pd.DataFrame(dedup_log_list)
+df_dedup_log = pd.DataFrame(_shared_text_dedup.normalize_log_entries(dedup_log_list))
 
 # Metadata assignment
 print("[Step 9] Metadata slot assignment...")
@@ -1498,9 +1459,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.5"),
+    ("Pipeline Version", "ASO Keyword Planner v3.6"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1524,7 +1485,7 @@ ws_readme.column_dimensions['B'].width = 80
 
 # --- 01_Main_Keyword_Shortlist ---
 ws_shortlist = wb.create_sheet(title="01_Main_Keyword_Shortlist")
-cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 
+cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants',
                   'CompetitorProven', 'ProvenDetails', 'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'WhereToUse', 'QuotaStatus', 'FillSource', 'FillReason', 'Reason']
 for col_idx, col in enumerate(cols_shortlist, 1):
     ws_shortlist.cell(row=1, column=col_idx, value=col)
@@ -1535,7 +1496,7 @@ style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
 # --- 02_Hairclipper_Keywords ---
 ws_clipper = wb.create_sheet(title="02_Hairclipper_Keywords")
-cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
+cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
     ws_clipper.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_clipper, 2):
@@ -1584,7 +1545,7 @@ style_sheet(ws_dropped, "06_Dropped_Audit")
 # --- 07_Report_Summary ---
 ws_report = wb.create_sheet(title="07_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1597,7 +1558,7 @@ metrics = [
     ("Taser Keywords Curated (03)", len(selected_taser)),
     ("Gun Sound Keywords Curated (04)", len(selected_gun)),
     ("General Prank Keywords Curated (05)", len(selected_general_prank)),
-    ("Duplicates Filtered (Dedup Log)", len(df_dedup_log))
+    ("Text Dedup Log Entries (PRUNED + REVIEW)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
@@ -1629,9 +1590,9 @@ sheets_info = [
     ("09_Language_Mismatch", "Audit sheet for keywords mismatching US_EN market language"),
     ("10_Generic_Style_Reserve", "Broad style-only keywords held back from metadata shortlist"),
     ("11_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
-    ("12_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
-    ("13_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("14_Text_Dedup_Log", "Log of text-level duplicates and variants pruned during optimization")
+    ("12_Text_Dedup_Log", "Log of text-level duplicates and review candidates during optimization"),
+    ("13_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
+    ("14_Secondary_Language", "Research candidates matching the configured secondary language")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1698,36 +1659,36 @@ for row_idx, (_, row) in enumerate(df_mrev.iterrows(), 2):
         ws_mrev.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
 style_sheet(ws_mrev, "11_Manual_Review")
 
-# --- 12_Top_By_Score ---
-ws_tps = wb.create_sheet(title="12_Top_By_Score")
-df_tps = df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(50)
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_tps.cell(row=1, column=col_idx, value=col)
-for row_idx, (_, row) in enumerate(df_tps.iterrows(), 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_tps.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_tps, "12_Top_By_Score")
-
-# --- 13_Secondary_Language ---
-ws_seclang = wb.create_sheet(title="13_Secondary_Language")
-df_seclang = df[df['LanguageGroup'] == 'SECONDARY'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_seclang.cell(row=1, column=col_idx, value=col)
-for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_seclang.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_seclang, "13_Secondary_Language")
-
-# --- 14_Text_Dedup_Log ---
-ws_dedup = wb.create_sheet(title="14_Text_Dedup_Log")
-cols_dedup = ['Table', 'RemovedKeyword', 'OriginalSection', 'KeptKeyword', 'DedupReason', 'BalancedScore', 'Note']
+# --- 12_Text_Dedup_Log ---
+ws_dedup = wb.create_sheet(title="12_Text_Dedup_Log")
+cols_dedup = _shared_text_dedup.TEXT_DEDUP_LOG_COLUMNS
 for col_idx, col in enumerate(cols_dedup, 1):
     ws_dedup.cell(row=1, column=col_idx, value=col)
 if not df_dedup_log.empty:
     for row_idx, (_, row) in enumerate(df_dedup_log.iterrows(), 2):
         for col_idx, col in enumerate(cols_dedup, 1):
             ws_dedup.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_dedup, "14_Text_Dedup_Log")
+style_sheet(ws_dedup, "12_Text_Dedup_Log")
+
+# --- 13_Top_By_Score ---
+ws_tps = wb.create_sheet(title="13_Top_By_Score")
+df_tps = df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(50)
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_tps.cell(row=1, column=col_idx, value=col)
+for row_idx, (_, row) in enumerate(df_tps.iterrows(), 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_tps.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
+style_sheet(ws_tps, "13_Top_By_Score")
+
+# --- 14_Secondary_Language ---
+ws_seclang = wb.create_sheet(title="14_Secondary_Language")
+df_seclang = df[df['LanguageGroup'] == 'SECONDARY'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_seclang.cell(row=1, column=col_idx, value=col)
+for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_seclang.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
+style_sheet(ws_seclang, "14_Secondary_Language")
 
 # Save
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")

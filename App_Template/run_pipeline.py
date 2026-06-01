@@ -14,6 +14,12 @@ from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 import argparse
+import sys
+
+_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _SHARED_ROOT not in sys.path:
+    sys.path.insert(0, _SHARED_ROOT)
+from shared import text_dedup as _shared_text_dedup
 
 # Resolve script and project root directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -329,21 +335,7 @@ df['Rank_numeric'] = pd.to_numeric(df['Rank'], errors='coerce').fillna(999)
 
 # Singularization / Normalization
 def normalize_text(text):
-    if not isinstance(text, str):
-        return ""
-    text = text.lower().strip()
-    text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-    text = re.sub(r'[-_]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    words = text.split()
-    normalized_words = []
-    for w in words:
-        if w.endswith('ns') and len(w) > 2:
-            w = w[:-2] + 'm'
-        elif w.endswith('s') and len(w) > 3 and not w.endswith('ss') and not w.endswith('us') and not w.endswith('is'):
-            w = w[:-1]
-        normalized_words.append(w)
-    return " ".join(normalized_words)
+    return _shared_text_dedup.normalize_text(text)
 
 df['keyword_normalized'] = df['Keyword'].apply(normalize_text)
 
@@ -1042,10 +1034,12 @@ df[['Bucket', 'DecisionRule', 'Reason']] = df.apply(override_row, axis=1)
 # Shortlist building & duplicate checking
 print("[Step 8] Near-Duplicate Cleanup & Shortlist building...")
 def build_shortlist(df_all, config):
-    df_sorted = df_all.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    eligible_buckets = ['Core Intent Final', 'Feature Keywords', 'Broad Expansion', 'Style Keywords', 'Consider Keywords']
+    df_candidates = df_all[df_all['Bucket'].isin(eligible_buckets)]
+    df_sorted, dedup_log = _shared_text_dedup.prepare_dataframe(df_candidates, '01_Main_Keyword_Shortlist', config)
+    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
     selected_normalized, selected_tokens = set(), set()
-    dedup_log = []
     
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
@@ -1216,10 +1210,10 @@ def build_shortlist(df_all, config):
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
 def build_curated_sheet(df_all, bucket_name, sheet_name):
-    df_sorted = df_all[df_all['Bucket'] == bucket_name].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    df_sorted, dedup_entries = _shared_text_dedup.prepare_dataframe(df_all[df_all['Bucket'] == bucket_name], sheet_name, config)
+    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected = []
     selected_normalized, selected_tokens = set(), set()
-    dedup_entries = []
     
     for _, row in df_sorted.iterrows():
         if len(selected) >= 30:
@@ -1271,7 +1265,7 @@ selected_style, dedup_style = build_curated_sheet(df, 'Style Keywords', '03_Styl
 
 dedup_log_list.extend(dedup_feat)
 dedup_log_list.extend(dedup_style)
-df_dedup_log = pd.DataFrame(dedup_log_list)
+df_dedup_log = pd.DataFrame(_shared_text_dedup.normalize_log_entries(dedup_log_list))
 
 # Metadata assignment
 print("[Step 9] Metadata slot assignment...")
@@ -1446,9 +1440,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.5"),
+    ("Pipeline Version", "ASO Keyword Planner v3.6"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1472,7 +1466,7 @@ ws_readme.column_dimensions['B'].width = 80
 
 # --- 01_Main_Keyword_Shortlist ---
 ws_shortlist = wb.create_sheet(title="01_Main_Keyword_Shortlist")
-cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 
+cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants',
                   'CompetitorProven', 'ProvenDetails', 'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'WhereToUse', 'QuotaStatus', 'FillSource', 'FillReason', 'Reason']
 for col_idx, col in enumerate(cols_shortlist, 1):
     ws_shortlist.cell(row=1, column=col_idx, value=col)
@@ -1483,7 +1477,7 @@ style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
 # --- 02_Feature_Keywords ---
 ws_feature = wb.create_sheet(title="02_Feature_Keywords")
-cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
+cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
     ws_feature.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_feature, 2):
@@ -1514,7 +1508,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.5 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1525,7 +1519,7 @@ metrics = [
     ("Consider Selected", len(selected_consider)),
     ("Feature Keywords Curated (02)", len(selected_feature)),
     ("Style Keywords Curated (03)", len(selected_style)),
-    ("Duplicates Filtered (Dedup Log)", len(df_dedup_log))
+    ("Text Dedup Log Entries (PRUNED + REVIEW)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
@@ -1557,7 +1551,7 @@ sheets_info = [
     ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
     ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
     ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("12_Text_Dedup_Log", "Log of text-level duplicates and variants pruned during optimization")
+    ("12_Text_Dedup_Log", "Log of text-level duplicates and review candidates during optimization")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1646,7 +1640,7 @@ style_sheet(ws_seclang, "11_Secondary_Language")
 
 # --- 12_Text_Dedup_Log ---
 ws_dedup = wb.create_sheet(title="12_Text_Dedup_Log")
-cols_dedup = ['Table', 'RemovedKeyword', 'OriginalSection', 'KeptKeyword', 'DedupReason', 'BalancedScore', 'Note']
+cols_dedup = _shared_text_dedup.TEXT_DEDUP_LOG_COLUMNS
 for col_idx, col in enumerate(cols_dedup, 1):
     ws_dedup.cell(row=1, column=col_idx, value=col)
 if not df_dedup_log.empty:

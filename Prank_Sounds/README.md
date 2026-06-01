@@ -69,12 +69,13 @@ Kết quả sẽ được xuất thành một file Excel duy nhất chứa đầ
 
 ---
 
-## Shared filter logic từ v3.5
+## Shared filter logic từ v3.6
 
 Pipeline hiện sử dụng các module chung trong `ASO-DEMO/shared/`:
 
 - `shared/language_detector.py`: detect ngôn ngữ theo market policy và phân nhóm `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, `UNKNOWN`.
 - `shared/keyword_filter.py`: lọc noise-only, irrelevant, naturalness, expansion score, bucket classification và selection cache metadata.
+- `shared/text_dedup.py`: dedup Unicode `NFKC` + `casefold()`, stemming theo locale, và tách `MergedVariants` / `ReviewVariants`.
 
 Quy tắc cần nhớ:
 
@@ -84,6 +85,7 @@ Quy tắc cần nhớ:
 - `SECONDARY` giữ ở `Consider Keywords`.
 - Naturalness không hard-drop non-Latin/script khác bằng `LANGUAGE_BLEED`; ngôn ngữ do language detector xử lý.
 - `selected_keywords.json` chỉ được dùng lại khi metadata market và input file khớp run hiện tại.
+- Accent-fold chỉ tạo review candidate mặc định; không tự động loại keyword có dấu.
 
 ### Quy tắc overlap giữa các sheet
 

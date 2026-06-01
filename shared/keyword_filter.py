@@ -14,7 +14,7 @@ DEFAULT_NOISE_TERMS = [
     "new", "best", "top", "2026", "2025",
 ]
 
-FILTER_LOGIC_VERSION = "v3.5_topic_sheets_allow_main_overlap"
+FILTER_LOGIC_VERSION = "v3.6_multilingual_text_dedup"
 
 QUERY_PATTERNS = [
     r"\bwhat\s+is\b",

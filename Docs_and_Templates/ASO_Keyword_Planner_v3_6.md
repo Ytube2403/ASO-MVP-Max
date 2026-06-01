@@ -1750,7 +1750,7 @@ Cách sửa:
 
 ---
 
-*ASO Keyword Planner v3.5*  
+*ASO Keyword Planner v3.6*
 *Updated for single-workbook Excel output, strict language policy, rule precedence, scoring normalization, quota fallback, consider sub-quota, platform-specific metadata assignment, global text-level dedup, and Game Emulator semantic mode.*
 
 
@@ -1808,34 +1808,31 @@ Phạm vi dedup là **nội bộ từng sheet curated**, không phải global un
 Chuẩn hóa trước khi so sánh:
 
 ```text
-- Lowercase
-- Remove accents: retrô = retro
+- Unicode NFKC
+- Unicode casefold()
+- Preserve combining marks cho Hindi, Arabic, Thai và các hệ chữ tương tự
 - Normalize spacing/punctuation
-- Normalize singular/plural cơ bản:
-  games -> game
-  jogos -> jogo
-  consoles -> console
-  emuladores -> emulador
-- Normalize spacing variants:
-  game boy = gameboy
+- Snowball stemming theo locale khi tokenizer Unicode đáng tin cậy
+- Không áp dụng suffix rule toàn cục
 ```
 
-Loại nếu:
+Tự động loại nếu:
 
 ```text
-1. Exact normalized duplicate
-2. Same normalized token set
-3. Cùng hệ máy + cùng intent chính + token overlap cao
+1. Exact NFKC + casefold duplicate
+2. Same stemmed sequence theo locale
+3. Same stemmed token set theo locale
 ```
+
+Accent-fold chỉ tạo candidate cần review mặc định. Không tự động loại `retrô` chỉ vì gần `retro`.
 
 Ví dụ phải loại bớt:
 
 | Keyword A | Keyword B | Lý do |
 |---|---|---|
-| `gba jogos retrô` | `gba jogos retro` | Exact normalized duplicate |
-| `jogos retro gba` | `gba jogos retrô` | Same normalized token set |
-| `emulador de gba retrô` | `emulador de jogos de gba` | Same system + emulator wording |
-| `emulador de game boy` | `emulador gameboy` | Same system + emulator wording |
+| `AR FILTER` | `ar-filter` | Exact NFKC + casefold duplicate |
+| `filters app` | `filter app` | Same stemmed sequence tiếng Anh |
+| `retro gba games` | `games gba retro` | Same stemmed token set |
 
 Ví dụ không được loại:
 
@@ -1858,10 +1855,16 @@ Cột bắt buộc:
 | Column | Purpose |
 |---|---|
 | `Table` | Sheet bị lọc trùng |
+| `Action` | `PRUNED` hoặc `REVIEW` |
+| `ClusterId` | ID cluster hoặc review pair |
+| `DedupRule` | Rule tạo cluster/review |
+| `Confidence` | Độ tin cậy rule |
 | `RemovedKeyword` | Keyword bị bỏ khỏi curated table |
+| `RemovedVolume` | Volume hiện tại của keyword bị loại/review |
 | `OriginalSection` | Section/bucket ban đầu |
 | `KeptKeyword` | Keyword được giữ làm đại diện |
-| `DedupReason` | Lý do loại |
+| `KeptVolume` | Volume hiện tại của keyword được giữ |
+| `NormalizedKey` | Key Unicode hoặc token key dùng để so sánh |
 | `BalancedScore` | Điểm keyword bị loại |
 | `Note` | Ghi chú rằng keyword vẫn còn trong All Candidates |
 
@@ -1986,5 +1989,28 @@ Khi sua logic shared, can chay:
 
 ```powershell
 python -m unittest discover -s ASO-DEMO\tests -p "test_*.py"
-python -m py_compile ASO-DEMO\shared\language_detector.py ASO-DEMO\shared\keyword_filter.py ASO-DEMO\Prank_Sounds\run_pipeline.py ASO-DEMO\App_Template\run_pipeline.py ASO-DEMO\AR_Filter\run_ar_filter_v3_5.py ASO-DEMO\Control_Widget\run_control_widget_v3_5.py ASO-DEMO\Game_Emulator\run_game_emulator_v3_5.py
+python -m py_compile ASO-DEMO\shared\language_detector.py ASO-DEMO\shared\keyword_filter.py ASO-DEMO\shared\text_dedup.py ASO-DEMO\Prank_Sounds\run_pipeline.py ASO-DEMO\App_Template\run_pipeline.py ASO-DEMO\AR_Filter\run_ar_filter_v3_6.py ASO-DEMO\Control_Widget\run_control_widget_v3_6.py ASO-DEMO\Game_Emulator\run_game_emulator_v3_6.py
+```
+
+---
+
+## 27. Cap nhat v3.6 - Multilingual Text Dedup
+
+Phien ban 3.6 nang cap text-level dedup cho Unicode va ngon ngu khong Latin:
+
+1. `shared/text_dedup.py` dung `NFKC` + `casefold()` de nhan dien cac bien the Unicode tuong duong.
+2. Combining marks co y nghia duoc bao toan; Hindi, Arabic, Thai va cac he chu tuong tu khong con bi mat dau cau tao.
+3. Snowball stemming chi chay theo locale; suffix rule toan cuc da duoc bo khoi dedup.
+4. Cluster duoc tao noi bo tung curated sheet truoc quota. Winner duoc chon theo thu tu:
+   `Volume DESC`, `Max. Volume DESC`, `BalancedScore DESC`, `Rank_numeric ASC`, `KEI DESC`, `original_row_order ASC`.
+5. Topic sheets doc lap voi main shortlist.
+6. `MergedVariants` ghi alias da prune; `ReviewVariants` ghi bien the chi can xem lai.
+7. Accent-fold chi tao `Action=REVIEW` mac dinh. Config `dedup_policy.accent_fold_auto_merge_locales` cho phep opt-in theo locale.
+8. `12_Text_Dedup_Log` ghi ca `PRUNED` va `REVIEW`.
+9. `TokenizerAdapter` da san sang de tich hop ICU tokenizer o release tiep theo; v3.6 chua bat buoc `PyICU`.
+
+Dependencies:
+
+```powershell
+pip install flask openpyxl pandas langdetect snowballstemmer
 ```
