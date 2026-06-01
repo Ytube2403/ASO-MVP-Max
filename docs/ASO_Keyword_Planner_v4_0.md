@@ -576,7 +576,7 @@ Chỉ các ngôn ngữ nằm ngoài `primary_languages`, `secondary_languages`, 
 | LanguageGroup | Cách xử lý |
 |---|---|
 | `PRIMARY` | Được xét vào Top 25 Core, 5 Broad, Feature Top 30, Style Top 30 |
-| `SECONDARY` | Không auto drop, mặc định đưa vào Consider hoặc Secondary Language Keywords |
+| `SECONDARY` | Không auto drop, mặc định đưa vào Consider hoặc Secondary Language Keywords. Nếu raw keyword khớp chính xác `intent_core_terms`, giữ vai trò Core. |
 | `OPTIONAL_SECONDARY` | Chỉ giữ nếu data tốt, mặc định Audit hoặc Consider |
 | `FOREIGN` | Drop hoặc đưa vào Language Mismatch Audit |
 | `MIXED` | Chỉ giữ nếu tự nhiên với search behavior của market |
@@ -1983,7 +1983,7 @@ Phien ban v3.5 tach logic nhan dien ngon ngu va loc keyword dung chung cho 5 pip
 ### 26.2 Language bucket policy
 `LanguageGroup` duoc xu ly theo policy thi truong:
 - `PRIMARY`: co the vao core bucket neu dat cac dieu kien diem va intent.
-- `SECONDARY`: giu lai o `Consider Keywords`, khong day vao core.
+- `SECONDARY`: mac dinh giu lai o `Consider Keywords`. Neu raw keyword khop chinh xac `intent_core_terms`, giu vai tro core; nhan ngon ngu va semantic intent la hai truc rieng.
 - `MIXED`: vao `Consider Keywords` neu market policy `mixed_allowed=True`; neu khong thi vao `Manual Review`.
 - `FOREIGN`: vao `Language Mismatch Audit`.
 - `UNKNOWN`: vao `Manual Review`.
@@ -2037,8 +2037,13 @@ Phien ban 3.6 tung nang cap text-level dedup cho Unicode va ngon ngu khong Latin
 Dependencies:
 
 ```powershell
-pip install flask openpyxl pandas langdetect snowballstemmer
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
+
+Checklist day du cho may Windows moi: `docs/SETUP_WINDOWS.md`.
 
 ---
 

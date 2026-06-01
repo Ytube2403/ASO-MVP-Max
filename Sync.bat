@@ -142,7 +142,14 @@ echo   Buoc 4: Clone du an:
 echo     git clone https://github.com/Ytube2403/ASO-MVP.git
 echo.
 echo   Buoc 5: Cai dat Python packages:
-echo     pip install flask openpyxl pandas langdetect snowballstemmer
+echo     cd ASO-MVP
+echo     python -m venv .venv
+echo     .venv\Scripts\activate
+echo     python -m pip install --upgrade pip
+echo     python -m pip install -r requirements.txt
+echo.
+echo   Huong dan day du:
+echo     docs\SETUP_WINDOWS.md
 echo.
 echo  ────────────────────────────────────────────────
 echo.

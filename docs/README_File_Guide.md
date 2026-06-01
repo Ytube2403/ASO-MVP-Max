@@ -67,6 +67,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 ## `docs/`
 
 - `docs/ASO_Keyword_Planner_v4_0.md`: dac ta logic pipeline.
+- `docs/SETUP_WINDOWS.md`: checklist phan mem, extension, Python packages va cach kiem tra moi truong Windows.
 - `docs/App_Config_Template.py`: template config.
 - `docs/App_Profile_Template.json`: template profile.
 - `docs/english_words_10k.txt`: whitelist tieng Anh.
@@ -84,3 +85,8 @@ Regression test cho registry, parser locale, hard filter, dedup, translation, pr
 ## `releases/`
 
 Chua zip package local. File zip bi ignore de repository source gon nhe.
+
+## File setup tai root
+
+- `requirements.txt`: danh sach Python packages cho moi truong pipeline day du.
+- `.vscode/extensions.json`: de xuat extension VS Code cho Python, Pylance va CSV.

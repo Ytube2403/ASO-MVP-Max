@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from openpyxl import Workbook, load_workbook
 
@@ -133,6 +134,26 @@ class TextDedupTests(unittest.TestCase):
         )
         self.assertEqual([record["Keyword"] for record in result.records], ["filter app"])
         self.assertEqual(result.log_entries[0]["DedupRule"], "stemmed_sequence_key")
+
+    def test_portuguese_plural_fallback_without_optional_stemmer(self):
+        records = [
+            {"Keyword": "som engraçado", "Volume": 18, "Bucket": "Core Intent Final"},
+            {"Keyword": "som engraçados", "Volume": 14, "Bucket": "Core Intent Final"},
+            {"Keyword": "sons engraçado", "Volume": 12, "Bucket": "Core Intent Final"},
+            {"Keyword": "sonoros engraçados", "Volume": 10, "Bucket": "Core Intent Final"},
+            {"Keyword": "pegadinhas", "Volume": 8, "Bucket": "Core Intent Final"},
+            {"Keyword": "pegadinha", "Volume": 13, "Bucket": "Core Intent Final"},
+        ]
+        with mock.patch.object(text_dedup, "snowballstemmer", None):
+            result = text_dedup.deduplicate_candidates(records, "sheet", "pt")
+
+        self.assertEqual(
+            [record["Keyword"] for record in result.records],
+            ["som engraçado", "sonoros engraçados", "pegadinha"],
+        )
+        self.assertEqual(result.records[0]["MergedVariants"], "som engraçados; sons engraçado")
+        self.assertEqual(result.records[2]["MergedVariants"], "pegadinhas")
+        self.assertTrue(all(entry["DedupRule"] == "stemmed_sequence_key" for entry in result.log_entries))
 
 
 if __name__ == "__main__":

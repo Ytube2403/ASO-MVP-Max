@@ -4,6 +4,8 @@ Thư mục mẫu này được thiết kế để giúp bạn dễ dàng thiết
 
 Hệ thống được thiết kế theo hướng **tách biệt cấu hình và mã nguồn**: toàn bộ thông số cấu hình nằm trong file `app_config.py` và hồ sơ ứng dụng nằm trong file `App_Profile.json`.
 
+Trước khi chạy lần đầu trên máy Windows mới, làm theo [hướng dẫn cài đặt đầy đủ](../../docs/SETUP_WINDOWS.md).
+
 ---
 
 ## 📁 Cấu trúc thư mục mẫu

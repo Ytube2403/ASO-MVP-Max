@@ -1,0 +1,6 @@
+flask
+langdetect
+numpy
+openpyxl
+pandas
+snowballstemmer

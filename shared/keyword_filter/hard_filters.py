@@ -4,6 +4,12 @@ from .runtime import DEFAULT_NOISE_TERMS, resolve_filter_runtime
 from .scoring import has_core_intent, has_feature_intent, has_style_intent
 
 
+DEFAULT_DANGLING_TERMS = {
+    "and", "com", "con", "da", "das", "de", "do", "dos", "e", "et",
+    "for", "of", "ou", "para", "por", "with", "y",
+}
+
+
 def _raw_text(value):
     return value.get("Keyword", "") if hasattr(value, "get") and not isinstance(value, str) else value
 
@@ -77,6 +83,13 @@ def find_truncated_keyword(value, config):
     if len(words) < 2:
         return None
     prefix = words[-1]
+    dangling_terms = {
+        normalize_filter_text(term)
+        for term in policy.get("dangling_terms", DEFAULT_DANGLING_TERMS)
+        if normalize_filter_text(term)
+    }
+    if prefix in dangling_terms:
+        return AuditMatch(rule="truncated_keyword", term=prefix, source="raw")
     min_length = int(policy.get("min_prefix_length", 2) or 2)
     if len(prefix) < min_length:
         return None
