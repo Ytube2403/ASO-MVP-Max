@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration Template
-Version: 3.4
+Version: 3.6
 Purpose: Template configuration for deploying ASO Keyword Planner on a new application.
 """
 
@@ -15,6 +15,8 @@ APP_CONFIG = {
     "category_slug": "widget",        # Slug dùng cho đường dẫn (viết thường, không dấu, phân cách bởi gạch dưới)
     "market": "US_EN",                # Thị trường mục tiêu mặc định (US_EN, VN_VI, BR_PT, IN_EN...)
     "platform_mode": "google_play",   # Nền tảng: 'google_play' hoặc 'app_store'
+
+    "semantic_mode": "personalization_widget",
 
     # ==========================================
     # 2. MARKET LANGUAGE POLICY (Chính sách ngôn ngữ)
@@ -98,28 +100,28 @@ APP_CONFIG = {
         "brandname"
     ],
 
+    "risky_platform_terms": ["iphone", "ios", "ipad", "apple", "android", "tiktok", "snapchat", "instagram"],
+    "ambiguous_brand_terms": [],
+    "platform_affiliation_terms": ["official tiktok", "official snapchat", "official instagram"],
+    "truncation_policy": {
+        "enabled": True,
+        "min_prefix_length": 2,
+        "allowed_partial_terms": []
+    },
+
     # ==========================================
     # 5. RISK HANDLING & PRECEDENCE (Chính sách rủi ro & Thứ tự ưu tiên)
     # ==========================================
     "risk_policy": {
         "competitor_brand_action": "drop",
+        "ambiguous_brand_action": "consider",
         "risky_ip_action": "consider",
-        "platform_style_action": "consider",
+        "platform_context_action": "consider",
+        "platform_only_action": "drop",
+        "platform_affiliation_action": "drop",
         "style_only_action": "reserve",
         "core_intent_override": True  # Nếu chứa core intent mạnh, không tự động loại khi dính lỗi nhẹ
     },
-
-    "rule_precedence": [
-        "force_drop_and_competitor_brand",
-        "typo_truncated_broken_keyword",
-        "foreign_language_mismatch",
-        "irrelevant_intent",
-        "core_intent_override",
-        "risk_policy",
-        "secondary_language_handling",
-        "scoring_and_bucket_classification",
-        "user_overrides_with_limits"
-    ],
 
     # ==========================================
     # 6. KEYWORD QUOTA (Hạn ngạch phân bổ từ khóa)
@@ -181,7 +183,7 @@ APP_CONFIG = {
                 "flag": "TOO_LONG"
             },
             "cross_language_bleed": {
-                "note": "Chỉ dùng để loại bỏ ngôn ngữ lạ, không flag nhầm secondary language",
+                "note": "Legacy note only. From v3.5, script/language mismatch is handled by shared/language_detector.py; naturalness must not hard-drop non-Latin text as LANGUAGE_BLEED.",
                 "forbidden_foreign_in_market": {},
                 "flag": "LANGUAGE_BLEED"
             }
@@ -213,11 +215,23 @@ APP_CONFIG = {
     },
 
     "scoring_normalization": {
-        "volume": "log_minmax",
+        "volume": "maximum_reach_or_exponential_search_popularity",
         "difficulty": "inverse_0_100",
         "kei": "log_minmax",
         "rank": "tiered_rank_score",
         "unranked_rank_score": 0.0
+    },
+
+    "volume_score_policy": {
+        "search_popularity_floor": 5.0,
+        "search_popularity_ceiling": 100.0,
+        "exponential_curve_factor": 4.0,
+        "current_volume_weight": 0.85,
+        "historical_max_volume_weight": 0.15,
+        "low_tier_threshold": 5.0,
+        "low_tier_score_cap": 0.05,
+        "exclude_low_tier_from_metadata_shortlist": True,
+        "max_low_tier_consider_keywords": 3
     },
 
     # ==========================================
@@ -238,6 +252,12 @@ APP_CONFIG = {
     },
 
     "max_word_overlap": 0.5,  # Tỷ lệ trùng lặp từ tối đa giữa các keyword trong Top N (tránh lặp ý)
+    "dedup_policy": {
+        "auto_merge_token_bag": True,
+        "review_overlap_threshold": 0.80,
+        "accent_fold_auto_merge_locales": [],
+        "enable_review_log": True,
+    },
     "output_prefix": "ASO_Keyword_Planner",
     "output_mode": "excel_workbook",
     "output_workbook": {

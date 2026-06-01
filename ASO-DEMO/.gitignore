@@ -2,10 +2,6 @@
 # ASO-DEMO Project — Git Ignore Rules
 # ═══════════════════════════════════════════════
 
-# ── Antigravity / AI tools ──
-.understand-anything/
-.pytest_cache/
-
 # ── Python cache ──
 __pycache__/
 *.py[cod]
@@ -23,6 +19,10 @@ Master_Keywords/
 
 # SQLite database (Keyword Tracker)
 Keyword_Tracker/keyword_tracker.db
+
+# Scoped interactive selection cache
+*/.cache/
+.cache/
 
 # ── IDE & Editor ──
 .vscode/

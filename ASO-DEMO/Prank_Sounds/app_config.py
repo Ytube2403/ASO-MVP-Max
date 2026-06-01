@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-ASO Keyword Planner - App Configuration File
+ASO Keyword Planner - App Configuration File for Pranky
 Version: 3.6
-Purpose: Configuration file for deploying ASO Keyword Planner on a new application (Photo Editor template).
+Purpose: Configuration file for deploying ASO Keyword Planner on Pranky (Prank Sounds: Haircut & Taser).
 """
 
 APP_CONFIG = {
     # =========================================================================
     # 1. IDENTITY & META (Thông tin định danh)
     # =========================================================================
-    "app_id": "com.example.mynewapp",      # Package ID / Bundle ID của ứng dụng
-    "app_name": "My New App Name",         # Tên ứng dụng đầy đủ hiển thị trên Store
-    "category": "Photo Editor",            # Danh mục ứng dụng (VD: Photo Editor, VPN, Launcher, Widget...)
-    "category_slug": "photo_editor",       # Slug dùng cho đường dẫn (viết thường, không dấu, phân cách bởi gạch dưới)
-    "market": "US_EN",                     # Mã thị trường mặc định (VD: US_EN, BR_PT, VN_VI...)
-    "platform_mode": "google_play",        # Nền tảng: 'google_play' hoặc 'app_store'
-    "semantic_mode": "photo_editor",
+    "app_id": "com.prank.sound.airhorn.haircut.razor.clipper",  # Package ID / Bundle ID của ứng dụng
+    "app_name": "Prank Sounds: Haircut & Taser",                 # Tên ứng dụng đầy đủ hiển thị trên Store
+    "category": "Entertainment",                                 # Danh mục ứng dụng
+    "category_slug": "prank_sounds",                             # Slug dùng cho đường dẫn (viết thường, không dấu)
+    "market": "US_EN",                                           # Mã thị trường mặc định (VD: US_EN, BR_PT, VN_VI...)
+    "platform_mode": "google_play",                              # Nền tảng: 'google_play' hoặc 'app_store'
+    "semantic_mode": "prank_sounds",
 
     # =========================================================================
     # 2. MARKET LANGUAGE POLICY (Chính sách ngôn ngữ)
@@ -48,27 +48,45 @@ APP_CONFIG = {
     # =========================================================================
     "intent_core_terms": [
         # Các từ khóa cốt lõi thể hiện ý định tìm kiếm chính của ứng dụng
-        # Ví dụ nếu là Photo Editor: "photo editor", "picture editor", "image editor"
-        "photo editor", "picture editor", "image editor", "photo editing"
+        "prank sounds", "prank sound", "haircut prank", "taser prank", "hair clipper", 
+        "soundboard", "fart sounds", "fart sound", "air horn", "stun gun", 
+        "clipper prank", "razor prank", "clippers", "trimmer prank", 
+        "stun gun simulator", "taser simulator", "shock gun", "funny sounds", 
+        "funny sound", "prank app", "prank apps", "gun sounds", "gun sound", 
+        "gun simulator", "weapon sounds", "firearm sounds",
+        # Generic core keywords and common translations
+        "prank", "pranks", "fart", "taser", "shaver", "clipper", "shave", "razor", 
+        "trimmer", "horn", "sound effects", "fake sound", "fake sounds", 
+        "fun sound", "fun sounds", "hair cut", "hair cutting", "joke sound", "joke sounds", "barber"
     ],
-    
+
+    "intent_core_words": [
+        "prank", "haircut", "clipper", "clippers", "razor", "trimmer", "taser",
+        "stun", "shock", "airhorn", "air horn", "soundboard", "fart", "gun",
+        "weapon", "firearm", "siren"
+    ],
+
     "feature_terms": [
         # Các từ khóa mô tả tính năng / chức năng cụ thể của ứng dụng
-        # Ví dụ: "retouch", "background eraser", "collage maker", "filter"
-        "retouch", "background eraser", "remove bg", "collage maker", "photo collage",
-        "photo filters", "photo effects", "magic eraser", "photo enhancer", "crop photo"
+        "clipper sound", "taser sounds", "fart noise", "airhorn prank", "broken glass", 
+        "barber prank", "gun simulator", "laser blaster", "shaving simulator", "police siren", 
+        "burp sounds", "scary sounds", "coughing sounds", "laughing sounds", "siren sounds", 
+        "doorbell sounds", "vibration effect", "timer prank", "custom lists", "favorites list", 
+        "voice changer", "face dance", "gunshot sound", "shotgun reload", "pistol fire", 
+        "machine gun burst", "weapon simulator", "noise", "noisy"
     ],
     
     "style_terms": [
         # Các từ khóa mô tả phong cách, giao diện, IP hoặc theme thẩm mỹ
-        # Ví dụ: "aesthetic", "vintage", "retro", "neon", "cute", "anime"
         # LƯU Ý: style_terms chỉ được phân bổ vào Full Description, không dùng ở Title/Subtitle để tránh vi phạm IP
-        "aesthetic", "vintage", "retro", "neon", "cute", "anime", "kawaii", "cyberpunk"
+        "funny", "crazy", "silly", "troll", "trolls", "joke", "jokes", 
+        "hilarious", "meme", "memes", "viral", "laughter", "prankster", 
+        "friendly joke", "haha", "cheeky"
     ],
     
     "visual_terms": [
         # Các từ khóa mô tả giao diện phụ trợ, hiệu ứng hình ảnh
-        "camera", "selfie", "gallery", "album", "frame", "sticker", "stickers"
+        "simulator", "soundboard", "effects", "effect", "board", "button", "buttons", "machine", "trigger"
     ],
 
     # =========================================================================
@@ -76,31 +94,34 @@ APP_CONFIG = {
     # =========================================================================
     "competitor_brands": [
         # Tên các đối thủ cạnh tranh nổi tiếng. Keyword chứa các từ này sẽ bị cấm dùng trong metadata chính
-        "picsart", "canva", "lightroom", "snapseed", "vsco", "meitu"
+        "meowclaw", "meowclaw studio", "era games", "era games studio", 
+        "falcon global", "hiprank", "hiprank studio", "haha prank", 
+        "wister stella", "cem software", "sigma prank"
     ],
     
     "noise_terms": [
         # Các từ khóa chung chung, generic quá rộng không mang ý định tìm app cụ thể
-        "app", "apps", "free", "download", "android", "for android", "new", "best", "top"
+        "app", "apps", "free", "download", "android", "for android", "new", "best", "top", "sounds", "sound", "play", "offline"
     ],
     
     "typo_blacklist": [
         # Các từ khóa gõ sai chính tả phổ biến hoặc các từ khóa vô nghĩa thu được từ auto-suggest
-        "editer", "edtor", "filtre", "efect", "colage", "rettouch"
+        "haricut", "cliper", "tazer", "airhon", "fartsound", "fartsounds", "clippr", "rrazor"
     ],
     
     "irrelevant_intent_terms": [
         # Từ khóa thuộc danh mục khác, hoàn toàn không liên quan đến ứng dụng của bạn
-        # Ví dụ: app của bạn là photo editor thì không nên chứa từ khóa về widget, launcher hay game
-        "widget", "widgets", "launcher", "theme launcher", "game", "games", "calculator"
+        "makeup", "editor", "photo", "video", "filter", "filters", 
+        "launcher", "theme", "widget", "widgets", "wallpaper", 
+        "keyboard", "calculator", "games", "game", "emulator", "emulators"
     ],
     
-    "risky_ip_terms": [
-        # Từ khóa chứa IP hoặc bản quyền nhạy cảm cần hạn chế
-        "brandname"
+    "risky_platform_terms": [
+        # Từ khóa chứa tên nền tảng hoặc dịch vụ bên thứ ba để đưa vào consider thay vì drop
+        "iphone", "ios", "ipad", "apple", "android", "tiktok", "snapchat", "instagram", "facebook", "whatsapp", "messenger"
     ],
 
-    "risky_platform_terms": ["iphone", "ios", "ipad", "apple", "android", "tiktok", "snapchat", "instagram"],
+    "risky_ip_terms": [],
     "ambiguous_brand_terms": [],
     "platform_affiliation_terms": ["official tiktok", "official snapchat", "official instagram"],
     "truncation_policy": {

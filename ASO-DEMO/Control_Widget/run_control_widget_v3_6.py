@@ -23,46 +23,136 @@ from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
 from shared import translation_service as _shared_translation_service
 
-# Resolve script and project root directories
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-
 # Parse arguments
-parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
-parser.add_argument("--csv", type=str, required=True, help="Path to input CSV")
-parser.add_argument("--market", type=str, default="", help="Market code (e.g. US_EN)")
+parser = argparse.ArgumentParser(description="ASO Keyword Planner for Control Widget")
+parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
+parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
 args, unknown = parser.parse_known_args()
 
-# Load configuration from app_config.py
-try:
-    from app_config import APP_CONFIG as config
-except ImportError:
-    # Fallback if run from a different directory
-    import sys
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    try:
-        from app_config import APP_CONFIG as config
-    except ImportError:
-        print("Error: Could not import APP_CONFIG from app_config.py.")
-        sys.exit(1)
-
-INPUT_PATH = os.path.abspath(args.csv)
-market = args.market if args.market else config.get("market", "US_EN")
-config["market"] = market # Override default market with cli arg
-
+INPUT_PATH = args.csv
 if args.output:
     OUTPUT_PATH = args.output
 else:
     # Update OUTPUT_PATH dynamically
     csv_dir = os.path.dirname(os.path.abspath(INPUT_PATH))
-    app_slug = config.get("app_name", "App").replace(" ", "_")
-    OUTPUT_PATH = os.path.join(csv_dir, f"{app_slug}_{market.replace('_', '-')}_Output.xlsx")
+    OUTPUT_PATH = os.path.join(csv_dir, "Control_Widget", f"ControlWidget_{args.market.replace('_', '-')}_Output.xlsx")
+
+# Control Widget configuration
+config = {
+    "app_id": "com.control.widget.custom.panel.wallpaper.pack",
+    "app_name": "Control Widget: Theme & Panels",
+    "category": "Personalization / Widget",
+    "market": args.market,
+    "platform_mode": "google_play",
+    "semantic_mode": "personalization_widget",
+    "dedup_policy": {
+        "auto_merge_token_bag": True,
+        "review_overlap_threshold": 0.80,
+        "accent_fold_auto_merge_locales": [],
+        "enable_review_log": True,
+    },
+
+    "intent_core_terms": [
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "volume control", "shortcut widget",
+        "android panel", "settings panel", "control menu", "control hub panel",
+        "panel android", "panels control center", "simple control center",
+        "control widgets", "widget control"
+    ],
+    
+    "feature_terms": [
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "control menu", "settings",
+        "shortcut", "shortcuts", "toggle", "switch", "fast settings",
+        "panel android", "brightness", "volume", "wifi", "wi-fi", "bluetooth",
+        "flashlight", "screen recorder", "screenshot", "airplane mode",
+        "do not disturb", "control hub", "panel", "android panel", "widget control"
+    ],
+    
+    "style_terms": [
+        "theme", "themes", "themed", "style", "styles", "aesthetic", "cute",
+        "kawaii", "anime", "cartoon", "k-pop", "neon", "gradient", "glass",
+        "color", "colorful", "pastel", "minimal", "simple", "wallpaper",
+        "home screen", "icon", "custom", "customize", "personalize",
+        "personalization", "iphone", "ios", "os 17", "os 18"
+    ],
+    
+    "competitor_brands": [
+        "mi control center", "power shade", "one shade", "volume styles",
+        "super status bar", "bottom quick settings",
+        "dynamic spot", "notiguy", "edge action",
+        "theme kit", "themekit", "widgetkit", "widget lab", "magic widget",
+        "widcon", "skycenter", "themepack", "simple photo widget", "themify",
+        "themix", "themex", "themedy", "themica",
+        "themehub"
+    ],
+    
+    "typo_blacklist": [
+        "contol", "controll", "pannel", "widgit", "widjet", "wiget", "widg",
+        "custon", "custome", "setings", "sttings", "notifcation", "notificaion",
+        "brigthness", "volum", "togel", "toggl", "shotcut", "shorcut", "shrtcut",
+        "tontrol", "conditioners wi", "customize cstyle call", "bring icontrol"
+    ],
+    
+    "irrelevant_intent_terms": [
+        "call widget", "call theme", "price widget", "usage widget", "calculator",
+        "keyboard", "launcher", "ringtones", "compass", "remote", "hotspot",
+        "lock screen widget", "app icon aesthetic", "icon changer", "stable diffusion",
+        "redmi", "inoty", "control net", "multiplicat", "app specially",
+        "control designed", "control partner", "control drops", "control content",
+        "control enjoy", "control lay", "control bars", "control unlimited",
+        "control convenient", "control transform", "stylish apps control",
+        "control pack", "control changer", "control change", "control set",
+        "control unique", "mob quick"
+    ],
+    
+    "risky_platform_terms": [
+        "iphone", "ios", "ipad", "apple", "os 17", "os 18", "os17", "os18", "icontrol"
+    ],
+
+    "risky_ip_terms": ["assistive touch", "dynamic island"],
+    "ambiguous_brand_terms": ["sidebar"],
+    "platform_affiliation_terms": [],
+    "truncation_policy": {
+        "enabled": True,
+        "min_prefix_length": 2,
+        "allowed_partial_terms": []
+    },
+    "risk_policy": {
+        "competitor_brand_action": "drop",
+        "ambiguous_brand_action": "consider",
+        "risky_ip_action": "consider",
+        "platform_context_action": "consider",
+        "platform_only_action": "drop",
+        "platform_affiliation_action": "drop",
+        "style_only_action": "reserve",
+        "core_intent_override": True
+    },
+    
+    "user_overrides": {
+        "force_top30_terms": [],
+        "force_consider_terms": [],
+        "force_drop_terms": []
+    },
+    
+    "balanced_weights": {
+        "VolumeN": 0.20,
+        "DifficultyN": 0.15,
+        "KEIN": 0.15,
+        "RelevancyScore": 0.30,
+        "CurrentRankN": 0.10,
+        "ExpansionValue": 0.10
+    }
+}
+
+from app_config import FILTER_POLICY
+config.update(FILTER_POLICY)
 
 # --- Shared Google Play profile service ---
-# Build or load App Profile using seed query from config
-app_profile = _shared_profile_service.get_app_profile(config, config.get("app_name", "App"), SCRIPT_DIR)
+# Build or load App Profile using seed query 'Control Widget'
+app_profile = _shared_profile_service.get_app_profile(config, "Control Widget", os.path.dirname(__file__))
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -233,7 +323,9 @@ except ImportError:
 def load_english_vocab():
     vocab = set()
     # Use relative path from project root for portability
-    path = os.path.join(PROJECT_ROOT, "Docs_and_Templates", "english_words_10k.txt")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -507,9 +599,8 @@ df['LanguageGroup'] = lang_groups
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
-provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, provided_en=provided_en, cache_path=os.path.join(PROJECT_ROOT, ".cache", "translations.sqlite3")
+    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
 

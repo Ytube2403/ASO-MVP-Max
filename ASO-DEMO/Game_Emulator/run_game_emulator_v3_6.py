@@ -14,10 +14,18 @@ from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 import argparse
+import sys
+
+_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _SHARED_ROOT not in sys.path:
+    sys.path.insert(0, _SHARED_ROOT)
+from shared import text_dedup as _shared_text_dedup
+from shared import profile_service as _shared_profile_service
+from shared import translation_service as _shared_translation_service
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="ASO Keyword Planner for Game Emulator")
-parser.add_argument("--csv", type=str, default=r"C:\Users\VOLIO\Documents\ASO-DEMO\GameEmulator_US_EN.csv", help="Path to input CSV")
+parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
 parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
@@ -39,7 +47,13 @@ config = {
     "market": args.market,
     "platform_mode": "google_play",
     "semantic_mode": "game_emulator",
-    
+    "dedup_policy": {
+        "auto_merge_token_bag": True,
+        "review_overlap_threshold": 0.80,
+        "accent_fold_auto_merge_locales": [],
+        "enable_review_log": True,
+    },
+
     "intent_core_terms": [
         "game emulator", "retro game emulator", "retro games emulator", 
         "gba emulator", "gameboy emulator", "arcade emulator", "handheld emulator",
@@ -60,15 +74,15 @@ config = {
         'xbox', 'sega', 'dreamcast', 'arcade', 'fliperama',
         'handheld', 'console', 'portable',
         # Retro/Classic indicators
-        'retro', 'retrô', 'classic', 'classicos', 'clássico', 'klasik',
+        'retro', 'classic', 'classicos', 'clássico', 'klasik',
         '8bit', '8-bit', '16bit', '16-bit', '32bit',
-        'old', 'vintage', 'nostalgic', 'nostalgia', 'nostálgia',
+        'old', 'vintage', 'nostalgic', 'nostalgia',
         'jadul', 'lawas', 'advance', 'collection'
     ],
     
     "style_terms": [
         # Nintendo IP
-        'pokemon', 'pokémon', 'pokemon red', 'pokemon blue', 'pokemon fire red',
+        'pokemon', 'pokemon red', 'pokemon blue', 'pokemon fire red',
         'pokemon emerald', 'pokemon yellow', 'pokemon gold', 'pokemon silver',
         'mario', 'super mario', 'mario kart', 'zelda', 'legend of zelda',
         'metroid', 'kirby', 'donkey kong', 'star fox', 'fire emblem',
@@ -108,9 +122,9 @@ config = {
     
     "competitor_brands": [
         # Major multi-system
-        'ppsspp', 'ppsspp gold', 'dolphin', 'dolphin emulator',
+        'ppsspp', 'ppsspp gold', 'dolphin emulator',
         'retroarch', 'retroarch emulator',
-        'delta', 'delta emulator', 'delta nintendo emulator',
+        'delta emulator', 'delta nintendo emulator',
         'citra', 'citra emulator', 'lime3ds', 'lime3ds emulator',
         'aethersx2', 'aethersx2 emulator',
         'lemuroid', 'lemuroid emulator',
@@ -132,7 +146,7 @@ config = {
         'epsxe', 'epsxe emulator',
         'fpse', 'fpse emulator',
         'pcsx2', 'pcsx2 emulator', 'damonps2', 'damon ps2',
-        'play!', 'play emulator',
+        'play emulator',
         # N64
         'mupen64plus', 'mupen64', 'mupen',
         'project64', 'project 64', 'n64oid',
@@ -142,9 +156,9 @@ config = {
         'kawaks',
         # All-in-one
         'classicboy', 'classicboy lite',
-        'super retro 16', 'retro game boy',
-        'emu', 'emu games', 'emu paradise',
-        'roms', 'romsmania', 'loveroms', 'romhustler',
+        'retro game boy',
+        'emu games', 'emu paradise',
+        'romsmania', 'loveroms', 'romhustler',
         # Cloud/Remote
         'netboom', 'netboom cloud gaming',
         'airconsole', 'air console',
@@ -171,7 +185,7 @@ config = {
         'video game', 'videogame', 'video games', 'computer game',
         'android game', 'mobile game', 'phone game', 'tablet game',
         'play', 'playing', 'player', 'fun', 'entertainment',
-        'download', 'free', 'gratis', 'grátis', 'premium', 'pro', 'lite',
+        'download', 'free', 'gratis', 'premium', 'pro', 'lite',
         'best', 'top', 'new', 'old', 'latest', 'update', 'version',
         'android', 'ios', 'iphone', 'ipad', 'phone', 'mobile', 'tablet',
         'app', 'application', 'software', 'tool', 'utility', 'program',
@@ -185,7 +199,7 @@ config = {
         'd-pad', 'dpad', 'analog', 'stick', 'trigger', 'bumper',
         'bluetooth controller', 'wireless controller', 'usb controller',
         'remote', 'remoto', 'remote play', 'second screen',
-        'cloud', 'cloud gaming', 'streaming', 'stream', 'remote',
+        'cloud', 'cloud gaming', 'streaming', 'stream',
         'geforce now', 'xbox cloud', 'playstation now', 'stadia',
         'nvidia', 'shadow', 'boosteroid', 'blacknut',
         'screen', 'display', 'monitor', 'resolution', 'fps', 'hz',
@@ -197,11 +211,11 @@ config = {
         'chat', 'message', 'friend', 'social', 'community', 'forum',
         'rate', 'review', 'feedback', 'support', 'help', 'faq',
         'guide', 'tutorial', 'walkthrough', 'tips', 'tricks',
-        'news', 'blog', 'update', 'patch', 'dlc', 'expansion',
+        'news', 'blog', 'patch', 'dlc', 'expansion',
         'skin', 'theme', 'wallpaper', 'icon', 'font', 'sound',
         'music', 'song', 'audio', 'soundtrack', 'ost', 'bgm',
         'record', 'recording', 'screenshot', 'capture', 'clip',
-        'share', 'export', 'import', 'sync', 'backup', 'transfer',
+        'share', 'export', 'import', 'sync', 'transfer',
         'the', 'a', 'an', 'and', 'or', 'but', 'for', 'with', 'without',
         'in', 'on', 'at', 'to', 'from', 'by', 'of', 'about', 'into',
         'through', 'during', 'before', 'after', 'above', 'below',
@@ -237,6 +251,30 @@ config = {
     "risky_platform_terms": [
         "ios", "iphone", "apple", "os 17", "os 18", "os17", "os18", "ipad"
     ],
+
+    "risky_ip_terms": ["pokemon", "mario", "zelda", "nintendo", "playstation"],
+    "ambiguous_brand_terms": ["dolphin", "delta", "play"],
+    "platform_affiliation_terms": [],
+    "truncation_policy": {
+        "enabled": True,
+        "min_prefix_length": 2,
+        "allowed_partial_terms": []
+    },
+    "risk_policy": {
+        "competitor_brand_action": "drop",
+        "ambiguous_brand_action": "consider",
+        "risky_ip_action": "consider",
+        "platform_context_action": "consider",
+        "platform_only_action": "drop",
+        "platform_affiliation_action": "drop",
+        "style_only_action": "reserve",
+        "core_intent_override": True
+    },
+    "user_overrides": {
+        "force_top30_terms": [],
+        "force_consider_terms": [],
+        "force_drop_terms": []
+    },
     
     "balanced_weights": {
         "VolumeN": 0.20,
@@ -248,129 +286,12 @@ config = {
     }
 }
 
-# --- Google Play Scraper & Competitor Profile Builder ---
-def get_app_profile(config, seed_query):
-    profile_path = os.path.join(os.path.dirname(OUTPUT_PATH), "App_Profile.json")
-    
-    # Check if cached profile is fresh (< 14 days)
-    if os.path.exists(profile_path):
-        try:
-            with open(profile_path, "r", encoding="utf-8") as f:
-                profile = json.load(f)
-            last_checked = datetime.fromisoformat(profile.get("last_checked", "2000-01-01"))
-            if datetime.now() - last_checked < timedelta(days=14):
-                print(f"Loaded fresh App Profile from {profile_path} (Last checked: {last_checked})")
-                return profile
-        except Exception as e:
-            print(f"Error reading profile cache: {e}. Re-fetching...")
-            
-    print("App Profile is missing or older than 14 days. Fetching from Google Play Store...")
-    profile = {
-        "app_id": config["app_id"],
-        "last_checked": datetime.now().isoformat(),
-        "title": "",
-        "short_description": "",
-        "full_description": "",
-        "competitors": []
-    }
-    
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    
-    def fetch_url(url):
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'}
-        )
-        try:
-            with urllib.request.urlopen(req, context=ctx, timeout=10) as response:
-                return response.read().decode('utf-8')
-        except Exception as e:
-            print(f"Error fetching URL {url}: {e}")
-            return None
+from app_config import FILTER_POLICY
+config.update(FILTER_POLICY)
 
-    # 1. Fetch own app metadata
-    own_url = f"https://play.google.com/store/apps/details?id={config['app_id']}&hl=en&gl=US"
-    own_html = fetch_url(own_url)
-    if own_html:
-        t_match = re.search(r'<meta property="og:title" content="([^"]+)"', own_html)
-        if t_match:
-            title = html_lib.unescape(t_match.group(1))
-            profile["title"] = re.sub(r'\s*-\s*Apps on Google Play$', '', title)
-        s_match = re.search(r'<meta name="description" content="([^"]+)"', own_html)
-        if not s_match:
-            s_match = re.search(r'<meta name="twitter:description" content="([^"]+)"', own_html)
-        if s_match:
-            profile["short_description"] = html_lib.unescape(s_match.group(1))
-        f_match = re.search(r'data-g-id="description"[^>]*>(.+?)</div>', own_html, re.DOTALL)
-        if f_match:
-            f_desc = re.sub(r'<[^>]+>', '\n', f_match.group(1))
-            profile["full_description"] = html_lib.unescape(re.sub(r'\n+', '\n', f_desc).strip())
-        else:
-            j_match = re.search(r'\[\[null,"([^"]{50,})"\s*\]\]', own_html)
-            if j_match:
-                f_desc = j_match.group(1).replace('\\u003cbr\\u003e', '\n').replace('\\n', '\n')
-                profile["full_description"] = html_lib.unescape(f_desc)
-                
-    # 2. Search for competitors
-    search_url = f"https://play.google.com/store/search?q={urllib.parse.quote_plus(seed_query)}&c=apps&hl=en&gl=US"
-    search_html = fetch_url(search_url)
-    competitor_pids = []
-    if search_html:
-        raw_pids = re.findall(r'href="/store/apps/details\?id=([a-zA-Z0-9._]+)"', search_html)
-        seen = set([config['app_id']])
-        for pid in raw_pids:
-            if pid not in seen:
-                seen.add(pid)
-                competitor_pids.append(pid)
-                if len(competitor_pids) >= 3:
-                    break
-                    
-    # 3. Fetch competitor details
-    for pid in competitor_pids:
-        comp_url = f"https://play.google.com/store/apps/details?id={pid}&hl=en&gl=US"
-        comp_html = fetch_url(comp_url)
-        comp_data = {
-            "package_id": pid,
-            "title": "",
-            "short_description": "",
-            "desc200": ""
-        }
-        if comp_html:
-            t_match = re.search(r'<meta property="og:title" content="([^"]+)"', comp_html)
-            if t_match:
-                title = html_lib.unescape(t_match.group(1))
-                comp_data["title"] = re.sub(r'\s*-\s*Apps on Google Play$', '', title)
-            s_match = re.search(r'<meta name="description" content="([^"]+)"', comp_html)
-            if not s_match:
-                s_match = re.search(r'<meta name="twitter:description" content="([^"]+)"', comp_html)
-            if s_match:
-                comp_data["short_description"] = html_lib.unescape(s_match.group(1))
-            f_match = re.search(r'data-g-id="description"[^>]*>(.+?)</div>', comp_html, re.DOTALL)
-            f_desc_str = ""
-            if f_match:
-                f_desc_str = re.sub(r'<[^>]+>', '\n', f_match.group(1))
-                f_desc_str = html_lib.unescape(re.sub(r'\n+', '\n', f_desc_str).strip())
-            else:
-                j_match = re.search(r'\[\[null,"([^"]{50,})"\s*\]\]', comp_html)
-                if j_match:
-                    f_desc_str = html_lib.unescape(j_match.group(1).replace('\\u003cbr\\u003e', '\n').replace('\\n', '\n'))
-            comp_data["desc200"] = f_desc_str[:200]
-        profile["competitors"].append(comp_data)
-        
-    try:
-        os.makedirs(os.path.dirname(profile_path), exist_ok=True)
-        with open(profile_path, "w", encoding="utf-8") as f:
-            json.dump(profile, f, indent=4, ensure_ascii=False)
-        print(f"Saved fresh App Profile to {profile_path}")
-    except Exception as e:
-        print(f"Error saving profile: {e}")
-        
-    return profile
-
+# --- Shared Google Play profile service ---
 # Build or load App Profile using seed query 'Game Emulator'
-app_profile = get_app_profile(config, "Game Emulator")
+app_profile = _shared_profile_service.get_app_profile(config, "Game Emulator", os.path.dirname(__file__))
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -488,10 +409,13 @@ if 'KEI' not in df.columns:
     df['KEI'] = 0
 if 'Rank' not in df.columns:
     df['Rank'] = 'Unranked'
+if 'MaximumReach' not in df.columns:
+    df['MaximumReach'] = 0
 
 df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce').fillna(0).astype(int)
 df['Difficulty'] = pd.to_numeric(df['Difficulty'], errors='coerce').fillna(0).astype(int)
 df['KEI'] = pd.to_numeric(df['KEI'], errors='coerce').fillna(0).astype(float)
+df['MaximumReach'] = pd.to_numeric(df['MaximumReach'].astype(str).str.replace(',', '', regex=False), errors='coerce').fillna(0).astype(float)
 
 # Load Max. Volume
 max_vol_col = None
@@ -521,20 +445,7 @@ df['Rank_numeric'] = pd.to_numeric(df['Rank'], errors='coerce').fillna(999)
 
 # Singularization / Normalization
 def normalize_text(text):
-    if not isinstance(text, str):
-        return ""
-    text = text.lower().strip()
-    text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-    text = re.sub(r'[-_]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    words = text.split()
-    normalized_words = []
-    for w in words:
-        if w.endswith('s') and len(w) > 3:
-            if w in ['themes', 'widgets', 'panels', 'settings', 'shortcuts', 'icons', 'styles', 'games', 'emulators', 'consoles']:
-                w = w[:-1]
-        normalized_words.append(w)
-    return " ".join(normalized_words)
+    return _shared_text_dedup.normalize_text(text)
 
 df['keyword_normalized'] = df['Keyword'].apply(normalize_text)
 
@@ -550,7 +461,10 @@ except ImportError:
 
 def load_english_vocab():
     vocab = set()
-    path = r"c:\Users\VOLIO\Documents\ASO-DEMO\Docs_and_Templates\english_words_10k.txt"
+    # Use relative path from project root for portability
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -580,71 +494,227 @@ def get_root_word(w):
             return w[:-1]
     return w
 
-def detect_keyword_language(kw, market_lang, config):
-    kw_lower = str(kw).lower().strip()
-    if not kw_lower:
-        return market_lang.split("_")[1].lower() if "_" in market_lang else "en", 'PRIMARY'
+# --- Dynamic Google Play Country-Language Mapping Loader ---
+_COUNTRY_LANG_MAP = None
+
+def _load_country_language_map():
+    global _COUNTRY_LANG_MAP
+    if _COUNTRY_LANG_MAP is not None:
+        return _COUNTRY_LANG_MAP
+    mapping = {}
+    try:
+        import openpyxl
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        map_path = os.path.join(script_dir, "google_play_country_language_map.xlsx")
+        if not os.path.exists(map_path):
+            map_path = os.path.join(os.path.dirname(script_dir), "google_play_country_language_map.xlsx")
         
-    primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
+        if os.path.exists(map_path):
+            wb = openpyxl.load_workbook(map_path, read_only=True)
+            if 'Country-Language Map' in wb.sheetnames:
+                ws = wb['Country-Language Map']
+                for row in ws.iter_rows(min_row=5, values_only=True):
+                    if len(row) >= 7:
+                        country = str(row[3] or '').strip().upper()
+                        primary_locale = str(row[4] or '').strip()
+                        secondary_locale = str(row[6] or '').strip()
+                        if not country:
+                            continue
+                        
+                        p_langs = [primary_locale.split('-')[0].lower()] if primary_locale else []
+                        s_langs = []
+                        if secondary_locale and secondary_locale.lower() != 'none':
+                            for s in secondary_locale.split(';'):
+                                s = s.strip()
+                                if s:
+                                    s_langs.append(s.split('-')[0].lower())
+                        mapping[country] = {'primary': p_langs, 'secondary': s_langs}
+            wb.close()
+    except Exception as e:
+        print(f"Warning loading country-language map: {e}")
+    _COUNTRY_LANG_MAP = mapping
+    return _COUNTRY_LANG_MAP
+
+def _get_language_policy(config, primary_lang):
+    """Get or auto-derive market language policy, incorporating the spreadsheet mapping."""
+    policy = config.get('market_language_policy', {})
     
-    # Whitelist of common English words/ASO-related terms that might not be in 10k list
+    # 1. If explicit policy exists in the configuration, use it
+    if policy.get('primary_languages') or policy.get('secondary_languages'):
+        policy_primary = [l.split('-')[0].lower() for l in policy.get('primary_languages', [])]
+        secondary_langs = [l.split('-')[0].lower() for l in policy.get('secondary_languages', [])]
+        if not policy_primary:
+            policy_primary = [primary_lang]
+        return policy_primary, secondary_langs
+    
+    # 2. Derive policy dynamically from the Country-Language map
+    market = config.get('market', 'US_EN')
+    if "_" in market:
+        parts = market.split("_")
+        country_code = parts[0].upper()
+        target_lang = parts[1].lower()
+    else:
+        country_code = market.upper()
+        target_lang = primary_lang
+        
+    cmap = _load_country_language_map()
+    if cmap and country_code in cmap:
+        sheet_primary = cmap[country_code]['primary']
+        sheet_secondary = cmap[country_code]['secondary']
+        
+        # If the target language is part of the spreadsheet's primary languages
+        if target_lang in sheet_primary:
+            policy_primary = [target_lang]
+            secondary_langs = [l for l in sheet_secondary if l != target_lang]
+        else:
+            policy_primary = [target_lang]
+            # Include the spreadsheet's primary and other secondary languages as secondary for this run
+            secondary_langs = [l for l in (sheet_primary + sheet_secondary) if l != target_lang]
+            
+        # Ensure secondary_langs is deduplicated and doesn't contain target_lang
+        secondary_langs = list(dict.fromkeys(secondary_langs))
+    else:
+        # Fallback to standard derivation if spreadsheet is not loaded or country not found
+        policy_primary = [target_lang]
+        secondary_langs = ['en'] if target_lang != 'en' else []
+        
+    return policy_primary, secondary_langs
+
+def _build_eng_words_only(config):
+    """Build English-only whitelist from config terms that were defined in English.
+    Only uses the BASE config keys, not localized extensions."""
     eng_words = {
-        'ar', 'fyp', 'app', 'apps', 'free', 'download', 'android', 'new', 'best', 'top',
+        'fyp', 'app', 'apps', 'free', 'download', 'android', 'new', 'best', 'top',
         'doggy', 'dogy', 'shrek', 'diy', 'pro', 'lite', 'tiktok', 'snapchat', 'instagram',
         'youtube', 'facebook', 'whatsapp', 'messenger', 'pinterest', 'google', 'play',
-        '3d', 'arstudio', 'augmented', 'virtual', 'scanning', 'scanner', 'doge', 'da', 'doin'
+        '3d', 'arstudio', 'augmented', 'virtual', 'scanning', 'scanner', 'doge'
     }
-    
-    # Add words from configuration terms
     for key in ['intent_core_words', 'intent_core_terms', 'feature_terms', 'style_terms', 'visual_terms', 'noise_terms']:
         if key in config:
             for term in config[key]:
                 for w in str(term).lower().split():
-                    eng_words.add(w)
-                    
-    # Clean words in keyword
+                    if all(c.isascii() for c in w):
+                        eng_words.add(w)
+    return eng_words
+
+_eng_words_cache = _build_eng_words_only(config)
+
+_LANGDETECT_CONFUSION = {
+    'no': ['en'],
+    'da': ['en'],
+    'it': ['en', 'es'],
+    'ro': ['en'],
+    'sl': ['en'],
+    'so': ['en'],
+    'tl': ['es'],
+    'pt': ['es'],
+    'id': ['en'],
+    'tr': ['es'],
+    'af': ['en'],
+    'cy': ['en'],
+    'sw': ['en'],
+}
+
+def detect_keyword_language(kw, market_lang, config):
+    def lang_match(l1, l2):
+        l1, l2 = str(l1).lower(), str(l2).lower()
+        return l1 == l2 or (l1 == 'fil' and l2 == 'tl') or (l1 == 'tl' and l2 == 'fil')
+
+    kw_lower = str(kw).lower().strip()
+    primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
+    
+    if not kw_lower:
+        return primary_lang, 'PRIMARY'
+    
+    policy_primary, secondary_langs = _get_language_policy(config, primary_lang)
+    
     words = [re.sub(r'[^a-z0-9]', '', w) for w in kw_lower.split()]
     words = [w for w in words if w]
     
     if not words:
         return primary_lang, 'PRIMARY'
-        
-    # If all words in the keyword are in the English whitelist OR the 10k vocabulary, it's Primary!
-    is_primary = True
+    
+    all_english = True
     for w in words:
         root = get_root_word(w)
-        if w not in eng_words and w not in english_vocab and root not in eng_words and root not in english_vocab:
-            is_primary = False
+        if w not in _eng_words_cache and w not in english_vocab and root not in _eng_words_cache and root not in english_vocab:
+            all_english = False
             break
-            
-    if is_primary:
-        return primary_lang, 'PRIMARY'
-        
-    # If not all words are in the whitelists, use langdetect if available
+    
+    if all_english:
+        if any(lang_match('en', p) for p in policy_primary):
+            return 'en', 'PRIMARY'
+        elif any(lang_match('en', s) for s in secondary_langs):
+            return 'en', 'SECONDARY'
+        else:
+            return 'en', 'FOREIGN'
+    
     if HAS_LANGDETECT:
         try:
             langs = detect_langs(kw_lower)
             best_lang = langs[0].lang
             prob = langs[0].prob
             
-            if best_lang == primary_lang:
+            # Apply confusion matrix corrections for short text
+            word_count = len(words)
+            confusion_corrected = False
+            if word_count <= 3 and best_lang in _LANGDETECT_CONFUSION:
+                likely_langs = _LANGDETECT_CONFUSION[best_lang]
+                # If primary_lang is in the confusion list, prefer it
+                if any(lang_match(primary_lang, l) for l in likely_langs):
+                    best_lang = primary_lang
+                    confusion_corrected = True
+                # If any secondary lang is in the confusion list
+                elif any(any(lang_match(s, l) for l in likely_langs) for s in secondary_langs):
+                    for s in secondary_langs:
+                        if any(lang_match(s, l) for l in likely_langs):
+                            best_lang = s
+                            confusion_corrected = True
+                            break
+                # If 'en' is in confusion list and primary is English
+                elif any(lang_match('en', l) for l in likely_langs) and any(lang_match('en', p) for p in policy_primary):
+                    best_lang = 'en'
+                    confusion_corrected = True
+                # For very short keywords (1-2 words), default to primary
+                elif word_count <= 2:
+                    best_lang = primary_lang
+                    confusion_corrected = True
+            
+            # Classify the detected language
+            if lang_match(best_lang, primary_lang) or any(lang_match(best_lang, p) for p in policy_primary):
                 return best_lang, 'PRIMARY'
-                
-            if prob > 0.7:
-                # langdetect tends to misclassify short English words as Norwegian or Danish
-                if best_lang in ['no', 'da'] and primary_lang == 'en':
-                    return 'en', 'PRIMARY'
-                
-                # Check for secondary languages from policy
-                secondary_langs = [l.split('-')[0].lower() for l in config.get('market_language_policy', {}).get('secondary_languages', [])]
-                if best_lang in secondary_langs:
+            
+            # For confusion-corrected results, trust the correction directly
+            if confusion_corrected:
+                if any(lang_match(best_lang, s) for s in secondary_langs):
                     return best_lang, 'SECONDARY'
-                    
                 return best_lang, 'FOREIGN'
+            
+            # For non-corrected results, require higher confidence for short keywords
+            min_prob = 0.85 if word_count <= 2 else 0.7 if word_count <= 3 else 0.6
+            if prob >= min_prob:
+                if any(lang_match(best_lang, s) for s in secondary_langs):
+                    return best_lang, 'SECONDARY'
+                # Only mark as FOREIGN with sufficient confidence
+                return best_lang, 'FOREIGN'
+            
         except Exception:
             pass
-            
+    
     return primary_lang, 'PRIMARY'
+
+# Override the legacy local detector with the shared, market-aware implementation.
+try:
+    import sys
+    _PROJECT_ROOT_FOR_SHARED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _PROJECT_ROOT_FOR_SHARED not in sys.path:
+        sys.path.insert(0, _PROJECT_ROOT_FOR_SHARED)
+    from shared.language_detector import detect_keyword_language as _shared_detect_keyword_language
+
+    def detect_keyword_language(kw, market_lang, config):
+        return _shared_detect_keyword_language(kw, market_lang, config, english_vocab=english_vocab)
+except Exception as e:
+    print(f"Warning loading shared language detector: {e}. Falling back to legacy detector.")
 
 # Populate language columns in df
 detected_langs = []
@@ -666,39 +736,23 @@ for idx, row in df.iterrows():
 df['DetectedLanguage'] = detected_langs
 df['LanguageGroup'] = lang_groups
 
+# Translate non-English keywords to English
+print("[Step 2.5] Translating non-English keywords to English...")
+translation_frame = _shared_translation_service.translate_dataframe(
+    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
+)
+df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
+
+from shared import keyword_filter as _shared_keyword_filter
+
 # Step 3: Hard filters
 print("[Step 3] Hard filters...")
-df['is_competitor'] = df['Keyword'].apply(
-    lambda x: any(re.search(r'\b' + re.escape(brand.lower()) + r'\b', str(x).lower()) 
-                  for brand in config['competitor_brands'])
-)
-df['is_typo'] = df['Keyword'].apply(
-    lambda x: any(re.search(r'\b' + re.escape(typo.lower()) + r'\b', str(x).lower()) 
-                  for typo in config['typo_blacklist'])
-)
-df['is_irrelevant'] = False
-
-def is_noise_only(kw, config):
-    kw_lower = str(kw).lower().strip()
-    has_core = any(term.lower() in kw_lower for term in config['intent_core_terms'])
-    if has_core:
-        return False
-    words = kw_lower.split()
-    if len(words) > 1:
-        has_feat = any(f.lower() in kw_lower for f in config['feature_terms'])
-        has_sty = any(s.lower() in kw_lower for s in config['style_terms'])
-        if has_feat or has_sty:
-            return False
-    noise_words = set(t.lower() for t in config['noise_terms'])
-    if all(w in noise_words for w in words):
-        return True
-    if len(words) == 1:
-        w = words[0]
-        if w in noise_words:
-            return True
-    return False
-
-df['is_noise'] = df['Keyword'].apply(lambda x: is_noise_only(x, config))
+for warning in _shared_keyword_filter.validate_filter_config(config):
+    print(f"Warning: {warning}")
+_filter_runtime = _shared_keyword_filter.build_filter_runtime(config)
+hard_filter_results = df.apply(lambda row: _shared_keyword_filter.evaluate_hard_filters(row, _filter_runtime), axis=1)
+for column in _shared_keyword_filter.HARD_FILTER_COLUMNS:
+    df[column] = hard_filter_results.apply(lambda result: result.get(column, ""))
 
 # Naturalness Filter
 print("[Step 4] Naturalness checking...")
@@ -732,7 +786,7 @@ def check_naturalness(kw, config):
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
-naturalness = df['Keyword'].apply(lambda x: check_naturalness(x, config))
+naturalness = df.apply(lambda r: _shared_keyword_filter.check_naturalness(r, config), axis=1)
 df['NaturalnessFlag'] = [n[0] for n in naturalness]
 df['NaturalnessReason'] = [n[1] for n in naturalness]
 
@@ -805,7 +859,7 @@ df['ProvenDetails'] = proven_details_list
 df['CompetitorBoost'] = competitor_boost_list
 
 def calculate_relevancy(row, config):
-    kw = str(row['Keyword']).lower()
+    kw = str(row.get('EN', row['Keyword'])).lower()
     score = 0.3  # Base score
     
     # +0.40: Core emulator intent
@@ -853,14 +907,25 @@ def calculate_relevancy(row, config):
         
     return max(0.0, min(1.0, score))
 
-df['RelevancyScore'] = df.apply(lambda r: calculate_relevancy(r, config), axis=1)
+if 'RelevancyScore' in df_raw.columns:
+    raw_relevancy = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
+    shared_relevancy = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
+    df['RelevancyScore'] = np.maximum(raw_relevancy, shared_relevancy)
+    df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
+else:
+    df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
 
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
-max_vol = df['Max. Volume'].max()
+max_reach = df['MaximumReach'].max()
 max_kei = df['KEI'].max()
 
-df['VolumeN'] = np.log1p(df['Max. Volume']) / np.log1p(max_vol) if max_vol > 0 else 0
+df['VolumeN'] = df.apply(
+    lambda r: _shared_keyword_filter.calculate_volume_score(
+        r['Volume'], r['Max. Volume'], r['MaximumReach'], max_reach, config
+    ),
+    axis=1,
+)
 df['DifficultyN'] = 1.0 - (df['Difficulty'].clip(0, 100) / 100.0)
 df['KEIN'] = np.log1p(df['KEI']) / np.log1p(max_kei) if max_kei > 0 else 0
 
@@ -900,7 +965,7 @@ def calculate_expansion(row):
         score = min(score, 0.3)
     return max(0.0, min(1.0, score))
 
-df['ExpansionValue'] = df.apply(calculate_expansion, axis=1)
+df['ExpansionValue'] = df.apply(lambda r: _shared_keyword_filter.calculate_expansion(r, config), axis=1)
 
 bw = config['balanced_weights']
 df['BalancedScore'] = (
@@ -975,18 +1040,30 @@ def classify_keyword(row, config):
         
     return 'Broad Expansion', 'broad_expansion', 'Moderately relevant emulator expansion'
 
-classifications = df.apply(lambda r: classify_keyword(r, config), axis=1)
+classifications = df.apply(lambda r: _shared_keyword_filter.classify_keyword(r, config), axis=1)
 df['Bucket'] = [c[0] for c in classifications]
 df['DecisionRule'] = [c[1] for c in classifications]
 df['Reason'] = [c[2] for c in classifications]
 
+def override_row(row):
+    bucket, rule, reason = _shared_keyword_filter.apply_user_overrides(row, config)
+    return pd.Series([bucket, rule, reason])
+
+df[['Bucket', 'DecisionRule', 'Reason']] = df.apply(override_row, axis=1)
+
 # Shortlist building & duplicate checking
 print("[Step 8] Near-Duplicate Cleanup & Shortlist building...")
 def build_shortlist(df_all, config):
-    df_sorted = df_all.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    eligible_buckets = ['Core Intent Final', 'System Keywords', 'Broad Expansion', 'Game Keywords', 'Consider Keywords']
+    df_candidates = df_all[df_all['Bucket'].isin(eligible_buckets)]
+    df_sorted, dedup_log = _shared_text_dedup.prepare_dataframe(df_candidates, '01_Main_Keyword_Shortlist', config)
+    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
     selected_normalized, selected_tokens = set(), set()
-    dedup_log = []
+
+    def volume_eligible(row, section):
+        low_tier_count = sum(_shared_keyword_filter.is_low_volume_tier(item, config) for item in selected_consider)
+        return _shared_keyword_filter.is_shortlist_volume_eligible(row, section, low_tier_count, config)
     
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
@@ -1029,6 +1106,8 @@ def build_shortlist(df_all, config):
     for _, row in core_candidates.iterrows():
         if len(selected_core) >= 25:
             break
+        if not volume_eligible(row, 'Core Intent Final'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Core Intent Final')
         if is_dup:
             dedup_log.append({
@@ -1046,6 +1125,8 @@ def build_shortlist(df_all, config):
         for _, row in fallback_candidates.iterrows():
             if len(selected_core) >= 25:
                 break
+            if not volume_eligible(row, 'Core Intent Final'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1071,6 +1152,8 @@ def build_shortlist(df_all, config):
     for _, row in broad_candidates.iterrows():
         if len(selected_broad) >= 5:
             break
+        if not volume_eligible(row, 'Broad Expansion'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Broad Expansion')
         if is_dup:
             dedup_log.append({
@@ -1088,6 +1171,8 @@ def build_shortlist(df_all, config):
         for _, row in fallback_candidates.iterrows():
             if len(selected_broad) >= 5:
                 break
+            if not volume_eligible(row, 'Broad Expansion'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1113,6 +1198,8 @@ def build_shortlist(df_all, config):
     for _, row in consider_candidates.iterrows():
         if len(selected_consider) >= 10:
             break
+        if not volume_eligible(row, 'Consider Keywords'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Consider Keywords')
         if is_dup:
             dedup_log.append({
@@ -1132,6 +1219,8 @@ def build_shortlist(df_all, config):
         for _, row in missed_opps.iterrows():
             if len(selected_consider) >= 10:
                 break
+            if not volume_eligible(row, 'Consider Keywords'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1157,10 +1246,10 @@ def build_shortlist(df_all, config):
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
 def build_curated_sheet(df_all, bucket_name, sheet_name):
-    df_sorted = df_all[df_all['Bucket'] == bucket_name].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    df_sorted, dedup_entries = _shared_text_dedup.prepare_dataframe(df_all[df_all['Bucket'] == bucket_name], sheet_name, config)
+    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected = []
     selected_normalized, selected_tokens = set(), set()
-    dedup_entries = []
     
     for _, row in df_sorted.iterrows():
         if len(selected) >= 30:
@@ -1214,26 +1303,32 @@ selected_style, dedup_style = build_curated_sheet(df, 'Game Keywords', '03_Game_
 
 dedup_log_list.extend(dedup_feat)
 dedup_log_list.extend(dedup_style)
-df_dedup_log = pd.DataFrame(dedup_log_list)
+df_dedup_log = pd.DataFrame(_shared_text_dedup.normalize_log_entries(dedup_log_list))
 
 # Metadata assignment
 print("[Step 9] Metadata slot assignment...")
 
 # Start Interactive Selector Dashboard
-selections_file = os.path.join(os.path.dirname(__file__), "selected_keywords.json")
+selections_file = _shared_keyword_filter.selection_cache_path(os.path.dirname(__file__), config, INPUT_PATH, config.get("market", ""))
+selection_cache_meta = _shared_keyword_filter.build_selection_cache_meta(INPUT_PATH, config.get("market", ""), config)
 
 confirmed_selection = None
 
 if os.path.exists(selections_file):
-    print(f"\n[Step 9] Found existing keyword selections in {selections_file}. Loading...")
+    print(f"\n[Step 9] Found existing keyword selections in {selections_file}. Checking cache metadata...")
     with open(selections_file, "r", encoding="utf-8") as f:
-        confirmed_selection = json.load(f)
+        cached_selection = json.load(f)
+    if _shared_keyword_filter.is_selection_cache_valid(cached_selection, selection_cache_meta):
+        confirmed_selection, _ = _shared_keyword_filter.unwrap_selection_payload(cached_selection)
+        print("[Step 9] Selection cache matches current input. Loading cached selections...")
+    else:
+        print("[Step 9] Selection cache does not match current input/market. Ignoring cached selections.")
 else:
     if args.interactive:
         confirmed_selection = start_interactive_server(df, config, app_profile)
         if confirmed_selection:
-            with open(selections_file, "w", encoding="utf-8") as f:
-                json.dump(confirmed_selection, f, indent=4, ensure_ascii=False)
+            payload = _shared_keyword_filter.wrap_selection_payload(confirmed_selection, selection_cache_meta)
+            _shared_keyword_filter.atomic_write_json(selections_file, payload)
                 
             print("\n" + "="*50)
             print("[SELECTION_CONFIRMED] Keyword selections successfully saved!")
@@ -1370,18 +1465,25 @@ def style_sheet(ws, title, is_report=False):
             max_len = max(max_len, len(val_str))
         col_letter = get_column_letter(col[0].column)
         ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+        
+        # Hide Traffic Stability and Stability Class columns
+        col_name = ws.cell(row=1, column=col[0].column).value
+        if col_name in ['Traffic Stability', 'Stability Class']:
+            ws.column_dimensions[col_letter].hidden = True
 
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.4"),
+    ("Pipeline Version", "ASO Keyword Planner v3.6"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
     ("Market", config["market"]),
     ("Platform", config["platform_mode"]),
+    ("Profile Status", app_profile.get("ProfileStatus", "")),
+    ("Profile Error", app_profile.get("ProfileError", "")),
     ("Run Date", pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"))
 ]
 if "app_title_draft" in config:
@@ -1400,7 +1502,7 @@ ws_readme.column_dimensions['B'].width = 80
 
 # --- 01_Main_Keyword_Shortlist ---
 ws_shortlist = wb.create_sheet(title="01_Main_Keyword_Shortlist")
-cols_shortlist = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'Section', 'BalancedScore', 'RelevancyScore', 
+cols_shortlist = ['Keyword', 'EN', 'TranslationStatus', 'TranslationError', 'Volume', 'Max. Volume', 'MaximumReach', 'VolumeN', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants',
                   'CompetitorProven', 'ProvenDetails', 'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'WhereToUse', 'QuotaStatus', 'FillSource', 'FillReason', 'Reason']
 for col_idx, col in enumerate(cols_shortlist, 1):
     ws_shortlist.cell(row=1, column=col_idx, value=col)
@@ -1411,7 +1513,7 @@ style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
 # --- 02_System_Keywords ---
 ws_system = wb.create_sheet(title="02_System_Keywords")
-cols_curated = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'Section', 'BalancedScore', 'RelevancyScore', 'Reason']
+cols_curated = ['Keyword', 'EN', 'TranslationStatus', 'TranslationError', 'Volume', 'Max. Volume', 'MaximumReach', 'VolumeN', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
     ws_system.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_feature, 2):
@@ -1431,7 +1533,7 @@ style_sheet(ws_game, "03_Game_Keywords")
 # --- 04_Dropped_Audit ---
 ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
 df_dropped = df[df['Bucket'] == 'Dropped'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
-cols_audit = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'BalancedScore', 'RelevancyScore', 'DecisionRule', 'Reason']
+cols_audit = ['Keyword', 'EN', 'TranslationStatus', 'TranslationError', 'Volume', 'Max. Volume', 'MaximumReach', 'VolumeN', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_audit, 1):
     ws_dropped.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_dropped.iterrows(), 2):
@@ -1442,7 +1544,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.4 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1453,7 +1555,7 @@ metrics = [
     ("Consider Selected", len(selected_consider)),
     ("System Keywords Curated (02)", len(selected_feature)),
     ("Game Keywords Curated (03)", len(selected_style)),
-    ("Duplicates Filtered (Dedup Log)", len(df_dedup_log))
+    ("Text Dedup Log Entries (PRUNED + REVIEW)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
@@ -1485,7 +1587,7 @@ sheets_info = [
     ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
     ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
     ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("12_Text_Dedup_Log", "Log of text-level duplicates and variants pruned during optimization")
+    ("12_Text_Dedup_Log", "Log of text-level duplicates and review candidates during optimization")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1513,8 +1615,8 @@ ws_report.column_dimensions['E'].width = 65
 
 # --- 06_All_Candidates ---
 ws_all = wb.create_sheet(title="06_All_Candidates")
-cols_all = ['Keyword', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'Traffic Stability', 'Stability Class', 'BalancedScore', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket', 
-            'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason']
+cols_all = ['Keyword', 'EN', 'TranslationStatus', 'TranslationError', 'Volume', 'Max. Volume', 'MaximumReach', 'VolumeN', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket',
+            'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_all, 1):
     ws_all.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).iterrows(), 2):
@@ -1574,7 +1676,7 @@ style_sheet(ws_seclang, "11_Secondary_Language")
 
 # --- 12_Text_Dedup_Log ---
 ws_dedup = wb.create_sheet(title="12_Text_Dedup_Log")
-cols_dedup = ['Table', 'RemovedKeyword', 'OriginalSection', 'KeptKeyword', 'DedupReason', 'BalancedScore', 'Note']
+cols_dedup = _shared_text_dedup.TEXT_DEDUP_LOG_COLUMNS
 for col_idx, col in enumerate(cols_dedup, 1):
     ws_dedup.cell(row=1, column=col_idx, value=col)
 if not df_dedup_log.empty:

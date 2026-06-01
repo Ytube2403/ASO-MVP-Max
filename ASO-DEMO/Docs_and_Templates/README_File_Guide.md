@@ -6,91 +6,120 @@ Hệ thống ASO Keyword Filter được tổ chức thành các thư mục tài
 
 ## 📂 Thư Mục Gốc (Root Directory)
 
-### 1. [run_aso_filter.py](file:///c:/Users/VOLIO/Documents/ASO-DEMO/run_aso_filter.py)
+### 1. [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/run_aso_filter.py)
 * **Tác dụng:** **Bộ điều phối trung tâm (Orchestrator)**. 
 * **Cách hoạt động:** Khi bạn chạy file này từ dòng lệnh với file CSV đầu vào, nó sẽ:
-  1. Tự động nhận dạng tên ứng dụng (`ARFilter`, `ControlWidget` hoặc `GameEmulator`) và thị trường (`Market` như `US_EN`) từ tên file CSV.
-  2. Di chuyển/sao chép file CSV đầu vào vào đúng thư mục lưu trữ (`Input/[Tháng]/`).
+  1. Tự động nhận dạng tên ứng dụng (`ARFilter`, `ControlWidget`, `GameEmulator`, `PrankSounds`/`Pranky`) và thị trường (`Market` như `US_EN`) từ tên file CSV.
+  2. Sao chép file CSV đầu vào vào đúng thư mục lưu trữ (`Input/[Tháng]/`); file gốc không bị xóa.
   3. Kích hoạt đúng script xử lý tương ứng của ứng dụng đó với các cờ cấu hình phù hợp.
   4. Xuất kết quả ra đúng thư mục (`Output/[Tháng]/`).
 
-### 2. [SKILL_ASO_Keyword_Filter_Trigger.md](file:///c:/Users/VOLIO/Documents/ASO-DEMO/SKILL_ASO_Keyword_Filter_Trigger.md)
+### 2. [SKILL_ASO_Keyword_Filter_Trigger.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/SKILL_ASO_Keyword_Filter_Trigger.md)
 * **Tác dụng:** **Tài liệu hướng dẫn kích hoạt nhanh cho AI Agent**.
 * **Nội dung:** Định nghĩa các điều kiện kích hoạt (Trigger Conditions), cấu trúc đặt tên file CSV chuẩn hóa và các bước thực hiện tuần tự để Agent tự động hóa việc nhận diện, điều phối và phân tích báo cáo lọc từ khóa cho người dùng.
+
+### 3. [export_master_keywords.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/export_master_keywords.py)
+* **Tác dụng:** **Script xuất danh sách Master Keywords (Module B - Độc lập)**.
+* **Cách hoạt động:** Quét toàn bộ các từ khóa thu thập được trong thư mục `Input/` của app, đối chiếu với danh sách bị loại bỏ trong sheet `04_Dropped_Audit` của thư mục `Output/` để loại bỏ các từ khóa không liên quan (`irrelevant_intent` hoặc `noise_only`). Kết quả xuất ra tệp Excel riêng biệt cho từng app lưu trong thư mục `Master_Keywords/` phân chia theo từng locale làm các sheet riêng lẻ.
 
 ---
 
 ## 📂 Thư Mục `Docs_and_Templates/` (Tài liệu & File mẫu)
 
-### 3. [ASO_Keyword_Planner_v3_4.md](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_4.md)
-* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.4 (Mới nhất)**.
-* **Nội dung:** Giải thích chi tiết quy trình 10 bước của ASO Keyword Planner: chuẩn hóa dữ liệu đầu vào (mã hóa UTF-8/BOM, ép kiểu và điền fallback), lọc cứng chặn đối thủ/typo/noise, phân tích chính sách ngôn ngữ thị trường (primary vs secondary), lọc độ tự nhiên ngôn ngữ, chấm điểm Relevancy và tính điểm cân bằng Balanced Score, phân nhóm quota cho Top 30 (25 Core Intent + 5 Broad Expansion) và 10 Consider (4 Platform-Style, 3 Secondary, 3 Overlap), cơ chế đa dạng hóa Word Overlap, và xuất duy nhất 01 file Excel tổng gồm các sheet quy chuẩn từ 00 đến 06 (hoặc 11).
+### 4. [ASO_Keyword_Planner_v3_6.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/ASO_Keyword_Planner_v3_6.md)
+* **Tác dụng:** **Tài liệu đặc tả quy trình lọc từ khoá phiên bản 3.6 mới nhất**.
+* **Nội dung:** Giải thích chi tiết quy trình 10 bước của ASO Keyword Planner: chuẩn hóa dữ liệu đầu vào, lọc cứng chặn đối thủ/typo/noise, phân tích chính sách ngôn ngữ thị trường, lọc độ tự nhiên ngôn ngữ, chấm điểm Relevancy và tính điểm cân bằng Balanced Score, phân nhóm quota cho Top 30 và 10 Consider, cơ chế đa dạng hóa Word Overlap, và xuất duy nhất 01 file Excel tổng gồm các sheet quy chuẩn từ 00 đến 12.
 
-### 4. [ASO_Pipeline_Universal_Template_v2.md](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/ASO_Pipeline_Universal_Template_v2.md)
-* **Tác dụng:** **Tài liệu đặc tả quy trình lọc phiên bản 2.0**.
-* **Nội dung:** Tài liệu tham khảo về quy trình cũ (9 bước), chủ yếu dùng để đối chiếu hoặc sử dụng khi chạy pipeline đơn giản trên các nền tảng chat web như Kimi Web.
-
-### 5. [App_Config_Template.py](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/App_Config_Template.py)
+### 5. [App_Config_Template.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/App_Config_Template.py)
 * **Tác dụng:** **File mẫu cấu hình Python (`APP_CONFIG`)**.
-* **Cách dùng:** Khi cấu hình cho một ứng dụng mới, lập trình viên sao chép cấu trúc từ file này để điền thông tin định danh, các từ khóa thương hiệu đối thủ cần chặn, từ khóa tính năng (features), phong cách (styles), và các tham số lọc/trọng số điểm cho ứng dụng đó.
+* **Cách dùng:** Khi cấu hình cho một ứng dụng mới, sao chép cấu trúc từ file này để điền thông tin định danh, các từ khóa thương hiệu đối thủ cần chặn, từ khóa tính năng (features), phong cách (styles), và các tham số lọc/trọng số điểm cho ứng dụng đó.
 
-### 6. [App_Profile_Template.json](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/App_Profile_Template.json)
+### 6. [App_Profile_Template.json](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/App_Profile_Template.json)
 * **Tác dụng:** **File mẫu cấu hình thông tin định danh ứng dụng dạng JSON**.
 * **Nội dung:** Chứa các thẻ thông tin cơ bản của app như ID, tên, thị trường, phiên bản và các mô tả tóm tắt để phục vụ việc hiển thị hoặc cấu hình tích hợp.
 
-### 7. [english_words_10k.txt](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/english_words_10k.txt)
+### 7. [english_words_10k.txt](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/english_words_10k.txt)
 * **Tác dụng:** **Từ điển 10,000 từ tiếng Anh thông dụng nhất**.
-* **Cách dùng:** Dùng làm whitelist để kiểm tra và phân loại nhanh xem một từ khóa có phải là tiếng Anh chuẩn hay không (ở Bước 3 - Language Naturalness), tránh bị nhận diện sai ngôn ngữ bởi các thư viện nhận diện tự động.
+* **Cách dùng:** Dùng làm whitelist hỗ trợ `shared/language_detector.py` khi phân loại keyword tiếng Anh ngắn hoặc thuật ngữ ASO dễ bị detect nhầm.
+
+### 8. [DESIGN.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Docs_and_Templates/DESIGN.md)
+* **Tác dụng**: **Tài liệu hệ thống thiết kế (Design System Spec)**.
+* **Nội dung**: Định nghĩa các token thiết kế chuẩn như bảng màu (primary, gradients, glassmorphism), kiểu chữ, bo góc, khoảng cách để duy trì tính nhất quán thẩm mỹ cao cấp cho toàn bộ slide và giao diện tương tác.
 
 ---
 
 ## 📂 Thư Mục Mẫu Cho Ứng Dụng Mới (`App_Template/`)
 
-Thư mục này là mô hình mẫu hoàn chỉnh giúp cấu hình và triển khai quy trình lọc từ khóa cho bất kỳ ứng dụng mới nào một cách dễ dàng và nhanh chóng:
-
-### 8. [README.md](file:///c:/Users/VOLIO/Documents/ASO-DEMO/App_Template/README.md)
+### 9. [README.md](file:///d:/Antigravity/ASO-Project/ASO-DEMO/App_Template/README.md)
 * **Tác dụng:** **Tài liệu hướng dẫn cấu hình nhanh**. Giải thích cấu trúc thư mục mẫu và các bước thiết lập từ khóa, chạy lệnh chạy pipeline cho ứng dụng mới.
 
-### 9. [app_config.py](file:///c:/Users/VOLIO/Documents/ASO-DEMO/App_Template/app_config.py)
-* **Tác dụng:** **File cấu hình từ khóa riêng của app**. Nơi điền các từ khóa cốt lõi (core intent), tính năng (features), phong cách (styles), thương hiệu đối thủ (competitor brands), và từ nhiễu (noise) của ứng dụng mới.
+### 10. [app_config.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/App_Template/app_config.py)
+* **Tác dụng:** **File cấu hình từ khóa riêng của app**. Nơi điền các từ khóa cốt lõi (core intent), tính năng (features), phong cách (styles), thương hiệu đối thủ, và từ nhiễu.
 
-### 10. [App_Profile.json](file:///c:/Users/VOLIO/Documents/ASO-DEMO/App_Template/App_Profile.json)
-* **Tác dụng:** **Hồ sơ định vị và đối thủ cạnh tranh của app**. Cung cấp thông tin mô tả cửa hàng và danh sách 3-5 đối thủ cạnh tranh chính để script phân tích, tự động tối ưu hóa từ khóa.
+### 11. [App_Profile.json](file:///d:/Antigravity/ASO-Project/ASO-DEMO/App_Template/App_Profile.json)
+* **Tác dụng:** **Hồ sơ định vị và đối thủ cạnh tranh của app**. Cung cấp thông tin mô tả cửa hàng và danh sách đối thủ cạnh tranh chính.
 
-### 11. [run_pipeline.py](file:///c:/Users/VOLIO/Documents/ASO-DEMO/App_Template/run_pipeline.py)
-* **Tác dụng:** **Script thực thi pipeline lọc từ khóa tự động**. Được liên kết động để đọc thông tin từ `app_config.py` và `App_Profile.json` trong cùng thư mục để thực hiện quy trình lọc 10 bước mà bạn không cần phải sửa bất kỳ dòng code xử lý nào.
+### 12. [run_pipeline.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/App_Template/run_pipeline.py)
+* **Tác dụng:** **Script thực thi pipeline lọc từ khóa tự động**. Được liên kết động để đọc thông tin cấu hình và thực hiện quy trình lọc 10 bước.
 
-### 12. `interactive_optimizer.html` & `interactive_description_editor.html`
-* **Tác dụng:** Giao diện Web tương tác và bảng viết mô tả được tích hợp sẵn dành cho ứng dụng mới của bạn.
+### 13. `interactive_optimizer.html` & `interactive_description_editor.html`
+* **Tác dụng:** Giao diện Web tương tác và bảng viết mô tả được tích hợp sẵn dành cho ứng dụng mới.
 
 ---
 
+## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`, `Prank_Sounds/`)
 
-## 📂 Các Thư Mục Ứng Dụng (`AR_Filter/`, `Control_Widget/`, `Game_Emulator/`)
+### 14. `run_[tên_app]_v3_6.py` hoặc `run_pipeline.py`
+* **Tác dụng:** **Script xử lý nghiệp vụ chính**. `AR_Filter`, `Control_Widget`, `Game_Emulator` dùng script `v3_6`; `Prank_Sounds` dùng `run_pipeline.py`. Tất cả đều ưu tiên lấy language/filter/dedup logic từ `shared/`.
+* **Routing hiện tại của `run_aso_filter.py`:**
+  * Tên file chứa `filter` -> `AR_Filter/run_ar_filter_v3_6.py`.
+  * Tên file chứa `emulator` -> `Game_Emulator/run_game_emulator_v3_6.py`.
+  * Tên file chứa `prank` hoặc `pranky` -> `Prank_Sounds/run_pipeline.py`.
+  * Các trường hợp còn lại -> `Control_Widget/run_control_widget_v3_6.py`.
 
-Mỗi thư mục ứng dụng đại diện cho một app cụ thể và chứa các file mã nguồn, giao diện điều chỉnh tương ứng:
+### 15. `App_Profile.json`
+* **Tác dụng:** **Hồ sơ cấu hình thực tế của ứng dụng** (được script xử lý đọc trực tiếp khi chạy).
 
-### 13. `run_[tên_app]_v3_4.py` (Ví dụ: `run_ar_filter_v3_4.py`)
-* **Tác dụng:** **Script xử lý nghiệp vụ chính**.
-* **Nội dung:** Chứa toàn bộ mã nguồn cài đặt 10 bước của quy trình ASO Keyword Planner v3.4. Script này sẽ thực hiện đọc CSV đầu vào, chuẩn hóa, tính điểm, lọc trùng lặp và ghi dữ liệu ra file Excel đầu ra có định dạng nhiều sheet chuyên nghiệp.
+### 16. `interactive_optimizer.html`
+* **Tác dụng:** **Giao diện Web tương tác tối ưu hóa từ khóa**. Cho phép người dùng xem trực quan danh sách từ khóa, chỉnh sửa thủ công, kiểm tra độ trùng lặp và xem trước phân bổ từ khóa vào metadata.
 
-### 14. `App_Profile.json`
-* **Tác dụng:** **Hồ sơ cấu hình thực tế của ứng dụng**.
-* **Nội dung:** Chứa cấu hình cụ thể về từ khóa và thông tin đã được thiết lập sẵn cho ứng dụng đó (được script xử lý đọc trực tiếp khi chạy).
+### 17. `interactive_description_editor.html`
+* **Tác dụng:** **Giao diện Web tương tác soạn thảo mô tả (Description Editor)**. Cung cấp trình soạn thảo trực quan giúp người viết nội dung ASO chèn các từ khóa và tự động kiểm tra mật độ từ khóa.
 
-### 15. `interactive_optimizer.html`
-* **Tác dụng:** **Giao diện Web tương tác tối ưu hóa từ khóa**.
-* **Cách hoạt động:** Khi chạy script python ở chế độ interactive (`--interactive` hoặc `-i`), giao diện này sẽ được mở lên trên trình duyệt, cho phép người dùng xem trực quan danh sách từ khóa, chỉnh sửa thủ công, kiểm tra độ trùng lặp và xem trước (preview) phân bổ từ khóa vào metadata.
+### 18. Thư mục `Input/` và `Output/`
+* **Input/**: Nơi lưu trữ tự động các file CSV thô đầu vào (sắp xếp theo thư mục tháng dạng `MMYYYY`).
+* **Output/**: Nơi xuất ra file Excel kết quả tổng hợp sau khi lọc (sắp xếp theo thư mục tháng).
 
-### 16. `interactive_description_editor.html`
-* **Tác dụng:** **Giao diện Web tương tác soạn thảo mô tả (Description Editor)**.
-* **Cách hoạt động:** Cung cấp trình soạn thảo trực quan giúp người viết nội dung ASO chèn các từ khóa đã lọc vào mô tả ứng dụng (Title, Subtitle, Short & Full Description) và tự động đếm ký tự, kiểm tra mật độ từ khóa (keyword density) trực tiếp.
+---
 
-### 17. Thư mục `Input/` và `Output/`
-* **Input/**: Nơi lưu trữ tự động các file CSV thô đầu vào do người dùng cung cấp (sắp xếp theo thư mục tháng dạng `MMYYYY`).
-* **Output/**: Nơi xuất ra file Excel kết quả tổng hợp sau khi lọc (`ASO_Keyword_Planner_[AppName]_[Market].xlsx`) sắp xếp theo thư mục tháng.
+## 📂 Thư Mục Đối Soát Keyword & Master Keywords (Mới)
 
-### 18. [DESIGN.md](file:///c:/Users/VOLIO/Documents/ASO-DEMO/Docs_and_Templates/DESIGN.md)
-* **Tác dụng**: **Tài liệu hệ thống thiết kế (Design System Spec)**.
-* **Nội dung**: Định nghĩa các token thiết kế chuẩn như bảng màu (primary, gradients, glassmorphism), kiểu chữ (display, body, mono), bo góc, khoảng cách và các thành phần giao diện mẫu để duy trì tính nhất quán thẩm mỹ cao cấp cho toàn bộ slide ảnh, slide PowerPoint và giao diện tương tác.
+### 19. Thư mục [Keyword_Tracker/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Keyword_Tracker)
+* **Tác dụng:** **Hệ thống theo dõi và so sánh từ khóa hàng tháng (Module A)**.
+* **Các file bên trong:**
+  * **[run_dashboard.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Keyword_Tracker/run_dashboard.py)**: Khởi động Flask server tại `http://127.0.0.1:5000` và tự động mở trình duyệt. Tích hợp tính năng xuất báo cáo Excel nâng cao đối sánh 2 tháng.
+  * **[db_manager.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Keyword_Tracker/db_manager.py)**: Quản lý kết nối cơ sở dữ liệu SQLite `keyword_tracker.db`, các bảng `keyword_data` (lưu trữ chỉ số), `import_log` (theo dõi hash file) và truy vấn tính toán ASO Power Score.
+  * **[data_scanner.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Keyword_Tracker/data_scanner.py)**: Quét tự động thư mục dự án để tìm file CSV mới, tính MD5 hash so khớp và import dữ liệu mới vào DB.
+  * **Thư mục static/**: Chứa giao diện SPA (HTML/CSS/JS) sử dụng ECharts để vẽ biểu đồ so sánh xu hướng ASO Power Score, phân bổ Rank Tiers, và Movers biến động thứ hạng.
 
+### 20. Thư mục [Master_Keywords/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Master_Keywords)
+* **Tác dụng:** Thư mục chứa các tệp Excel đầu ra của Module B (danh sách keyword sạch sau lọc dùng để import vào AppTweak, phân sheet theo locale).
+
+---
+
+## Shared Modules v3.6
+
+### 21. [shared/language_detector.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/language_detector.py)
+* **Tac dung:** Module nhan dien ngon ngu dung chung cho toan bo pipeline. Ham chinh la `detect_keyword_language`, tra ve ngon ngu duoc detect va nhom `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, hoac `UNKNOWN`.
+* **Luu y:** Market policy nam trong shared module; vi du `PH_FIL` cho phep mixed Filipino/Tagalog + English vao `Consider Keywords`.
+
+### 22. [shared/keyword_filter.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/keyword_filter.py)
+* **Tac dung:** Module loc keyword dung chung, gom noise-only, irrelevant, naturalness, expansion score, language bucket classification va selection cache metadata.
+* **Luu y:** Tu v3.5, cac pipeline `Prank_Sounds`, `App_Template`, `AR_Filter`, `Control_Widget`, va `Game_Emulator` nen goi module nay truoc khi dung fallback legacy.
+
+### 23. [shared/text_dedup.py](file:///d:/Antigravity/ASO-Project/ASO-DEMO/shared/text_dedup.py)
+* **Tac dung:** Module dedup Unicode dung chung. Module dung `NFKC`, `casefold()`, tokenizer bao toan combining marks, Snowball stemmer theo locale, va interface adapter san sang cho ICU o release tiep theo.
+* **Luu y:** Accent-fold chi tao `REVIEW` mac dinh; cac alias da prune va cac bien the can review duoc tach vao `MergedVariants` va `ReviewVariants`.
+
+### 24. [tests/](file:///d:/Antigravity/ASO-Project/ASO-DEMO/tests)
+* **Tac dung:** Chua regression test cho shared modules, bao gom non-Latin, Philippines mixed language, Spanish mismatch, noise phrase, stale selection cache va multilingual text dedup.

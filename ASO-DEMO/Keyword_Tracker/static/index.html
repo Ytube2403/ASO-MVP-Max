@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASO Keyword Tracker</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- Apache ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Top App Bar -->
+    <header class="app-bar">
+        <div class="app-bar-brand">
+            <span class="material-icons-outlined brand-icon">insights</span>
+            <h1>ASO Keyword Tracker</h1>
+        </div>
+        <div class="app-bar-actions">
+            <button id="btn-refresh" class="btn btn-outlined">
+                <span class="material-icons-outlined">sync</span>
+                <span>Refresh Data</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Control Panel -->
+    <section class="control-panel">
+        <div class="control-group">
+            <div class="select-wrapper">
+                <label for="select-app">App</label>
+                <select id="select-app">
+                    <option value="" disabled selected>Select App</option>
+                </select>
+            </div>
+            <div class="select-wrapper">
+                <label for="select-locale">Locale</label>
+                <select id="select-locale" disabled>
+                    <option value="" disabled selected>Select Locale</option>
+                </select>
+            </div>
+            <div class="select-wrapper">
+                <label for="select-month-a">Month A (Base)</label>
+                <select id="select-month-a" disabled>
+                    <option value="">None (Single Month)</option>
+                </select>
+            </div>
+            <div class="select-wrapper">
+                <label for="select-month-b">Month B (Target)</label>
+                <select id="select-month-b" disabled>
+                    <option value="" disabled selected>Select Month B</option>
+                </select>
+            </div>
+        </div>
+        <div class="action-group">
+            <button id="btn-export" class="btn btn-contained" disabled>
+                <span class="material-icons-outlined">download</span>
+                <span>Export Report</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Tab Bar -->
+    <nav class="tab-bar">
+        <button class="tab-item active" data-tab="overview">
+            <span class="material-icons-outlined">dashboard</span>
+            <span>Overview</span>
+        </button>
+        <button class="tab-item" data-tab="keywords">
+            <span class="material-icons-outlined">list_alt</span>
+            <span>Keyword Comparison</span>
+        </button>
+        <button class="tab-item" data-tab="trends">
+            <span class="material-icons-outlined">trending_up</span>
+            <span>Keyword Trend</span>
+        </button>
+        <button class="tab-item" data-tab="movers">
+            <span class="material-icons-outlined">swap_vertical_circle</span>
+            <span>Top Movers</span>
+        </button>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Loader -->
+        <div id="loader" class="loader-overlay hidden">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state">
+            <span class="material-icons-outlined empty-icon">analytics</span>
+            <h2>No Data Selected</h2>
+            <p>Please select an App, Locale, and Month to view the keyword insights.</p>
+        </div>
+
+        <!-- Content Areas (Tabs) -->
+        <div id="tab-content" class="content-container hidden">
+            <!-- TAB: Overview -->
+            <section id="content-overview" class="tab-pane active">
+                <div class="kpi-grid">
+                    <div class="card kpi-card">
+                        <div class="kpi-title">ASO Power Score</div>
+                        <div class="kpi-value-row">
+                            <span id="overview-power-score" class="kpi-value">-</span>
+                            <span id="overview-power-score-delta" class="kpi-delta">-</span>
+                        </div>
+                        <div class="kpi-desc">Overall app visibility in top 100 search results</div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Total Keywords</div>
+                        <div class="kpi-value-row">
+                            <span id="overview-total-keywords" class="kpi-value">-</span>
+                            <span id="overview-total-keywords-delta" class="kpi-delta">-</span>
+                        </div>
+                        <div class="kpi-desc">Total tracked keywords in selected target month</div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Ranked Keywords</div>
+                        <div class="kpi-value-row">
+                            <span id="overview-ranked-keywords" class="kpi-value">-</span>
+                            <span id="overview-ranked-keywords-delta" class="kpi-delta">-</span>
+                        </div>
+                        <div class="kpi-desc">Keywords with rank ≤ 100 (and % of total)</div>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Rank Movers</div>
+                        <div class="kpi-value-row">
+                            <span class="kpi-sub-item text-success"><span class="material-icons-outlined icon-small">trending_up</span> <span id="overview-rank-up">-</span></span>
+                            <span class="kpi-sub-item text-danger"><span class="material-icons-outlined icon-small">trending_down</span> <span id="overview-rank-down">-</span></span>
+                        </div>
+                        <div class="kpi-desc">Keywords that gained or lost rank positions</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="card chart-card">
+                        <h3>ASO Power Score Trend</h3>
+                        <div id="chart-power-score" class="chart-container"></div>
+                    </div>
+                    <div class="card chart-card">
+                        <h3>Rank Tier Distribution</h3>
+                        <div id="chart-rank-distribution" class="chart-container"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: Keywords -->
+            <section id="content-keywords" class="tab-pane">
+                <div class="card table-card">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <span class="material-icons-outlined">search</span>
+                            <input type="text" id="kw-search" placeholder="Search keywords...">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="kw-filter-brand">
+                                <option value="all">All Brand/Generic</option>
+                                <option value="generic">Generic only</option>
+                                <option value="brand">Brand only</option>
+                            </select>
+                            <select id="kw-filter-status">
+                                <option value="all">All Status</option>
+                                <option value="new">New keywords</option>
+                                <option value="lost">Lost keywords</option>
+                                <option value="improved">Rank improved (↑)</option>
+                                <option value="declined">Rank declined (↓)</option>
+                                <option value="ranked">Ranked only (1-100)</option>
+                                <option value="unranked">Unranked only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="keywords-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="keyword">Keyword <span class="sort-icon"></span></th>
+                                    <th data-sort="brand">Brand <span class="sort-icon"></span></th>
+                                    <th data-sort="volume_a">Vol (A) <span class="sort-icon"></span></th>
+                                    <th data-sort="volume_b">Vol (B) <span class="sort-icon"></span></th>
+                                    <th data-sort="diff_volume">Δ Vol <span class="sort-icon"></span></th>
+                                    <th data-sort="difficulty_a">Dif (A) <span class="sort-icon"></span></th>
+                                    <th data-sort="difficulty_b">Dif (B) <span class="sort-icon"></span></th>
+                                    <th data-sort="diff_difficulty">Δ Dif <span class="sort-icon"></span></th>
+                                    <th data-sort="rank_a">Rank (A) <span class="sort-icon"></span></th>
+                                    <th data-sort="rank_b">Rank (B) <span class="sort-icon"></span></th>
+                                    <th data-sort="diff_rank">Δ Rank <span class="sort-icon"></span></th>
+                                    <th data-sort="status">Status <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-pagination">
+                        <div class="page-size">
+                            <span>Rows per page:</span>
+                            <select id="select-page-size">
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="500">500</option>
+                            </select>
+                        </div>
+                        <div class="pagination-info">
+                            Showing <span id="pag-start">0</span>-<span id="pag-end">0</span> of <span id="pag-total">0</span>
+                        </div>
+                        <div class="pagination-buttons">
+                            <button id="pag-prev" class="btn-icon" disabled><span class="material-icons-outlined">chevron_left</span></button>
+                            <button id="pag-next" class="btn-icon" disabled><span class="material-icons-outlined">chevron_right</span></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: Trends -->
+            <section id="content-trends" class="tab-pane">
+                <div class="trend-layout">
+                    <div class="card trend-selector-card">
+                        <h3>Select Keyword</h3>
+                        <div class="trend-search">
+                            <input type="text" id="trend-kw-search" placeholder="Type to filter keywords...">
+                        </div>
+                        <ul id="trend-kw-list" class="trend-kw-list">
+                            <!-- Dynamic list of keywords -->
+                        </ul>
+                    </div>
+                    <div class="card trend-chart-card">
+                        <div class="trend-header-row">
+                            <h2 id="trend-selected-keyword">Select a keyword to view trend</h2>
+                            <span id="trend-keyword-brand" class="badge hidden">Brand</span>
+                        </div>
+                        <div id="trend-metrics-summary" class="trend-metrics-grid hidden">
+                            <div class="trend-metric-box">
+                                <div class="label">Latest Volume</div>
+                                <div class="value" id="trend-val-volume">-</div>
+                            </div>
+                            <div class="trend-metric-box">
+                                <div class="label">Latest Difficulty</div>
+                                <div class="value" id="trend-val-difficulty">-</div>
+                            </div>
+                            <div class="trend-metric-box">
+                                <div class="label">Latest Rank</div>
+                                <div class="value" id="trend-val-rank">-</div>
+                            </div>
+                            <div class="trend-metric-box">
+                                <div class="label">Latest KEI</div>
+                                <div class="value" id="trend-val-kei">-</div>
+                            </div>
+                        </div>
+                        <div id="chart-keyword-trend" class="trend-chart-container"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: Movers -->
+            <section id="content-movers" class="tab-pane">
+                <div class="movers-layout">
+                    <!-- Column 1: Gainers -->
+                    <div class="card mover-col-card gainer-card">
+                        <div class="mover-col-header text-success">
+                            <span class="material-icons-outlined">trending_up</span>
+                            <h3>Top Gainers</h3>
+                        </div>
+                        <div class="mover-list-wrapper">
+                            <table class="mover-table">
+                                <thead>
+                                    <tr>
+                                        <th>Keyword</th>
+                                        <th>Old Rank</th>
+                                        <th>New Rank</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="movers-gainers-list">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Losers -->
+                    <div class="card mover-col-card loser-card">
+                        <div class="mover-col-header text-danger">
+                            <span class="material-icons-outlined">trending_down</span>
+                            <h3>Top Losers</h3>
+                        </div>
+                        <div class="mover-list-wrapper">
+                            <table class="mover-table">
+                                <thead>
+                                    <tr>
+                                        <th>Keyword</th>
+                                        <th>Old Rank</th>
+                                        <th>New Rank</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="movers-losers-list">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: New Keywords -->
+                    <div class="card mover-col-card new-kw-card">
+                        <div class="mover-col-header text-primary">
+                            <span class="material-icons-outlined">add_circle_outline</span>
+                            <h3>New Keywords</h3>
+                        </div>
+                        <div class="mover-list-wrapper">
+                            <table class="mover-table">
+                                <thead>
+                                    <tr>
+                                        <th>Keyword</th>
+                                        <th>Volume</th>
+                                        <th>Difficulty</th>
+                                        <th>Rank</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="movers-new-list">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Column 4: Lost Keywords -->
+                    <div class="card mover-col-card lost-kw-card">
+                        <div class="mover-col-header text-secondary">
+                            <span class="material-icons-outlined">remove_circle_outline</span>
+                            <h3>Lost Keywords</h3>
+                        </div>
+                        <div class="mover-list-wrapper">
+                            <table class="mover-table">
+                                <thead>
+                                    <tr>
+                                        <th>Keyword</th>
+                                        <th>Last Vol</th>
+                                        <th>Last Rank</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="movers-lost-list">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/overview.js"></script>
+    <script src="js/keyword_table.js"></script>
+    <script src="js/trend.js"></script>
+    <script src="js/movers.js"></script>
+</body>
+</html>

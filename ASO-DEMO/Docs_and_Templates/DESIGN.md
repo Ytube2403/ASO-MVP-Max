@@ -1,7 +1,7 @@
 ---
-version: 1.2.0
+version: 1.3.0
 name: Google Material Design Light Theme System
-description: Hệ thống thiết kế chuẩn Google Light Theme tối ưu hóa giao diện slide và công cụ ASO Keyword Filter.
+description: Hệ thống thiết kế chuẩn Google Light Theme tối ưu hóa giao diện slide, công cụ ASO Keyword Filter, và Keyword Tracker Dashboard.
 colors:
   bg-base: "#f8f9fa"        # Màu nền sáng nhẹ Google (Grey 100)
   bg-surface: "#ffffff"     # Màu nền card chính (White)
@@ -56,6 +56,25 @@ components:
     border-radius: "{rounded.md}"
     font-family: "{typography.fontFamily.mono}"
     color: "#202124"
+  dashboard-app-bar:
+    background: "{colors.bg-surface}"
+    border-bottom: "1px solid {colors.border-color}"
+    font-family: "'Outfit', sans-serif"
+  dashboard-kpi-card:
+    background: "{colors.bg-surface}"
+    border-radius: "{rounded.md}"
+    box-shadow: "0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)"
+  dashboard-chart-card:
+    background: "{colors.bg-surface}"
+    border-radius: "{rounded.md}"
+    min-height: "400px"
+  dashboard-colors:
+    success-bg: "#e6f4ea"
+    success-text: "#137333"
+    danger-bg: "#fce8e6"
+    danger-text: "#c5221f"
+    warning-bg: "#fef7e0"
+    warning-text: "#b06000"
 ---
 
 # Quy Chuẩn Thiết Kế Google Material Design (Light Theme)
@@ -112,3 +131,35 @@ Mỗi slide phải chứa ít nhất một thành phần trực quan:
 - **Don't:** Không nhét quá 5 thẻ con trên cùng một lưới hiển thị của slide stage 16:9.
 - **Don't:** Không sử dụng các tông màu tối sậm làm nền card trên giao diện Light Theme này.
 - **Don't:** Không dùng font có chân (Serif) làm chữ nội dung.
+
+---
+
+## 7. Keyword Tracker Dashboard (Giao diện Web Dashboard)
+
+Giao diện **ASO Keyword Tracker Dashboard** (`Keyword_Tracker/static/`) tuân thủ hoàn toàn hệ thiết kế Google Material Design Light Theme đã định nghĩa ở trên, với các bổ sung riêng cho ứng dụng web:
+
+### 7.1 Typography
+- **Heading/UI Font:** `Outfit` (Google Fonts) — được chọn thay cho Google Sans vì license mở, vẫn giữ phong cách sans-serif hiện đại.
+- **Body/Data Font:** kế thừa từ hệ thống (`Roboto` fallback).
+
+### 7.2 Color Semantics cho Dashboard
+| Token | Mã màu | Ý nghĩa |
+|---|---|---|
+| `--success` / `--success-bg` | `#34a853` / `#e6f4ea` | Chỉ số tăng trưởng tốt (rank lên, volume tăng) |
+| `--danger` / `--danger-bg` | `#ea4335` / `#fce8e6` | Chỉ số giảm sút (rank xuống, volume giảm, keyword mất) |
+| `--warning` / `--warning-bg` | `#fbbc05` / `#fef7e0` | Cảnh báo hoặc trạng thái cần xem xét |
+| `--primary` / `--primary-bg` | `#1a73e8` / `#e8f0fe` | Accent chính, nút hành động, tab active, badge Brand |
+
+### 7.3 Components
+- **App Bar:** Cố định trên đầu trang (sticky), nền trắng, viền dưới `#dadce0`.
+- **Control Panel:** Chứa 4 dropdowns (App, Locale, Month A, Month B) và nút Export.
+- **Tab Bar:** 4 tab ngang (Overview, Keywords, Trend, Movers) với indicator dưới tab active.
+- **KPI Cards:** Grid 4 cột, chiều cao 120px cố định, hiển thị giá trị lớn và delta badge.
+- **Chart Cards:** Sử dụng Apache ECharts, tối thiểu 300px chiều cao, responsive resize.
+- **Data Table:** Hỗ trợ sort header, search, filter, pagination, zebra striping.
+- **Toast:** Thông báo nổi góc phải dưới, tự ẩn sau 3 giây.
+
+### 7.4 Spacing & Layout
+- **Main content padding:** 24px.
+- **Card gap:** 16-24px.
+- **Grid breakpoints:** 4 cột → 2 cột (≤1200px) → 1 cột (≤650px).
