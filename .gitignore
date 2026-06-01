@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════
-# ASO-DEMO Project — Git Ignore Rules
+# ASO-MVP Project — Git Ignore Rules
 # ═══════════════════════════════════════════════
 
 # ── Antigravity / AI tools ──
@@ -12,6 +12,9 @@ __pycache__/
 *.pyo
 
 # ── Data files (mỗi máy có data riêng) ──
+# Legacy nested workspace accidentally committed before the ASO-MVP cleanup.
+/ASO-DEMO/
+
 # CSV đầu vào từ AppTweak
 apps/*/Input/
 !apps/Prank_Sounds/Input/
