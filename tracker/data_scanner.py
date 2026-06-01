@@ -3,12 +3,16 @@ import re
 import csv
 import hashlib
 import sys
-from db_manager import init_db, get_import_log, save_import_log, clear_import_data, insert_keyword_rows
+try:
+    from .db_manager import init_db, get_import_log, save_import_log, clear_import_data, insert_keyword_rows
+except ImportError:
+    from db_manager import init_db, get_import_log, save_import_log, clear_import_data, insert_keyword_rows
 
 ASO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ASO_ROOT not in sys.path:
     sys.path.insert(0, ASO_ROOT)
 from shared.locale_parser import extract_locale_from_filename
+from shared.paths import APPS_DIR, PROJECT_ROOT
 
 def get_file_md5(file_path):
     hash_md5 = hashlib.md5()
@@ -42,19 +46,15 @@ def parse_rank(val):
     return parse_int(clean_val, 0)
 
 def scan_and_import():
-    # ASO-DEMO is the parent directory of Keyword_Tracker
-    tracker_dir = os.path.dirname(os.path.abspath(__file__))
-    aso_demo_dir = os.path.dirname(tracker_dir)
-    
     # Initialize DB first
     init_db()
     
     # Step 1: Detect apps
-    # Any directory inside aso_demo_dir that contains an "Input" folder is an app
+    # Any directory inside apps/ that contains an "Input" folder is an app
     apps = []
-    for item in os.listdir(aso_demo_dir):
-        item_path = os.path.join(aso_demo_dir, item)
-        if os.path.isdir(item_path) and not item.startswith(".") and item != "Keyword_Tracker" and item != "Docs_and_Templates" and item != "Master_Keywords":
+    for item in os.listdir(APPS_DIR):
+        item_path = os.path.join(APPS_DIR, item)
+        if os.path.isdir(item_path) and not item.startswith("."):
             input_dir = os.path.join(item_path, "Input")
             if os.path.isdir(input_dir):
                 apps.append((item, input_dir))
@@ -80,7 +80,7 @@ def scan_and_import():
                         file_hash = get_file_md5(csv_path)
                         
                         # Check database import log
-                        relative_path = os.path.relpath(csv_path, aso_demo_dir)
+                        relative_path = os.path.relpath(csv_path, PROJECT_ROOT)
                         existing_log = get_import_log(relative_path)
                         
                         if existing_log and existing_log["file_hash"] == file_hash:

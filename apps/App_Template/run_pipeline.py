@@ -16,16 +16,17 @@ from openpyxl.utils import get_column_letter
 import argparse
 import sys
 
-_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
 from shared import translation_service as _shared_translation_service
+from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
 # Resolve script and project root directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+PROJECT_ROOT = _SHARED_ROOT
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
@@ -233,7 +234,7 @@ except ImportError:
 def load_english_vocab():
     vocab = set()
     # Use relative path from project root for portability
-    path = os.path.join(PROJECT_ROOT, "Docs_and_Templates", "english_words_10k.txt")
+    path = os.path.join(DOCS_DIR, "english_words_10k.txt")
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -273,10 +274,7 @@ def _load_country_language_map():
     mapping = {}
     try:
         import openpyxl
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        map_path = os.path.join(script_dir, "google_play_country_language_map.xlsx")
-        if not os.path.exists(map_path):
-            map_path = os.path.join(os.path.dirname(script_dir), "google_play_country_language_map.xlsx")
+        map_path = COUNTRY_LANGUAGE_MAP_PATH
         
         if os.path.exists(map_path):
             wb = openpyxl.load_workbook(map_path, read_only=True)
@@ -475,7 +473,7 @@ def detect_keyword_language(kw, market_lang, config):
 # Override the legacy local detector with the shared, market-aware implementation.
 try:
     import sys
-    _PROJECT_ROOT_FOR_SHARED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _PROJECT_ROOT_FOR_SHARED = _SHARED_ROOT
     if _PROJECT_ROOT_FOR_SHARED not in sys.path:
         sys.path.insert(0, _PROJECT_ROOT_FOR_SHARED)
     from shared.language_detector import detect_keyword_language as _shared_detect_keyword_language

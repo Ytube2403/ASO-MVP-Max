@@ -13,19 +13,22 @@ __pycache__/
 
 # ── Data files (mỗi máy có data riêng) ──
 # CSV đầu vào từ AppTweak
-*/Input/
+apps/*/Input/
+!apps/Prank_Sounds/Input/
+!apps/Prank_Sounds/Input/052026/
+!apps/Prank_Sounds/Input/052026/*.csv
 
 # Excel kết quả sau lọc
-*/Output/
+apps/*/Output/
 
 # Master Keywords export
-Master_Keywords/
+data/master_keywords/
 
 # SQLite database (Keyword Tracker)
-Keyword_Tracker/keyword_tracker.db
+tracker/keyword_tracker.db
 
 # Scoped interactive selection cache
-*/.cache/
+apps/*/.cache/
 .cache/
 
 # ── IDE & Editor ──

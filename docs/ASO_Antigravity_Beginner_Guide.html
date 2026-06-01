@@ -2069,7 +2069,7 @@
                                 <div class="tree-view">
                                     <div class="tree-node active" onclick="selectTreeNode('root')">
                                         <i class="fa-solid fa-folder-open tree-icon-folder"></i>
-                                        <span>ASO-DEMO/</span>
+                                        <span>ASO-MVP/</span>
                                     </div>
                                     <div class="tree-node tree-indent-1" onclick="selectTreeNode('run_aso_filter')">
                                         <i class="fa-solid fa-file-code tree-icon-file"></i>
@@ -2077,7 +2077,7 @@
                                     </div>
                                     <div class="tree-node tree-indent-1" onclick="selectTreeNode('template')">
                                         <i class="fa-solid fa-folder tree-icon-folder"></i>
-                                        <span>App_Template/</span>
+                                        <span>apps/App_Template/</span>
                                     </div>
                                     <div class="tree-node tree-indent-2" onclick="selectTreeNode('profile')">
                                         <i class="fa-solid fa-file-lines tree-icon-file"></i>
@@ -2101,7 +2101,7 @@
                                     </div>
                                 </div>
                                 <div class="tree-info-pane">
-                                    <h3 class="card-title" id="treeNodeTitle"><i class="fa-solid fa-folder-open text-warning"></i> Thư mục gốc: ASO-DEMO/</h3>
+                                    <h3 class="card-title" id="treeNodeTitle"><i class="fa-solid fa-folder-open text-warning"></i> Thư mục gốc: ASO-MVP/</h3>
                                     <div id="treeNodeDesc" style="font-size: 18px; line-height: 1.6; color: var(--text-muted); flex: 1;">
                                         Đây là thư mục làm việc chính của hệ thống. Chứa toàn bộ kịch bản chạy, tài liệu hướng dẫn và các module app mẫu. Click vào các thư mục hoặc file ở sơ đồ bên trái để xem chức năng chi tiết của từng file.
                                     </div>
@@ -2316,7 +2316,7 @@
                                         <li>Tách riêng các cấu hình thử nghiệm độc lập.</li>
                                     </ul>
                                     <div class="info-box" style="margin-bottom: 0; background: rgba(6, 182, 212, 0.05); border-left-color: var(--accent-cyan);">
-                                        <strong>Cách làm:</strong> Copy file <code>App_Profile.json</code> trong thư mục mẫu <code>App_Template/</code> và chỉnh sửa.
+                                        <strong>Cách làm:</strong> Copy file <code>App_Profile.json</code> trong thư mục mẫu <code>apps/App_Template/</code> và chỉnh sửa.
                                     </div>
                                 </div>
                                 <div class="glass-card card-purple">
@@ -2666,7 +2666,7 @@ Requirements:
                                         </div>
                                         <div class="terminal-body" id="terminalBody">
                                             <div class="terminal-input-line">
-                                                <span>PS D:\YourProject\ASO-DEMO&gt;</span>
+                                                <span>PS D:\YourProject\ASO-MVP&gt;</span>
                                                 <span id="simulatedCmdText"></span>
                                                 <span class="terminal-cursor"></span>
                                             </div>
@@ -3489,7 +3489,7 @@ Requirements:
            =========================================== */
         const treeInfoData = {
             root: {
-                title: '<i class="fa-solid fa-folder-open text-warning"></i> Thư mục gốc: ASO-DEMO/',
+                title: '<i class="fa-solid fa-folder-open text-warning"></i> Thư mục gốc: ASO-MVP/',
                 desc: 'Thư mục làm việc chính của hệ thống. Chứa toàn bộ kịch bản chạy, tài liệu hướng dẫn và các thư mục/file cấu hình của dự án.'
             },
             run_aso_filter: {
@@ -3497,7 +3497,7 @@ Requirements:
                 desc: 'Script Python trung tâm đóng vai trò bộ điều phối. Nó điều phối việc đọc CSV, gọi engine chấm điểm AI và xuất dữ liệu Excel workbook.'
             },
             template: {
-                title: '<i class="fa-solid fa-folder text-warning"></i> App_Template/',
+                title: '<i class="fa-solid fa-folder text-warning"></i> apps/App_Template/',
                 desc: 'Thư mục cấu trúc mẫu chuẩn. Khi cấu hình một app mới, bạn chỉ việc nhân bản (clone) thư mục này thành thư mục riêng của app.'
             },
             profile: {
@@ -4117,7 +4117,7 @@ Audit the pipeline setup:
                 ]
             },
             {
-                q: "3. Thư mục App_Template/ chứa cái gì?",
+                q: "3. Thư mục apps/App_Template/ chứa cái gì?",
                 a: [
                     { text: "Chứa các file CSV chứa keyword đã lọc sạch.", correct: false },
                     { text: "File cấu hình và runner mẫu để clone sang app mới.", correct: true },

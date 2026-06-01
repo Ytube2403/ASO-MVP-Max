@@ -5,11 +5,11 @@ import unittest
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 RUNNER_PATHS = [
-    "App_Template/run_pipeline.py",
-    "AR_Filter/run_ar_filter_v4_0.py",
-    "Control_Widget/run_control_widget_v4_0.py",
-    "Game_Emulator/run_game_emulator_v4_0.py",
-    "Prank_Sounds/run_pipeline.py",
+    "apps/App_Template/run_pipeline.py",
+    "apps/AR_Filter/run_ar_filter_v4_0.py",
+    "apps/Control_Widget/run_control_widget_v4_0.py",
+    "apps/Game_Emulator/run_game_emulator_v4_0.py",
+    "apps/Prank_Sounds/run_pipeline.py",
 ]
 
 ROW_AWARE_SHARED_CALLS = [

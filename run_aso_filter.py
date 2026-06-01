@@ -10,7 +10,7 @@ from shared.locale_parser import split_app_and_locale
 
 def detect_month(csv_path):
     # Tìm kiếm chuỗi định dạng MMYYYY (6 chữ số) trong đường dẫn file CSV
-    # Ví dụ: AR_Filter/Input/052026/ARFilter_US_EN.csv -> "052026"
+    # Ví dụ: apps/AR_Filter/Input/052026/ARFilter_US_EN.csv -> "052026"
     normalized_path = csv_path.replace("\\", "/")
     parts = normalized_path.split("/")
     for part in parts:
