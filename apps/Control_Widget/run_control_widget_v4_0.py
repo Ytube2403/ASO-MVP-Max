@@ -16,49 +16,144 @@ from openpyxl.utils import get_column_letter
 import argparse
 import sys
 
-_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
 from shared import translation_service as _shared_translation_service
+from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
-parser.add_argument("--csv", type=str, required=True, help="Path to input CSV")
-parser.add_argument("--market", type=str, default="", help="Market code (e.g. US_EN)")
+parser = argparse.ArgumentParser(description="ASO Keyword Planner for Control Widget")
+parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
+parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
 args, unknown = parser.parse_known_args()
 
-# Load configuration from app_config.py
-try:
-    from app_config import APP_CONFIG as config
-except ImportError:
-    # Fallback if run from a different directory
-    import sys
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    try:
-        from app_config import APP_CONFIG as config
-    except ImportError:
-        print("Error: Could not import APP_CONFIG from app_config.py.")
-        sys.exit(1)
-
-INPUT_PATH = os.path.abspath(args.csv)
-market = args.market if args.market else config.get("market", "US_EN")
-config["market"] = market # Override default market with cli arg
-
+INPUT_PATH = args.csv
 if args.output:
     OUTPUT_PATH = args.output
 else:
     # Update OUTPUT_PATH dynamically
     csv_dir = os.path.dirname(os.path.abspath(INPUT_PATH))
-    app_slug = config.get("app_name", "App").replace(" ", "_")
-    OUTPUT_PATH = os.path.join(csv_dir, f"{app_slug}_{market.replace('_', '-')}_Output.xlsx")
+    OUTPUT_PATH = os.path.join(csv_dir, "Control_Widget", f"ControlWidget_{args.market.replace('_', '-')}_Output.xlsx")
+
+# Control Widget configuration
+config = {
+    "app_id": "com.control.widget.custom.panel.wallpaper.pack",
+    "app_name": "Control Widget: Theme & Panels",
+    "category": "Personalization / Widget",
+    "market": args.market,
+    "platform_mode": "google_play",
+    "semantic_mode": "personalization_widget",
+    "dedup_policy": {
+        "auto_merge_token_bag": True,
+        "review_overlap_threshold": 0.80,
+        "accent_fold_auto_merge_locales": [],
+        "enable_review_log": True,
+    },
+
+    "intent_core_terms": [
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "volume control", "shortcut widget",
+        "android panel", "settings panel", "control menu", "control hub panel",
+        "panel android", "panels control center", "simple control center",
+        "control widgets", "widget control"
+    ],
+    
+    "feature_terms": [
+        "control panel", "control center", "control widget", "quick settings",
+        "quick panel", "notification panel", "control menu", "settings",
+        "shortcut", "shortcuts", "toggle", "switch", "fast settings",
+        "panel android", "brightness", "volume", "wifi", "wi-fi", "bluetooth",
+        "flashlight", "screen recorder", "screenshot", "airplane mode",
+        "do not disturb", "control hub", "panel", "android panel", "widget control"
+    ],
+    
+    "style_terms": [
+        "theme", "themes", "themed", "style", "styles", "aesthetic", "cute",
+        "kawaii", "anime", "cartoon", "k-pop", "neon", "gradient", "glass",
+        "color", "colorful", "pastel", "minimal", "simple", "wallpaper",
+        "home screen", "icon", "custom", "customize", "personalize",
+        "personalization", "iphone", "ios", "os 17", "os 18"
+    ],
+    
+    "competitor_brands": [
+        "mi control center", "power shade", "one shade", "volume styles",
+        "super status bar", "bottom quick settings",
+        "dynamic spot", "notiguy", "edge action",
+        "theme kit", "themekit", "widgetkit", "widget lab", "magic widget",
+        "widcon", "skycenter", "themepack", "simple photo widget", "themify",
+        "themix", "themex", "themedy", "themica",
+        "themehub"
+    ],
+    
+    "typo_blacklist": [
+        "contol", "controll", "pannel", "widgit", "widjet", "wiget", "widg",
+        "custon", "custome", "setings", "sttings", "notifcation", "notificaion",
+        "brigthness", "volum", "togel", "toggl", "shotcut", "shorcut", "shrtcut",
+        "tontrol", "conditioners wi", "customize cstyle call", "bring icontrol"
+    ],
+    
+    "irrelevant_intent_terms": [
+        "call widget", "call theme", "price widget", "usage widget", "calculator",
+        "keyboard", "launcher", "ringtones", "compass", "remote", "hotspot",
+        "lock screen widget", "app icon aesthetic", "icon changer", "stable diffusion",
+        "redmi", "inoty", "control net", "multiplicat", "app specially",
+        "control designed", "control partner", "control drops", "control content",
+        "control enjoy", "control lay", "control bars", "control unlimited",
+        "control convenient", "control transform", "stylish apps control",
+        "control pack", "control changer", "control change", "control set",
+        "control unique", "mob quick"
+    ],
+    
+    "risky_platform_terms": [
+        "iphone", "ios", "ipad", "apple", "os 17", "os 18", "os17", "os18", "icontrol"
+    ],
+
+    "risky_ip_terms": ["assistive touch", "dynamic island"],
+    "ambiguous_brand_terms": ["sidebar"],
+    "platform_affiliation_terms": [],
+    "truncation_policy": {
+        "enabled": True,
+        "min_prefix_length": 2,
+        "allowed_partial_terms": []
+    },
+    "risk_policy": {
+        "competitor_brand_action": "drop",
+        "ambiguous_brand_action": "consider",
+        "risky_ip_action": "consider",
+        "platform_context_action": "consider",
+        "platform_only_action": "drop",
+        "platform_affiliation_action": "drop",
+        "style_only_action": "reserve",
+        "core_intent_override": True
+    },
+    
+    "user_overrides": {
+        "force_top30_terms": [],
+        "force_consider_terms": [],
+        "force_drop_terms": []
+    },
+    
+    "balanced_weights": {
+        "VolumeN": 0.20,
+        "DifficultyN": 0.15,
+        "KEIN": 0.15,
+        "RelevancyScore": 0.30,
+        "CurrentRankN": 0.10,
+        "ExpansionValue": 0.10
+    }
+}
+
+from app_config import FILTER_POLICY
+config.update(FILTER_POLICY)
 
 # --- Shared Google Play profile service ---
-# Build or load App Profile using seed query from config
-app_profile = _shared_profile_service.get_app_profile(config, config.get("app_name", "App"), os.path.dirname(__file__))
+# Build or load App Profile using seed query 'Control Widget'
+app_profile = _shared_profile_service.get_app_profile(config, "Control Widget", os.path.dirname(__file__))
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -229,9 +324,7 @@ except ImportError:
 def load_english_vocab():
     vocab = set()
     # Use relative path from project root for portability
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
-    path = os.path.join(project_root, "Docs_and_Templates", "english_words_10k.txt")
+    path = os.path.join(DOCS_DIR, "english_words_10k.txt")
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -271,10 +364,7 @@ def _load_country_language_map():
     mapping = {}
     try:
         import openpyxl
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        map_path = os.path.join(script_dir, "google_play_country_language_map.xlsx")
-        if not os.path.exists(map_path):
-            map_path = os.path.join(os.path.dirname(script_dir), "google_play_country_language_map.xlsx")
+        map_path = COUNTRY_LANGUAGE_MAP_PATH
         
         if os.path.exists(map_path):
             wb = openpyxl.load_workbook(map_path, read_only=True)
@@ -356,35 +446,30 @@ def _build_eng_words_only(config):
         'youtube', 'facebook', 'whatsapp', 'messenger', 'pinterest', 'google', 'play',
         '3d', 'arstudio', 'augmented', 'virtual', 'scanning', 'scanner', 'doge'
     }
-    # Add words from configuration terms (these are typically English in the base config)
     for key in ['intent_core_words', 'intent_core_terms', 'feature_terms', 'style_terms', 'visual_terms', 'noise_terms']:
         if key in config:
             for term in config[key]:
                 for w in str(term).lower().split():
-                    # Skip words that look non-ASCII (likely localized terms)
                     if all(c.isascii() for c in w):
                         eng_words.add(w)
     return eng_words
 
-# Pre-build the English whitelist once
 _eng_words_cache = _build_eng_words_only(config)
 
-# langdetect confusion matrix: known misclassifications for short text
-# Maps (detected_lang) -> list of (likely_actual_lang) for correction
 _LANGDETECT_CONFUSION = {
-    'no': ['en'],        # Norwegian often = English
-    'da': ['en'],        # Danish often = English
-    'it': ['en', 'es'],  # Italian often = English or Spanish (short words)
-    'ro': ['en'],        # Romanian often = English
-    'sl': ['en'],        # Slovenian often = English
-    'so': ['en'],        # Somali often = English
-    'tl': ['es'],        # Tagalog often = Spanish
-    'pt': ['es'],        # Portuguese often = Spanish (and vice versa)
-    'id': ['en'],        # Indonesian often = English
-    'tr': ['es'],        # Turkish often = Spanish for single words
-    'af': ['en'],        # Afrikaans often = English
-    'cy': ['en'],        # Welsh often = English
-    'sw': ['en'],        # Swahili often = English
+    'no': ['en'],
+    'da': ['en'],
+    'it': ['en', 'es'],
+    'ro': ['en'],
+    'sl': ['en'],
+    'so': ['en'],
+    'tl': ['es'],
+    'pt': ['es'],
+    'id': ['en'],
+    'tr': ['es'],
+    'af': ['en'],
+    'cy': ['en'],
+    'sw': ['en'],
 }
 
 def detect_keyword_language(kw, market_lang, config):
@@ -400,14 +485,12 @@ def detect_keyword_language(kw, market_lang, config):
     
     policy_primary, secondary_langs = _get_language_policy(config, primary_lang)
     
-    # Clean words in keyword
     words = [re.sub(r'[^a-z0-9]', '', w) for w in kw_lower.split()]
     words = [w for w in words if w]
     
     if not words:
         return primary_lang, 'PRIMARY'
     
-    # --- Tier 1: Check if keyword is entirely English ---
     all_english = True
     for w in words:
         root = get_root_word(w)
@@ -416,7 +499,6 @@ def detect_keyword_language(kw, market_lang, config):
             break
     
     if all_english:
-        # Classify English based on market language policy
         if any(lang_match('en', p) for p in policy_primary):
             return 'en', 'PRIMARY'
         elif any(lang_match('en', s) for s in secondary_langs):
@@ -424,7 +506,6 @@ def detect_keyword_language(kw, market_lang, config):
         else:
             return 'en', 'FOREIGN'
     
-    # --- Tier 2: Use langdetect with guardrails ---
     if HAS_LANGDETECT:
         try:
             langs = detect_langs(kw_lower)
@@ -477,13 +558,12 @@ def detect_keyword_language(kw, market_lang, config):
         except Exception:
             pass
     
-    # --- Tier 3: Fallback to market primary language ---
     return primary_lang, 'PRIMARY'
 
 # Override the legacy local detector with the shared, market-aware implementation.
 try:
     import sys
-    _PROJECT_ROOT_FOR_SHARED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _PROJECT_ROOT_FOR_SHARED = _SHARED_ROOT
     if _PROJECT_ROOT_FOR_SHARED not in sys.path:
         sys.path.insert(0, _PROJECT_ROOT_FOR_SHARED)
     from shared.language_detector import detect_keyword_language as _shared_detect_keyword_language
@@ -515,9 +595,8 @@ df['LanguageGroup'] = lang_groups
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
-provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, provided_en=provided_en, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
+    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
 
@@ -672,8 +751,6 @@ if 'RelevancyScore' in df_raw.columns:
     df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
 else:
     df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
-
-
 
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
@@ -1008,54 +1085,20 @@ def build_shortlist(df_all, config):
 
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
-def get_category_sound(kw, en=""):
-    kw_lower = f"{kw} {en}".lower()
-    
-    # Hair clipper category
-    clipper_terms = ["clipper", "haircut", "hair cut", "razor", "shave", "trimmer", "barber"]
-    if any(t in kw_lower for t in clipper_terms):
-        return "hairclipper"
-        
-    # Taser category
-    taser_terms = ["taser", "stun gun", "electric shock", "shock gun"]
-    if any(t in kw_lower for t in taser_terms):
-        return "taser"
-        
-    # Gun sound category
-    gun_terms = ["gun", "weapon", "firearm", "gunshot", "shotgun", "pistol", "machine gun", "blaster"]
-    if any(t in kw_lower for t in gun_terms):
-        return "gun_sound"
-        
-    # Default/General prank sounds
-    return "prank_sound_general"
+def build_curated_sheet(df_all, bucket_name, sheet_name):
+    df_sorted = df_all[df_all['Bucket'] == bucket_name].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(30)
+    selected = []
+    for _, row in df_sorted.iterrows():
+        entry = row.to_dict()
+        entry['Section'] = bucket_name
+        entry['QuotaStatus'] = 'EXACT'
+        entry['FillSource'] = ''
+        entry['FillReason'] = ''
+        selected.append(entry)
+    return selected
 
-def classify_by_sound_category(df_all):
-    accepted_buckets = ['Core Intent Final', 'Broad Expansion', 'Feature Keywords', 'Style Keywords', 'Consider Keywords']
-    # Topic sheets are independent ranked views. Dedup applies only to the main shortlist.
-    df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)].copy()
-    df_candidates['_TopicGroup'] = df_candidates.apply(lambda row: get_category_sound(row['Keyword'], row.get('EN', '')), axis=1)
-    
-    groups = {
-        "hairclipper": [],
-        "taser": [],
-        "gun_sound": [],
-        "prank_sound_general": []
-    }
-    
-    for g in groups:
-        df_group = df_candidates[df_candidates['_TopicGroup'] == g].drop(columns=['_TopicGroup']).sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(30)
-        for _, row in df_group.iterrows():
-            entry = row.to_dict()
-            entry['Section'] = row['Bucket']
-            entry['QuotaStatus'] = 'EXACT'
-            entry['FillSource'] = ''
-            entry['FillReason'] = ''
-            groups[g].append(entry)
-            
-    return groups["hairclipper"], groups["taser"], groups["gun_sound"], groups["prank_sound_general"]
-
-# Headless classification of sound categories
-selected_clipper, selected_taser, selected_gun, selected_general_prank = classify_by_sound_category(df)
+selected_feature = build_curated_sheet(df, 'Feature Keywords', '02_Feature_Keywords')
+selected_style = build_curated_sheet(df, 'Style Keywords', '03_Style_Keywords')
 df_dedup_log = pd.DataFrame(_shared_text_dedup.normalize_log_entries(dedup_log_list))
 
 # Metadata assignment
@@ -1126,26 +1169,27 @@ if confirmed_selection:
                 entry['Section'] = 'Consider Keywords'
                 selected_consider.append(entry)
                 
-    selected_clipper, selected_taser, selected_gun, selected_general_prank = [], [], [], []
-    user_all_kws = user_feature + user_style
-    for kw in user_all_kws:
+    selected_feature = []
+    for kw in user_feature:
         if kw in df_lookup.index:
             row = df_lookup.loc[kw]
             if isinstance(row, pd.DataFrame):
                 row = row.iloc[0]
             entry = row.to_dict()
             entry['Keyword'] = kw
-            entry['Section'] = row.get('Bucket', 'Feature/Style Keywords')
+            entry['Section'] = 'Feature Keywords'
+            selected_feature.append(entry)
             
-            cat = get_category_sound(kw)
-            if cat == "hairclipper":
-                selected_clipper.append(entry)
-            elif cat == "taser":
-                selected_taser.append(entry)
-            elif cat == "gun_sound":
-                selected_gun.append(entry)
-            else:
-                selected_general_prank.append(entry)
+    selected_style = []
+    for kw in user_style:
+        if kw in df_lookup.index:
+            row = df_lookup.loc[kw]
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[0]
+            entry = row.to_dict()
+            entry['Keyword'] = kw
+            entry['Section'] = 'Style Keywords'
+            selected_style.append(entry)
             
     config["app_title_draft"] = confirmed_selection.get("title", "")
     config["short_desc_draft"] = confirmed_selection.get("short_description", "")
@@ -1263,45 +1307,27 @@ for row_idx, entry in enumerate(all_shortlist, 2):
         ws_shortlist.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
 style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
-# --- 02_Hairclipper_Keywords ---
-ws_clipper = wb.create_sheet(title="02_Hairclipper_Keywords")
+# --- 02_Feature_Keywords ---
+ws_feature = wb.create_sheet(title="02_Feature_Keywords")
 cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_clipper.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_clipper, 2):
+    ws_feature.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_feature, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_clipper.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_clipper, "02_Hairclipper_Keywords")
+        ws_feature.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_feature, "02_Feature_Keywords")
 
-# --- 03_Taser_Keywords ---
-ws_taser = wb.create_sheet(title="03_Taser_Keywords")
+# --- 03_Style_Keywords ---
+ws_style = wb.create_sheet(title="03_Style_Keywords")
 for col_idx, col in enumerate(cols_curated, 1):
-    ws_taser.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_taser, 2):
+    ws_style.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(selected_style, 2):
     for col_idx, col in enumerate(cols_curated, 1):
-        ws_taser.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_taser, "03_Taser_Keywords")
+        ws_style.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_style, "03_Style_Keywords")
 
-# --- 04_Gun_Sound_Keywords ---
-ws_gun = wb.create_sheet(title="04_Gun_Sound_Keywords")
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_gun.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_gun, 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_gun.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_gun, "04_Gun_Sound_Keywords")
-
-# --- 05_Prank_Sound_General ---
-ws_general = wb.create_sheet(title="05_Prank_Sound_General")
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_general.cell(row=1, column=col_idx, value=col)
-for row_idx, entry in enumerate(selected_general_prank, 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_general.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
-style_sheet(ws_general, "05_Prank_Sound_General")
-
-# --- 06_Dropped_Audit ---
-ws_dropped = wb.create_sheet(title="06_Dropped_Audit")
+# --- 04_Dropped_Audit ---
+ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
 df_dropped = df[df['Bucket'] == 'Dropped'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 cols_audit = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_audit, 1):
@@ -1309,10 +1335,10 @@ for col_idx, col in enumerate(cols_audit, 1):
 for row_idx, (_, row) in enumerate(df_dropped.iterrows(), 2):
     for col_idx, col in enumerate(cols_audit, 1):
         ws_dropped.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_dropped, "06_Dropped_Audit")
+style_sheet(ws_dropped, "04_Dropped_Audit")
 
-# --- 07_Report_Summary ---
-ws_report = wb.create_sheet(title="07_Report_Summary")
+# --- 05_Report_Summary ---
+ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
 ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
@@ -1323,25 +1349,23 @@ metrics = [
     ("Core Intent Selected", len(selected_core)),
     ("Broad Expansion Selected", len(selected_broad)),
     ("Consider Selected", len(selected_consider)),
-    ("Hairclipper Keywords Curated (02)", len(selected_clipper)),
-    ("Taser Keywords Curated (03)", len(selected_taser)),
-    ("Gun Sound Keywords Curated (04)", len(selected_gun)),
-    ("General Prank Keywords Curated (05)", len(selected_general_prank)),
+    ("Feature Keywords Curated (02)", len(selected_feature)),
+    ("Style Keywords Curated (03)", len(selected_style)),
     ("Main Shortlist Dedup Log Entries (PRUNED)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=val)
 
-ws_report.cell(row=17, column=1, value="Language Summary").font = Font(size=12, bold=True)
+ws_report.cell(row=15, column=1, value="Language Summary").font = Font(size=12, bold=True)
 lang_counts = df['LanguageGroup'].value_counts()
-for idx, (lang_g, count) in enumerate(lang_counts.items(), 19):
+for idx, (lang_g, count) in enumerate(lang_counts.items(), 17):
     ws_report.cell(row=idx, column=1, value=lang_g).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=count)
 
-ws_report.cell(row=26, column=1, value="Naturalness Summary").font = Font(size=12, bold=True)
+ws_report.cell(row=24, column=1, value="Naturalness Summary").font = Font(size=12, bold=True)
 nat_counts = df['NaturalnessFlag'].value_counts()
-for idx, (flag, count) in enumerate(nat_counts.items(), 28):
+for idx, (flag, count) in enumerate(nat_counts.items(), 26):
     ws_report.cell(row=idx, column=1, value=flag).font = Font(bold=True)
     ws_report.cell(row=idx, column=2, value=count)
 
@@ -1349,19 +1373,17 @@ ws_report.cell(row=3, column=4, value="Sheet Index").font = Font(size=12, bold=T
 sheets_info = [
     ("00_README_CONFIG", "App configuration parameters and run metadata"),
     ("01_Main_Keyword_Shortlist", "Top 25 Core + 5 Broad + 10 Consider shortlist for metadata allocation"),
-    ("02_Hairclipper_Keywords", "Curated hair clipper and razor sound candidates (capped <= 30)"),
-    ("03_Taser_Keywords", "Curated electric taser stun gun sound candidates (capped <= 30)"),
-    ("04_Gun_Sound_Keywords", "Curated gun simulator and weapon sound candidates (capped <= 30)"),
-    ("05_Prank_Sound_General", "Curated general prank sounds (air horn, fart, glass breaking, etc.) (capped <= 30)"),
-    ("06_Dropped_Audit", "Dropped keywords with detailed reasons"),
-    ("07_Report_Summary", "Summary stats, language breakdowns, and sheet indices"),
-    ("08_All_Candidates", "Full candidate pool with detailed score and policy values"),
-    ("09_Language_Mismatch", "Audit sheet for keywords mismatching US_EN market language"),
-    ("10_Generic_Style_Reserve", "Broad style-only keywords held back from metadata shortlist"),
-    ("11_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
-    ("12_Text_Dedup_Log", "Log of equivalent keyword variants pruned from the main shortlist"),
-    ("13_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
-    ("14_Secondary_Language", "Research candidates matching the configured secondary language")
+    ("02_Feature_Keywords", "Curated feature and control center specific candidates (capped <= 30)"),
+    ("03_Style_Keywords", "Curated aesthetic, theme, and styling specific candidates (capped <= 30)"),
+    ("04_Dropped_Audit", "Dropped keywords with detailed reasons"),
+    ("05_Report_Summary", "Summary stats, language breakdowns, and sheet indices"),
+    ("06_All_Candidates", "Full candidate pool with detailed score and policy values"),
+    ("07_Language_Mismatch", "Audit sheet for keywords mismatching US_EN market language"),
+    ("08_Generic_Style_Reserve", "Broad style-only keywords held back from metadata shortlist"),
+    ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
+    ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
+    ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
+    ("12_Text_Dedup_Log", "Log of equivalent keyword variants pruned from the main shortlist")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1369,13 +1391,13 @@ for idx, (title, purpose) in enumerate(sheets_info, 5):
 
 thin_border = Border(left=Side(style='thin', color='C0C0C0'), right=Side(style='thin', color='C0C0C0'), 
                      top=Side(style='thin', color='C0C0C0'), bottom=Side(style='thin', color='C0C0C0'))
-for r in range(4, 15):
+for r in range(4, 13):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
-for r in range(19, 19 + len(lang_counts)):
+for r in range(17, 17 + len(lang_counts)):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
-for r in range(28, 28 + len(nat_counts)):
+for r in range(26, 26 + len(nat_counts)):
     ws_report.cell(row=r, column=1).border = thin_border
     ws_report.cell(row=r, column=2).border = thin_border
 for r in range(5, 5 + len(sheets_info)):
@@ -1387,8 +1409,8 @@ ws_report.column_dimensions['B'].width = 15
 ws_report.column_dimensions['D'].width = 25
 ws_report.column_dimensions['E'].width = 65
 
-# --- 08_All_Candidates ---
-ws_all = wb.create_sheet(title="08_All_Candidates")
+# --- 06_All_Candidates ---
+ws_all = wb.create_sheet(title="06_All_Candidates")
 cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket',
             'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_all, 1):
@@ -1396,37 +1418,57 @@ for col_idx, col in enumerate(cols_all, 1):
 for row_idx, (_, row) in enumerate(df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).iterrows(), 2):
     for col_idx, col in enumerate(cols_all, 1):
         ws_all.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_all, "08_All_Candidates")
+style_sheet(ws_all, "06_All_Candidates")
 
-# --- 09_Language_Mismatch ---
-ws_lang_m = wb.create_sheet(title="09_Language_Mismatch")
+# --- 07_Language_Mismatch ---
+ws_lang_m = wb.create_sheet(title="07_Language_Mismatch")
 df_lang_m = df[df['Bucket'] == 'Language Mismatch Audit'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_lang_m.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_lang_m.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_lang_m.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_lang_m, "09_Language_Mismatch")
+style_sheet(ws_lang_m, "07_Language_Mismatch")
 
-# --- 10_Generic_Style_Reserve ---
-ws_reserve = wb.create_sheet(title="10_Generic_Style_Reserve")
+# --- 08_Generic_Style_Reserve ---
+ws_reserve = wb.create_sheet(title="08_Generic_Style_Reserve")
 df_reserve = df[df['Bucket'] == 'Generic Style Reserve'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_reserve.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_reserve.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_reserve.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_reserve, "10_Generic_Style_Reserve")
+style_sheet(ws_reserve, "08_Generic_Style_Reserve")
 
-# --- 11_Manual_Review ---
-ws_mrev = wb.create_sheet(title="11_Manual_Review")
+# --- 09_Manual_Review ---
+ws_mrev = wb.create_sheet(title="09_Manual_Review")
 df_mrev = df[df['Bucket'] == 'Manual Review'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
 for col_idx, col in enumerate(cols_curated, 1):
     ws_mrev.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_mrev.iterrows(), 2):
     for col_idx, col in enumerate(cols_curated, 1):
         ws_mrev.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_mrev, "11_Manual_Review")
+style_sheet(ws_mrev, "09_Manual_Review")
+
+# --- 10_Top_By_Score ---
+ws_tps = wb.create_sheet(title="10_Top_By_Score")
+df_tps = df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(50)
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_tps.cell(row=1, column=col_idx, value=col)
+for row_idx, (_, row) in enumerate(df_tps.iterrows(), 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_tps.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
+style_sheet(ws_tps, "10_Top_By_Score")
+
+# --- 11_Secondary_Language ---
+ws_seclang = wb.create_sheet(title="11_Secondary_Language")
+df_seclang = df[df['LanguageGroup'] == 'SECONDARY'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
+for col_idx, col in enumerate(cols_curated, 1):
+    ws_seclang.cell(row=1, column=col_idx, value=col)
+for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
+    for col_idx, col in enumerate(cols_curated, 1):
+        ws_seclang.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
+style_sheet(ws_seclang, "11_Secondary_Language")
 
 # --- 12_Text_Dedup_Log ---
 ws_dedup = wb.create_sheet(title="12_Text_Dedup_Log")
@@ -1439,31 +1481,11 @@ if not df_dedup_log.empty:
             ws_dedup.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
 style_sheet(ws_dedup, "12_Text_Dedup_Log")
 
-# --- 13_Top_By_Score ---
-ws_tps = wb.create_sheet(title="13_Top_By_Score")
-df_tps = df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(50)
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_tps.cell(row=1, column=col_idx, value=col)
-for row_idx, (_, row) in enumerate(df_tps.iterrows(), 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_tps.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_tps, "13_Top_By_Score")
-
-# --- 14_Secondary_Language ---
-ws_seclang = wb.create_sheet(title="14_Secondary_Language")
-df_seclang = df[df['LanguageGroup'] == 'SECONDARY'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
-for col_idx, col in enumerate(cols_curated, 1):
-    ws_seclang.cell(row=1, column=col_idx, value=col)
-for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
-    for col_idx, col in enumerate(cols_curated, 1):
-        ws_seclang.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
-style_sheet(ws_seclang, "14_Secondary_Language")
-
 # Save
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)
-    print("Pipeline for Pranky complete!")
+    print("Pipeline for Control Widget complete!")
 except PermissionError:
     alt_path = OUTPUT_PATH.replace(".xlsx", "_temp.xlsx")
     print(f"WARNING: Permission denied to write to {OUTPUT_PATH} (file is likely open in another program).")

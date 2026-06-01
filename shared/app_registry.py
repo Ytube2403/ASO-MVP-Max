@@ -4,33 +4,33 @@ import re
 
 APP_REGISTRY = {
     "ar_filter": {
-        "folder": "AR_Filter",
-        "runner": "AR_Filter/run_ar_filter_v4_0.py",
-        "config": "AR_Filter/app_config.py",
+        "folder": "apps/AR_Filter",
+        "runner": "apps/AR_Filter/run_ar_filter_v4_0.py",
+        "config": "apps/AR_Filter/app_config.py",
         "aliases": ["ARFilter", "AR_Filter"],
     },
     "game_emulator": {
-        "folder": "Game_Emulator",
-        "runner": "Game_Emulator/run_game_emulator_v4_0.py",
-        "config": "Game_Emulator/app_config.py",
+        "folder": "apps/Game_Emulator",
+        "runner": "apps/Game_Emulator/run_game_emulator_v4_0.py",
+        "config": "apps/Game_Emulator/app_config.py",
         "aliases": ["GameEmulator", "GameRetro", "Game_Emulator"],
     },
     "prank_sounds": {
-        "folder": "Prank_Sounds",
-        "runner": "Prank_Sounds/run_pipeline.py",
-        "config": "Prank_Sounds/app_config.py",
+        "folder": "apps/Prank_Sounds",
+        "runner": "apps/Prank_Sounds/run_pipeline.py",
+        "config": "apps/Prank_Sounds/app_config.py",
         "aliases": ["Pranky", "PrankSounds", "Prank_Sounds"],
     },
     "control_widget": {
-        "folder": "Control_Widget",
-        "runner": "Control_Widget/run_control_widget_v4_0.py",
-        "config": "Control_Widget/app_config.py",
+        "folder": "apps/Control_Widget",
+        "runner": "apps/Control_Widget/run_control_widget_v4_0.py",
+        "config": "apps/Control_Widget/app_config.py",
         "aliases": ["ControlWidget", "Control_Widget"],
     },
     "app_template": {
-        "folder": "App_Template",
-        "runner": "App_Template/run_pipeline.py",
-        "config": "App_Template/app_config.py",
+        "folder": "apps/App_Template",
+        "runner": "apps/App_Template/run_pipeline.py",
+        "config": "apps/App_Template/app_config.py",
         "aliases": ["AppTemplate", "App_Template"],
     },
 }

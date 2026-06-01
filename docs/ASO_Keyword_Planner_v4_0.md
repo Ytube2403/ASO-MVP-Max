@@ -44,7 +44,7 @@ Top keyword phải là keyword có thể dùng được, đúng intent, đúng n
 - **Quy chuẩn tên file**: `[AppName]_[Country]_[Language].csv` hoặc fallback `[Country]_[Language].csv`.
   - *Ví dụ*: `ARFilter_US_EN.csv`, `ControlWidget_BR_PT.csv`, `US_EN.csv`
 - **Quy chuẩn đường dẫn thư mục**: `[Component]/Input/[MMYYYY]/[Tên_File].csv`
-  - *Ví dụ*: `AR_Filter/Input/052026/ARFilter_US_EN.csv`
+  - *Ví dụ*: `apps/AR_Filter/Input/052026/ARFilter_US_EN.csv`
 
 ### 0.1.3 Các cột dữ liệu bắt buộc và tùy chọn
 
@@ -2013,8 +2013,8 @@ Khi ton tai `selected_keywords.json`, pipeline kiem tra metadata co ban gom mark
 Khi sua logic shared, can chay:
 
 ```powershell
-python -m unittest discover -s ASO-DEMO\tests -p "test_*.py"
-python -m py_compile ASO-DEMO\shared\language_detector.py ASO-DEMO\shared\text_dedup.py ASO-DEMO\Prank_Sounds\run_pipeline.py ASO-DEMO\App_Template\run_pipeline.py ASO-DEMO\AR_Filter\run_ar_filter_v4_0.py ASO-DEMO\Control_Widget\run_control_widget_v4_0.py ASO-DEMO\Game_Emulator\run_game_emulator_v4_0.py
+python -m unittest discover -s ASO-MVP\tests -p "test_*.py"
+python -m py_compile ASO-MVP\shared\language_detector.py ASO-MVP\shared\text_dedup.py ASO-MVP\apps\Prank_Sounds\run_pipeline.py ASO-MVP\apps\App_Template\run_pipeline.py ASO-MVP\apps\AR_Filter\run_ar_filter_v4_0.py ASO-MVP\apps\Control_Widget\run_control_widget_v4_0.py ASO-MVP\apps\Game_Emulator\run_game_emulator_v4_0.py
 ```
 
 ---

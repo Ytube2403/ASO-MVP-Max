@@ -136,7 +136,7 @@ Mỗi slide phải chứa ít nhất một thành phần trực quan:
 
 ## 7. Keyword Tracker Dashboard (Giao diện Web Dashboard)
 
-Giao diện **ASO Keyword Tracker Dashboard** (`Keyword_Tracker/static/`) tuân thủ hoàn toàn hệ thiết kế Google Material Design Light Theme đã định nghĩa ở trên, với các bổ sung riêng cho ứng dụng web:
+Giao diện **ASO Keyword Tracker Dashboard** (`tracker/static/`) tuân thủ hoàn toàn hệ thiết kế Google Material Design Light Theme đã định nghĩa ở trên, với các bổ sung riêng cho ứng dụng web:
 
 ### 7.1 Typography
 - **Heading/UI Font:** `Outfit` (Google Fonts) — được chọn thay cho Google Sans vì license mở, vẫn giữ phong cách sans-serif hiện đại.

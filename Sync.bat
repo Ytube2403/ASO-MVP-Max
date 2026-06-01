@@ -1,13 +1,13 @@
 @echo off
 chcp 65001 >nul 2>&1
-title ASO-DEMO Sync Tool
+title ASO-MVP Sync Tool
 color 0F
 
 :MENU
 cls
 echo.
 echo  ╔══════════════════════════════════════════════════╗
-echo  ║          ASO-DEMO  —  Sync Tool                 ║
+echo  ║          ASO-MVP   —  Sync Tool                 ║
 echo  ╠══════════════════════════════════════════════════╣
 echo  ║                                                  ║
 echo  ║   [1]  📥  Cap nhat code moi nhat (Pull)        ║
@@ -163,10 +163,10 @@ if /i "%ready%"=="y" (
     set /p destdir="  Thu muc: "
     echo.
     echo  Dang clone du an...
-    git clone https://github.com/Ytube2403/ASO-MVP.git "%destdir%\ASO-DEMO"
+    git clone https://github.com/Ytube2403/ASO-MVP.git "%destdir%\ASO-MVP"
     if %ERRORLEVEL% EQU 0 (
         echo.
-        echo  ✅  Clone thanh cong! Du an nam tai: %destdir%\ASO-DEMO
+        echo  ✅  Clone thanh cong! Du an nam tai: %destdir%\ASO-MVP
     ) else (
         echo.
         echo  ⚠️  Clone that bai. Kiem tra lai duong dan va ket noi mang.

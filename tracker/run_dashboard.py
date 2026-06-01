@@ -9,8 +9,11 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-import db_manager
-import data_scanner
+try:
+    from . import data_scanner, db_manager
+except ImportError:
+    import data_scanner
+    import db_manager
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
