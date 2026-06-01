@@ -9,9 +9,7 @@ except Exception:
 
 DEFAULT_DEDUP_POLICY = {
     "auto_merge_token_bag": True,
-    "review_overlap_threshold": 0.80,
     "accent_fold_auto_merge_locales": [],
-    "enable_review_log": True,
 }
 
 TEXT_DEDUP_LOG_COLUMNS = [
@@ -318,22 +316,6 @@ def _auto_match(left, right, policy):
     return None
 
 
-def _overlap_score(left, right):
-    left_tokens = set(left.token_sequence_key)
-    right_tokens = set(right.token_sequence_key)
-    if not left_tokens or not right_tokens:
-        return 0.0
-    intersection = len(left_tokens & right_tokens)
-    jaccard = intersection / len(left_tokens | right_tokens)
-    containment = intersection / min(len(left_tokens), len(right_tokens))
-    return max(jaccard, containment)
-
-
-def _suspicious_mixed_script(keys):
-    scripts = set(keys.script_profile)
-    return "Latin" in scripts and bool(scripts.intersection({"Cyrillic", "Greek"}))
-
-
 class _UnionFind:
     def __init__(self, size):
         self.parent = list(range(size))
@@ -365,6 +347,43 @@ def _variant_text(records, indexes):
         if keyword and keyword not in seen:
             seen.append(keyword)
     return "; ".join(seen)
+
+
+def _indexed_auto_groups(keys, policy):
+    groups = {}
+    accent_fold_locales = {
+        _lang_code(locale)
+        for locale in policy.get("accent_fold_auto_merge_locales", [])
+    }
+    for index, item in enumerate(keys):
+        if item.surface_key:
+            groups.setdefault(("surface", item.surface_key), []).append(index)
+        if item.accent_fold_review_key and item.language in accent_fold_locales:
+            groups.setdefault(("accent", item.language, item.accent_fold_review_key), []).append(index)
+        if item.stemmed_sequence_key:
+            groups.setdefault(("stem_sequence", item.stemmed_sequence_key), []).append(index)
+        if policy.get("auto_merge_token_bag", True) and item.stemmed_token_bag_key:
+            groups.setdefault(("stem_bag", item.stemmed_token_bag_key), []).append(index)
+    return groups.values()
+
+
+def _union_auto_matches(keys, policy, union_find):
+    seen_pairs = set()
+    for indexes in _indexed_auto_groups(keys, policy):
+        representatives = []
+        for index in indexes:
+            matched = False
+            for representative in representatives:
+                pair = (min(index, representative), max(index, representative))
+                if pair in seen_pairs:
+                    continue
+                seen_pairs.add(pair)
+                if _auto_match(keys[representative], keys[index], policy):
+                    union_find.union(representative, index)
+                    matched = True
+                    break
+            if not matched:
+                representatives.append(index)
 
 
 def _log_entry(
@@ -410,10 +429,7 @@ def deduplicate_candidates(records, sheet_name, language="", policy=None, tokeni
     ]
     union_find = _UnionFind(len(records))
 
-    for left_index, left in enumerate(keys):
-        for right_index in range(left_index + 1, len(keys)):
-            if _auto_match(left, keys[right_index], policy):
-                union_find.union(left_index, right_index)
+    _union_auto_matches(keys, policy, union_find)
 
     clusters = {}
     for index in range(len(records)):
@@ -421,13 +437,10 @@ def deduplicate_candidates(records, sheet_name, language="", policy=None, tokeni
 
     winners = []
     log_entries = []
-    winner_indexes = []
     for cluster_number, indexes in enumerate(clusters.values(), start=1):
         winner_index = min(indexes, key=lambda index: winner_sort_key(records[index], index))
         winner = records[winner_index]
         winner["MergedVariants"] = _variant_text(records, [i for i in indexes if i != winner_index])
-        winner.setdefault("ReviewVariants", "")
-        winner_indexes.append(winner_index)
         winners.append(winner)
         cluster_id = f"{sheet_name}:{cluster_number:04d}"
         for index in indexes:
@@ -448,74 +461,6 @@ def deduplicate_candidates(records, sheet_name, language="", policy=None, tokeni
                     "Keyword remains in All Candidates pool",
                 )
             )
-
-    if policy.get("enable_review_log", True):
-        review_variants = {index: [] for index in winner_indexes}
-        threshold = float(policy.get("review_overlap_threshold", 0.80))
-        review_counter = 0
-        for index in winner_indexes:
-            if not _suspicious_mixed_script(keys[index]):
-                continue
-            review_counter += 1
-            log_entries.append(
-                _log_entry(
-                    sheet_name,
-                    "REVIEW",
-                    f"{sheet_name}:review:{review_counter:04d}",
-                    "mixed_script_review",
-                    0.75,
-                    records[index],
-                    records[index],
-                    keys[index].surface_key,
-                    "Mixed Latin and Cyrillic/Greek scripts detected; inspect for confusable characters.",
-                )
-            )
-        for offset, left_index in enumerate(winner_indexes):
-            for right_index in winner_indexes[offset + 1 :]:
-                left = keys[left_index]
-                right = keys[right_index]
-                rule = ""
-                confidence = 0.0
-                normalized_key = ""
-                if (
-                    left.accent_fold_review_key
-                    and left.accent_fold_review_key == right.accent_fold_review_key
-                    and left.surface_key != right.surface_key
-                ):
-                    rule = "accent_fold_review"
-                    confidence = 0.80
-                    normalized_key = left.accent_fold_review_key
-                elif (
-                    left.tokenization_trusted
-                    and right.tokenization_trusted
-                    and _compatible_profiles(left.script_profile, right.script_profile)
-                ):
-                    confidence = _overlap_score(left, right)
-                    if confidence >= threshold:
-                        rule = "token_overlap_review"
-                        normalized_key = " ".join(left.token_sequence_key)
-                if not rule:
-                    continue
-                review_counter += 1
-                review_variants[left_index].append(records[right_index].get("Keyword", ""))
-                review_variants[right_index].append(records[left_index].get("Keyword", ""))
-                kept_index = min((left_index, right_index), key=lambda index: winner_sort_key(records[index], index))
-                other_index = right_index if kept_index == left_index else left_index
-                log_entries.append(
-                    _log_entry(
-                        sheet_name,
-                        "REVIEW",
-                        f"{sheet_name}:review:{review_counter:04d}",
-                        rule,
-                        confidence,
-                        records[kept_index],
-                        records[other_index],
-                        normalized_key,
-                        "Review candidate only; both keywords remain eligible",
-                    )
-                )
-        for record, index in zip(winners, winner_indexes):
-            record["ReviewVariants"] = "; ".join(dict.fromkeys(review_variants[index]))
 
     return DedupResult(winners, log_entries)
 
@@ -540,7 +485,7 @@ def prepare_dataframe(df, sheet_name, config=None, language=""):
 
 
 def normalize_log_entries(entries):
-    """Fill v3.6 fields for any legacy pruning records still emitted by runners."""
+    """Fill required fields for any legacy pruning records still emitted by runners."""
     normalized = []
     for entry in entries:
         normalized_entry = dict(entry)

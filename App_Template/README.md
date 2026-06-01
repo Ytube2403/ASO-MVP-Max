@@ -92,13 +92,16 @@ Dashboard sẽ tự động mở trình duyệt tại `http://127.0.0.1:5000` v�
 
 ---
 
-## Shared filter logic tu v3.6
+## Shared platform logic v4.0
 
 Template pipeline hien su dung cac module chung trong `ASO-DEMO/shared/`:
 
 - `shared/language_detector.py`: detect ngon ngu theo market policy va phan nhom `PRIMARY`, `SECONDARY`, `MIXED`, `FOREIGN`, `UNKNOWN`.
-- `shared/keyword_filter.py`: loc noise-only, irrelevant, naturalness, expansion score, bucket classification va selection cache metadata.
-- `shared/text_dedup.py`: dedup Unicode `NFKC` + `casefold()`, stemming theo locale, va tach `MergedVariants` / `ReviewVariants`.
+- `shared/keyword_filter/`: package matcher precompiled, hard filter, classifier, validator, audit, cache va version.
+- `shared/text_dedup.py`: dedup Unicode indexed `NFKC` + `casefold()`, stemming theo locale, va ghi `MergedVariants` cho main shortlist.
+- `shared/translation_service.py`: dich EN voi SQLite WAL cache, retry, global rate limit va TLS verification.
+- `shared/profile_service.py`: doc custom profile uu tien tuyet doi, generated cache atomic va stale fallback.
+- `shared/locale_parser.py`: parse locale dung chung cho orchestrator, exporter, tracker va batch runner.
 
 Quy tac quan trong:
 
@@ -107,5 +110,12 @@ Quy tac quan trong:
 - `MIXED` vao `Consider Keywords` neu market cho phep `mixed_allowed=True`.
 - `SECONDARY` giu o `Consider Keywords`.
 - Naturalness khong con drop non-Latin/script khac bang `LANGUAGE_BLEED`; ngon ngu do language detector xu ly.
-- `selected_keywords.json` chi duoc dung lai khi metadata market va input file khop run hien tai.
-- Accent-fold chi tao review candidate mac dinh; khong tu dong loai keyword co dau.
+- Selection cache chi duoc dung lai khi metadata `app_id`, market, input hash, config hash va engine version khop run hien tai.
+- Dedup chi ap dung cho `01_Main_Keyword_Shortlist`. Cac sheet tinh nang/style chi sort theo uu tien thong thuong.
+- Accent-fold va keyword chi gan giong duoc giu nhu keyword doc lap; khong con `ReviewVariants`.
+
+Chay batch nhieu locale:
+
+```powershell
+python ..\run_aso_batch.py --manifest path\to\manifest.json --max-workers 3
+```

@@ -20,6 +20,8 @@ _SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
+from shared import profile_service as _shared_profile_service
+from shared import translation_service as _shared_translation_service
 
 # Resolve script and project root directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,133 +60,9 @@ else:
     app_slug = config.get("app_name", "App").replace(" ", "_")
     OUTPUT_PATH = os.path.join(csv_dir, f"{app_slug}_{market.replace('_', '-')}_Output.xlsx")
 
-# --- Google Play Scraper & Competitor Profile Builder ---
-def get_app_profile(config, seed_query):
-    # Check script folder first
-    profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "App_Profile.json")
-    if not os.path.exists(profile_path):
-        profile_path = os.path.join(os.path.dirname(OUTPUT_PATH), "App_Profile.json")
-
-    
-    # Check if cached profile is fresh (< 14 days)
-    if os.path.exists(profile_path):
-        try:
-            with open(profile_path, "r", encoding="utf-8") as f:
-                profile = json.load(f)
-            last_checked = datetime.fromisoformat(profile.get("last_checked", "2000-01-01"))
-            if datetime.now() - last_checked < timedelta(days=14):
-                print(f"Loaded fresh App Profile from {profile_path} (Last checked: {last_checked})")
-                return profile
-        except Exception as e:
-            print(f"Error reading profile cache: {e}. Re-fetching...")
-            
-    print("App Profile is missing or older than 14 days. Fetching from Google Play Store...")
-    profile = {
-        "app_id": config["app_id"],
-        "last_checked": datetime.now().isoformat(),
-        "title": "",
-        "short_description": "",
-        "full_description": "",
-        "competitors": []
-    }
-    
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    
-    def fetch_url(url):
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'}
-        )
-        try:
-            with urllib.request.urlopen(req, context=ctx, timeout=10) as response:
-                return response.read().decode('utf-8')
-        except Exception as e:
-            print(f"Error fetching URL {url}: {e}")
-            return None
-
-    # 1. Fetch own app metadata
-    own_url = f"https://play.google.com/store/apps/details?id={config['app_id']}&hl=en&gl=US"
-    own_html = fetch_url(own_url)
-    if own_html:
-        t_match = re.search(r'<meta property="og:title" content="([^"]+)"', own_html)
-        if t_match:
-            title = html_lib.unescape(t_match.group(1))
-            profile["title"] = re.sub(r'\s*-\s*Apps on Google Play$', '', title)
-        s_match = re.search(r'<meta name="description" content="([^"]+)"', own_html)
-        if not s_match:
-            s_match = re.search(r'<meta name="twitter:description" content="([^"]+)"', own_html)
-        if s_match:
-            profile["short_description"] = html_lib.unescape(s_match.group(1))
-        f_match = re.search(r'data-g-id="description"[^>]*>(.+?)</div>', own_html, re.DOTALL)
-        if f_match:
-            f_desc = re.sub(r'<[^>]+>', '\n', f_match.group(1))
-            profile["full_description"] = html_lib.unescape(re.sub(r'\n+', '\n', f_desc).strip())
-        else:
-            j_match = re.search(r'\[\[null,"([^"]{50,})"\s*\]\]', own_html)
-            if j_match:
-                f_desc = j_match.group(1).replace('\\u003cbr\\u003e', '\n').replace('\\n', '\n')
-                profile["full_description"] = html_lib.unescape(f_desc)
-                
-    # 2. Search for competitors
-    search_url = f"https://play.google.com/store/search?q={urllib.parse.quote_plus(seed_query)}&c=apps&hl=en&gl=US"
-    search_html = fetch_url(search_url)
-    competitor_pids = []
-    if search_html:
-        raw_pids = re.findall(r'href="/store/apps/details\?id=([a-zA-Z0-9._]+)"', search_html)
-        seen = set([config['app_id']])
-        for pid in raw_pids:
-            if pid not in seen:
-                seen.add(pid)
-                competitor_pids.append(pid)
-                if len(competitor_pids) >= 3:
-                    break
-                    
-    # 3. Fetch competitor details
-    for pid in competitor_pids:
-        comp_url = f"https://play.google.com/store/apps/details?id={pid}&hl=en&gl=US"
-        comp_html = fetch_url(comp_url)
-        comp_data = {
-            "package_id": pid,
-            "title": "",
-            "short_description": "",
-            "desc200": ""
-        }
-        if comp_html:
-            t_match = re.search(r'<meta property="og:title" content="([^"]+)"', comp_html)
-            if t_match:
-                title = html_lib.unescape(t_match.group(1))
-                comp_data["title"] = re.sub(r'\s*-\s*Apps on Google Play$', '', title)
-            s_match = re.search(r'<meta name="description" content="([^"]+)"', comp_html)
-            if not s_match:
-                s_match = re.search(r'<meta name="twitter:description" content="([^"]+)"', comp_html)
-            if s_match:
-                comp_data["short_description"] = html_lib.unescape(s_match.group(1))
-            f_match = re.search(r'data-g-id="description"[^>]*>(.+?)</div>', comp_html, re.DOTALL)
-            f_desc_str = ""
-            if f_match:
-                f_desc_str = re.sub(r'<[^>]+>', '\n', f_match.group(1))
-                f_desc_str = html_lib.unescape(re.sub(r'\n+', '\n', f_desc_str).strip())
-            else:
-                j_match = re.search(r'\[\[null,"([^"]{50,})"\s*\]\]', comp_html)
-                if j_match:
-                    f_desc_str = html_lib.unescape(j_match.group(1).replace('\\u003cbr\\u003e', '\n').replace('\\n', '\n'))
-            comp_data["desc200"] = f_desc_str[:200]
-        profile["competitors"].append(comp_data)
-        
-    try:
-        os.makedirs(os.path.dirname(profile_path), exist_ok=True)
-        with open(profile_path, "w", encoding="utf-8") as f:
-            json.dump(profile, f, indent=4, ensure_ascii=False)
-        print(f"Saved fresh App Profile to {profile_path}")
-    except Exception as e:
-        print(f"Error saving profile: {e}")
-        
-    return profile
-
+# --- Shared Google Play profile service ---
 # Build or load App Profile using seed query from config
-app_profile = get_app_profile(config, config.get("app_name", "App"))
+app_profile = _shared_profile_service.get_app_profile(config, config.get("app_name", "App"), SCRIPT_DIR)
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -302,10 +180,13 @@ if 'KEI' not in df.columns:
     df['KEI'] = 0
 if 'Rank' not in df.columns:
     df['Rank'] = 'Unranked'
+if 'MaximumReach' not in df.columns:
+    df['MaximumReach'] = 0
 
 df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce').fillna(0).astype(int)
 df['Difficulty'] = pd.to_numeric(df['Difficulty'], errors='coerce').fillna(0).astype(int)
 df['KEI'] = pd.to_numeric(df['KEI'], errors='coerce').fillna(0).astype(float)
+df['MaximumReach'] = pd.to_numeric(df['MaximumReach'].astype(str).str.replace(',', '', regex=False), errors='coerce').fillna(0).astype(float)
 
 # Load Max. Volume
 max_vol_col = None
@@ -626,110 +507,22 @@ df['LanguageGroup'] = lang_groups
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
-from concurrent.futures import ThreadPoolExecutor
+provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
+translation_frame = _shared_translation_service.translate_dataframe(
+    df, provided_en=provided_en, cache_path=os.path.join(PROJECT_ROOT, ".cache", "translations.sqlite3")
+)
+df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
 
-def translate_to_english(keyword, lang):
-    if str(lang).lower() == 'en':
-        return keyword
-    try:
-        import urllib.request
-        import urllib.parse
-        import json
-        q = urllib.parse.quote(str(keyword))
-        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={q}"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None
-        with urllib.request.urlopen(req, timeout=3, context=ctx) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            return data[0][0][0]
-    except Exception:
-        return keyword
-
-def translate_keywords_parallel(df_in):
-    unique_translations = {}
-    to_translate = []
-    
-    for idx, row in df_in.iterrows():
-        kw = row['Keyword']
-        lang = row['DetectedLanguage']
-        if str(lang).lower() == 'en':
-            unique_translations[kw] = kw
-        else:
-            unique_translations[kw] = None
-            to_translate.append((kw, lang))
-            
-    to_translate_unique = list(set(to_translate))
-    
-    if to_translate_unique:
-        def worker(item):
-            kw, lang = item
-            return kw, translate_to_english(kw, lang)
-            
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            results = executor.map(worker, to_translate_unique)
-            for kw, translated in results:
-                unique_translations[kw] = translated
-                
-    return df_in['Keyword'].map(unique_translations).fillna(df_in['Keyword']).tolist()
-
-if 'EN' in df_raw.columns:
-    df['EN'] = df_raw['EN'].fillna('').astype(str)
-    missing_en = df['EN'].str.strip() == ''
-    if missing_en.any():
-        df.loc[missing_en, 'EN'] = pd.Series(translate_keywords_parallel(df.loc[missing_en]), index=df.index[missing_en])
-else:
-    df['EN'] = translate_keywords_parallel(df)
-
-try:
-    from shared import keyword_filter as _shared_keyword_filter
-except Exception as e:
-    _shared_keyword_filter = None
-    print(f"Warning loading shared keyword filter: {e}. Falling back to legacy filter logic.")
+from shared import keyword_filter as _shared_keyword_filter
 
 # Hard filters
 print("[Step 3] Hard filters...")
-df['is_competitor'] = df['Keyword'].apply(
-    lambda x: any(re.search(r'\b' + re.escape(brand.lower()) + r'\b', str(x).lower()) 
-                  for brand in config['competitor_brands'])
-)
-df['is_typo'] = df['Keyword'].apply(
-    lambda x: any(re.search(r'\b' + re.escape(typo.lower()) + r'\b', str(x).lower()) 
-                  for typo in config['typo_blacklist'])
-)
-if _shared_keyword_filter:
-    df['is_competitor'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_competitor_keyword(x, config))
-    df['is_typo'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_typo_keyword(x, config))
-    df['is_irrelevant'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_irrelevant_keyword(x, config))
-else:
-    df['is_irrelevant'] = df['Keyword'].apply(
-        lambda x: any(re.search(r'\b' + re.escape(term.lower()) + r'\b', str(x).lower()) 
-                      for term in config['irrelevant_intent_terms'])
-    )
-
-def is_noise_only(kw, config):
-    kw_lower = str(kw).lower().strip()
-    has_core = any(term.lower() in kw_lower for term in config['intent_core_terms'])
-    if has_core:
-        return False
-    words = kw_lower.split()
-    if len(words) > 1:
-        has_feat = any(f.lower() in kw_lower for f in config['feature_terms'])
-        has_sty = any(s.lower() in kw_lower for s in config['style_terms'])
-        if has_feat or has_sty:
-            return False
-    noise_words = set(t.lower() for t in config['noise_terms'])
-    if all(w in noise_words for w in words):
-        return True
-    if len(words) == 1:
-        w = words[0]
-        if w in noise_words:
-            return True
-    return False
-
-# Setup default noise if missing in script
-if 'noise_terms' not in config:
-    config['noise_terms'] = ['app', 'apps', 'free', 'download', 'android', 'for android', 'new', 'best', 'top', '2026', '2025']
-df['is_noise'] = df['Keyword'].apply(lambda x: _shared_keyword_filter.is_noise_only(x, config) if _shared_keyword_filter else is_noise_only(x, config))
+for warning in _shared_keyword_filter.validate_filter_config(config):
+    print(f"Warning: {warning}")
+_filter_runtime = _shared_keyword_filter.build_filter_runtime(config)
+hard_filter_results = df.apply(lambda row: _shared_keyword_filter.evaluate_hard_filters(row, _filter_runtime), axis=1)
+for column in _shared_keyword_filter.HARD_FILTER_COLUMNS:
+    df[column] = hard_filter_results.apply(lambda result: result.get(column, ""))
 
 # Naturalness Filter
 print("[Step 4] Naturalness checking...")
@@ -763,13 +556,9 @@ def check_naturalness(kw, config):
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
-if 'NaturalnessFlag' in df_raw.columns and not _shared_keyword_filter:
-    df['NaturalnessFlag'] = df_raw['NaturalnessFlag'].fillna('OK')
-    df['NaturalnessReason'] = df_raw.get('NaturalnessReason', 'Natural enough for keyword research')
-else:
-    naturalness = df['Keyword'].apply(lambda x: _shared_keyword_filter.check_naturalness(x, config) if _shared_keyword_filter else check_naturalness(x, config))
-    df['NaturalnessFlag'] = [n[0] for n in naturalness]
-    df['NaturalnessReason'] = [n[1] for n in naturalness]
+naturalness = df.apply(lambda r: _shared_keyword_filter.check_naturalness(r, config), axis=1)
+df['NaturalnessFlag'] = [n[0] for n in naturalness]
+df['NaturalnessReason'] = [n[1] for n in naturalness]
 
 # Scoring Logic
 print("[Step 5] Relevancy Scoring...")
@@ -840,7 +629,7 @@ df['ProvenDetails'] = proven_details_list
 df['CompetitorBoost'] = competitor_boost_list
 
 def calculate_relevancy(row, config):
-    kw = str(row['Keyword']).lower()
+    kw = str(row.get('EN', row['Keyword'])).lower()
     score = 0.3 # baseline
     
     # Core intent
@@ -870,21 +659,23 @@ def calculate_relevancy(row, config):
 
 if 'RelevancyScore' in df_raw.columns:
     raw_relevancy = df_raw['RelevancyScore'].fillna(0.3).astype(float) + df['CompetitorBoost']
-    if _shared_keyword_filter:
-        shared_relevancy = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
-        df['RelevancyScore'] = np.maximum(raw_relevancy, shared_relevancy)
-    else:
-        df['RelevancyScore'] = raw_relevancy
+    shared_relevancy = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
+    df['RelevancyScore'] = np.maximum(raw_relevancy, shared_relevancy)
     df['RelevancyScore'] = df['RelevancyScore'].clip(0.0, 1.0)
 else:
-    df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config) if _shared_keyword_filter else calculate_relevancy(r, config), axis=1)
+    df['RelevancyScore'] = df.apply(lambda r: _shared_keyword_filter.calculate_relevancy(r, config), axis=1)
 
 # Normalization & Balanced Score
 print("[Step 6] Balanced Score Normalization...")
-max_vol = df['Max. Volume'].max()
+max_reach = df['MaximumReach'].max()
 max_kei = df['KEI'].max()
 
-df['VolumeN'] = np.log1p(df['Max. Volume']) / np.log1p(max_vol) if max_vol > 0 else 0
+df['VolumeN'] = df.apply(
+    lambda r: _shared_keyword_filter.calculate_volume_score(
+        r['Volume'], r['Max. Volume'], r['MaximumReach'], max_reach, config
+    ),
+    axis=1,
+)
 df['DifficultyN'] = 1.0 - (df['Difficulty'].clip(0, 100) / 100.0)
 df['KEIN'] = np.log1p(df['KEI']) / np.log1p(max_kei) if max_kei > 0 else 0
 
@@ -921,7 +712,7 @@ def calculate_expansion(row, config):
         score = 0.1
     return max(0.0, min(1.0, score))
 
-df['ExpansionValue'] = df.apply(lambda r: _shared_keyword_filter.calculate_expansion(r, config) if _shared_keyword_filter else calculate_expansion(r, config), axis=1)
+df['ExpansionValue'] = df.apply(lambda r: _shared_keyword_filter.calculate_expansion(r, config), axis=1)
 
 bw = config['balanced_weights']
 df['BalancedScore'] = (
@@ -998,32 +789,14 @@ def classify_keyword(row, config):
         
     return 'Broad Expansion', 'broad_expansion', 'Broad widget expansion'
 
-classifications = df.apply(lambda r: _shared_keyword_filter.classify_keyword(r, config) if _shared_keyword_filter else classify_keyword(r, config), axis=1)
+classifications = df.apply(lambda r: _shared_keyword_filter.classify_keyword(r, config), axis=1)
 df['Bucket'] = [c[0] for c in classifications]
 df['DecisionRule'] = [c[1] for c in classifications]
 df['Reason'] = [c[2] for c in classifications]
 
 # Apply user overrides
 def apply_user_overrides(row, config):
-    kw = str(row['Keyword']).lower().strip()
-    uo = config.get('user_overrides', {})
-    
-    if row['is_competitor'] or row['is_typo'] or row['LanguageGroup'] == 'FOREIGN':
-        return row['Bucket'], row['DecisionRule'], row['Reason']
-        
-    force_drops = [t.lower().strip() for t in uo.get('force_drop_terms', [])]
-    if kw in force_drops:
-        return 'Dropped', 'user_override_force_drop', 'Dropped: Force drop by user override'
-        
-    force_top30 = [t.lower().strip() for t in uo.get('force_top30_terms', [])]
-    if kw in force_top30:
-        return 'Core Intent Final', 'user_override_force_top30', 'Core Intent Final: Forced by user override'
-        
-    force_consider = [t.lower().strip() for t in uo.get('force_consider_terms', [])]
-    if kw in force_consider:
-        return 'Consider Keywords', 'user_override_force_consider', 'Consider Keywords: Forced by user override'
-        
-    return row['Bucket'], row['DecisionRule'], row['Reason']
+    return _shared_keyword_filter.apply_user_overrides(row, config)
 
 def override_row(row):
     bucket, rule, reason = apply_user_overrides(row, config)
@@ -1032,7 +805,7 @@ def override_row(row):
 df[['Bucket', 'DecisionRule', 'Reason']] = df.apply(override_row, axis=1)
 
 # Shortlist building & duplicate checking
-print("[Step 8] Near-Duplicate Cleanup & Shortlist building...")
+print("[Step 8] Main Shortlist Equivalent-Variant Cleanup & Shortlist building...")
 def build_shortlist(df_all, config):
     eligible_buckets = ['Core Intent Final', 'Feature Keywords', 'Broad Expansion', 'Style Keywords', 'Consider Keywords']
     df_candidates = df_all[df_all['Bucket'].isin(eligible_buckets)]
@@ -1040,6 +813,10 @@ def build_shortlist(df_all, config):
     df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
     selected_normalized, selected_tokens = set(), set()
+
+    def volume_eligible(row, section):
+        low_tier_count = sum(_shared_keyword_filter.is_low_volume_tier(item, config) for item in selected_consider)
+        return _shared_keyword_filter.is_shortlist_volume_eligible(row, section, low_tier_count, config)
     
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
@@ -1082,6 +859,8 @@ def build_shortlist(df_all, config):
     for _, row in core_candidates.iterrows():
         if len(selected_core) >= 25:
             break
+        if not volume_eligible(row, 'Core Intent Final'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Core Intent Final')
         if is_dup:
             dedup_log.append({
@@ -1099,6 +878,8 @@ def build_shortlist(df_all, config):
         for _, row in fallback_candidates.iterrows():
             if len(selected_core) >= 25:
                 break
+            if not volume_eligible(row, 'Core Intent Final'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1124,6 +905,8 @@ def build_shortlist(df_all, config):
     for _, row in broad_candidates.iterrows():
         if len(selected_broad) >= 5:
             break
+        if not volume_eligible(row, 'Broad Expansion'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Broad Expansion')
         if is_dup:
             dedup_log.append({
@@ -1141,6 +924,8 @@ def build_shortlist(df_all, config):
         for _, row in fallback_candidates.iterrows():
             if len(selected_broad) >= 5:
                 break
+            if not volume_eligible(row, 'Broad Expansion'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1166,6 +951,8 @@ def build_shortlist(df_all, config):
     for _, row in consider_candidates.iterrows():
         if len(selected_consider) >= 10:
             break
+        if not volume_eligible(row, 'Consider Keywords'):
+            continue
         is_dup, reason, kept_kw = check_duplicate(row['Keyword'], 'Consider Keywords')
         if is_dup:
             dedup_log.append({
@@ -1185,6 +972,8 @@ def build_shortlist(df_all, config):
         for _, row in missed_opps.iterrows():
             if len(selected_consider) >= 10:
                 break
+            if not volume_eligible(row, 'Consider Keywords'):
+                continue
             norm = normalize_text(row['Keyword'])
             if norm in selected_normalized:
                 continue
@@ -1210,69 +999,27 @@ def build_shortlist(df_all, config):
 selected_core, selected_broad, selected_consider, dedup_log_list = build_shortlist(df, config)
 
 def build_curated_sheet(df_all, bucket_name, sheet_name):
-    df_sorted, dedup_entries = _shared_text_dedup.prepare_dataframe(df_all[df_all['Bucket'] == bucket_name], sheet_name, config)
-    df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
+    df_sorted = df_all[df_all['Bucket'] == bucket_name].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(30)
     selected = []
-    selected_normalized, selected_tokens = set(), set()
-    
     for _, row in df_sorted.iterrows():
-        if len(selected) >= 30:
-            break
-        norm = normalize_text(row['Keyword'])
-        tokens = " ".join(sorted(norm.split()))
-        
-        is_dup = False
-        reason = ""
-        kept_kw = ""
-        
-        if norm in selected_normalized:
-            is_dup = True
-            for item in selected:
-                if normalize_text(item['Keyword']) == norm:
-                    kept_kw = item['Keyword']
-                    break
-            reason = f"Exact normalized duplicate of '{kept_kw}'"
-        elif tokens in selected_tokens:
-            is_dup = True
-            for item in selected:
-                t = " ".join(sorted(normalize_text(item['Keyword']).split()))
-                if t == tokens:
-                    kept_kw = item['Keyword']
-                    break
-            reason = f"Same normalized token set as '{kept_kw}'"
-            
-        if is_dup:
-            dedup_entries.append({
-                'Table': sheet_name, 'RemovedKeyword': row['Keyword'],
-                'OriginalSection': bucket_name, 'KeptKeyword': kept_kw,
-                'DedupReason': reason, 'BalancedScore': row['BalancedScore'],
-                'Note': 'Keyword remains in All Candidates pool'
-            })
-        else:
-            selected_normalized.add(norm)
-            selected_tokens.add(tokens)
-            entry = row.to_dict()
-            entry['Section'] = bucket_name
-            entry['QuotaStatus'] = 'EXACT'
-            entry['FillSource'] = ''
-            entry['FillReason'] = ''
-            selected.append(entry)
-            
-    return selected, dedup_entries
+        entry = row.to_dict()
+        entry['Section'] = bucket_name
+        entry['QuotaStatus'] = 'EXACT'
+        entry['FillSource'] = ''
+        entry['FillReason'] = ''
+        selected.append(entry)
+    return selected
 
-selected_feature, dedup_feat = build_curated_sheet(df, 'Feature Keywords', '02_Feature_Keywords')
-selected_style, dedup_style = build_curated_sheet(df, 'Style Keywords', '03_Style_Keywords')
-
-dedup_log_list.extend(dedup_feat)
-dedup_log_list.extend(dedup_style)
+selected_feature = build_curated_sheet(df, 'Feature Keywords', '02_Feature_Keywords')
+selected_style = build_curated_sheet(df, 'Style Keywords', '03_Style_Keywords')
 df_dedup_log = pd.DataFrame(_shared_text_dedup.normalize_log_entries(dedup_log_list))
 
 # Metadata assignment
 print("[Step 9] Metadata slot assignment...")
 
 # Start Interactive Selector Dashboard
-selections_file = os.path.join(os.path.dirname(__file__), "selected_keywords.json")
-selection_cache_meta = _shared_keyword_filter.build_selection_cache_meta(INPUT_PATH, config.get("market", "")) if _shared_keyword_filter else {}
+selections_file = _shared_keyword_filter.selection_cache_path(os.path.dirname(__file__), config, INPUT_PATH, config.get("market", ""))
+selection_cache_meta = _shared_keyword_filter.build_selection_cache_meta(INPUT_PATH, config.get("market", ""), config)
 
 confirmed_selection = None
 
@@ -1280,21 +1027,17 @@ if os.path.exists(selections_file):
     print(f"\n[Step 9] Found existing keyword selections in {selections_file}. Checking cache metadata...")
     with open(selections_file, "r", encoding="utf-8") as f:
         cached_selection = json.load(f)
-    if _shared_keyword_filter:
-        if _shared_keyword_filter.is_selection_cache_valid(cached_selection, selection_cache_meta):
-            confirmed_selection, _ = _shared_keyword_filter.unwrap_selection_payload(cached_selection)
-            print("[Step 9] Selection cache matches current input. Loading cached selections...")
-        else:
-            print("[Step 9] Selection cache does not match current input/market. Ignoring cached selections.")
+    if _shared_keyword_filter.is_selection_cache_valid(cached_selection, selection_cache_meta):
+        confirmed_selection, _ = _shared_keyword_filter.unwrap_selection_payload(cached_selection)
+        print("[Step 9] Selection cache matches current input. Loading cached selections...")
     else:
-        confirmed_selection = cached_selection
+        print("[Step 9] Selection cache does not match current input/market. Ignoring cached selections.")
 else:
     if args.interactive:
         confirmed_selection = start_interactive_server(df, config, app_profile)
         if confirmed_selection:
-            with open(selections_file, "w", encoding="utf-8") as f:
-                payload = _shared_keyword_filter.wrap_selection_payload(confirmed_selection, selection_cache_meta) if _shared_keyword_filter else confirmed_selection
-                json.dump(payload, f, indent=4, ensure_ascii=False)
+            payload = _shared_keyword_filter.wrap_selection_payload(confirmed_selection, selection_cache_meta)
+            _shared_keyword_filter.atomic_write_json(selections_file, payload)
                 
             print("\n" + "="*50)
             print("[SELECTION_CONFIRMED] Keyword selections successfully saved!")
@@ -1440,14 +1183,16 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v3.6"),
+    ("Pipeline Version", "ASO Keyword Planner v4.0"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
     ("Market", config["market"]),
     ("Platform", config["platform_mode"]),
+    ("Profile Status", app_profile.get("ProfileStatus", "")),
+    ("Profile Error", app_profile.get("ProfileError", "")),
     ("Run Date", pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"))
 ]
 if "app_title_draft" in config:
@@ -1466,7 +1211,7 @@ ws_readme.column_dimensions['B'].width = 80
 
 # --- 01_Main_Keyword_Shortlist ---
 ws_shortlist = wb.create_sheet(title="01_Main_Keyword_Shortlist")
-cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants',
+cols_shortlist = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants',
                   'CompetitorProven', 'ProvenDetails', 'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'WhereToUse', 'QuotaStatus', 'FillSource', 'FillReason', 'Reason']
 for col_idx, col in enumerate(cols_shortlist, 1):
     ws_shortlist.cell(row=1, column=col_idx, value=col)
@@ -1477,7 +1222,7 @@ style_sheet(ws_shortlist, "01_Main_Keyword_Shortlist")
 
 # --- 02_Feature_Keywords ---
 ws_feature = wb.create_sheet(title="02_Feature_Keywords")
-cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'MergedVariants', 'ReviewVariants', 'Reason']
+cols_curated = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'Section', 'RelevancyScore', 'Reason']
 for col_idx, col in enumerate(cols_curated, 1):
     ws_feature.cell(row=1, column=col_idx, value=col)
 for row_idx, entry in enumerate(selected_feature, 2):
@@ -1497,7 +1242,7 @@ style_sheet(ws_style, "03_Style_Keywords")
 # --- 04_Dropped_Audit ---
 ws_dropped = wb.create_sheet(title="04_Dropped_Audit")
 df_dropped = df[df['Bucket'] == 'Dropped'].sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True])
-cols_audit = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason']
+cols_audit = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'DecisionRule', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_audit, 1):
     ws_dropped.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df_dropped.iterrows(), 2):
@@ -1508,7 +1253,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v3.6 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1519,7 +1264,7 @@ metrics = [
     ("Consider Selected", len(selected_consider)),
     ("Feature Keywords Curated (02)", len(selected_feature)),
     ("Style Keywords Curated (03)", len(selected_style)),
-    ("Text Dedup Log Entries (PRUNED + REVIEW)", len(df_dedup_log))
+    ("Main Shortlist Dedup Log Entries (PRUNED)", len(df_dedup_log))
 ]
 for idx, (lbl, val) in enumerate(metrics, 4):
     ws_report.cell(row=idx, column=1, value=lbl).font = Font(bold=True)
@@ -1551,7 +1296,7 @@ sheets_info = [
     ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
     ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
     ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("12_Text_Dedup_Log", "Log of text-level duplicates and review candidates during optimization")
+    ("12_Text_Dedup_Log", "Log of equivalent keyword variants pruned from the main shortlist")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1579,8 +1324,8 @@ ws_report.column_dimensions['E'].width = 65
 
 # --- 06_All_Candidates ---
 ws_all = wb.create_sheet(title="06_All_Candidates")
-cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket', 
-            'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason']
+cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket',
+            'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_all, 1):
     ws_all.cell(row=1, column=col_idx, value=col)
 for row_idx, (_, row) in enumerate(df.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).iterrows(), 2):

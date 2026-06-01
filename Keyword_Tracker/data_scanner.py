@@ -2,7 +2,13 @@ import os
 import re
 import csv
 import hashlib
+import sys
 from db_manager import init_db, get_import_log, save_import_log, clear_import_data, insert_keyword_rows
+
+ASO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ASO_ROOT not in sys.path:
+    sys.path.insert(0, ASO_ROOT)
+from shared.locale_parser import extract_locale_from_filename
 
 def get_file_md5(file_path):
     hash_md5 = hashlib.md5()
@@ -12,20 +18,7 @@ def get_file_md5(file_path):
     return hash_md5.hexdigest()
 
 def normalize_locale(filename):
-    # Strip extension
-    base = os.path.splitext(filename)[0]
-    # Match _CC_LL or _CC-LL at the end of the filename (with optional _Output or _master suffixes)
-    match = re.search(r'_([a-zA-Z]{2})[_-]([a-zA-Z]{2})(?:_Output|_master)?$', base)
-    if match:
-        return f"{match.group(1).upper()}_{match.group(2).upper()}"
-    # Fallback to general search if not anchored
-    match_fallback = re.search(r'_([a-zA-Z]{2})[_-]([a-zA-Z]{2})', base)
-    if match_fallback:
-        # Check if the match is not something like 'er_US' (from Filter_US)
-        # We can ensure both parts are uppercase, or at least they aren't part of common words.
-        # But our anchored pattern above is much safer.
-        return f"{match_fallback.group(1).upper()}_{match_fallback.group(2).upper()}"
-    return "UNKNOWN"
+    return extract_locale_from_filename(filename, default="UNKNOWN")
 
 def parse_int(val, default=0):
     if not val:

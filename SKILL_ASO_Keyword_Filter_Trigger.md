@@ -27,6 +27,8 @@ Khi điều kiện kích hoạt được đáp ứng, Agent PHẢI thực hiện
 ### Bước 1: Xác thực và Chuẩn bị tệp đầu vào
 1. Nhận diện file CSV được gửi.
 2. Kiểm tra cấu trúc tên file để trích xuất `AppName` và mã thị trường `Country_Language` (ví dụ: `ARFilter` và `US_EN`).
+   * Nếu filename chỉ có locale như `US_EN.csv`, Agent phải truyền `--app <RegisteredAlias>`.
+   * Alias app phải tồn tại trong `shared/app_registry.py`; app chưa đăng ký phải fail rõ ràng.
 3. Xác định tháng chạy dạng `MMYYYY` (ví dụ `052026`).
 4. Script điều phối sẽ tự động copy file CSV này vào thư mục lưu trữ chuẩn: `[AppFolder]/Input/[Tháng]/` (ví dụ: `AR_Filter/Input/052026/ARFilter_US_EN.csv`). File gốc không bị xóa.
 
@@ -53,11 +55,14 @@ Sau khi script hoàn thành thành công:
    * *Ví dụ link Game Emulator:* [GameEmulator_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Game_Emulator/Output/052026/GameEmulator_US-EN_Output.xlsx)
    * *Ví dụ link Prank Sounds:* [PrankSounds_PH-FIL_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-DEMO/Prank_Sounds/Output/052026/PrankSounds_PH-FIL_Output.xlsx)
 
-### Ghi chu logic v3.6
+### Ghi chu logic v4.0
 Pipeline hien dung shared logic:
 - `shared/language_detector.py` cho `detect_keyword_language`.
-- `shared/keyword_filter.py` cho noise, irrelevant, naturalness, expansion, classification va selection cache metadata.
-- `shared/text_dedup.py` cho Unicode `NFKC` + `casefold()`, stemming theo locale, `MergedVariants`, va `ReviewVariants`.
+- `shared/keyword_filter/` cho matcher precompiled, hard filter raw + EN, classification, validator, audit va selection cache metadata.
+- `shared/text_dedup.py` cho indexed Unicode `NFKC` + `casefold()`, stemming theo locale, va `MergedVariants` trong main shortlist. Bien the chi gan giong duoc giu nhu keyword doc lap.
+- `shared/translation_service.py` cho dich EN voi SQLite WAL cache, retry, global rate limit va TLS verification.
+- `shared/profile_service.py` cho custom/generated profile, atomic cache va stale fallback.
+- `shared/app_registry.py` cho routing alias app chinh xac; app chua dang ky phai fail ro rang.
 
 Khi doc ket qua, can hieu bucket ngon ngu nhu sau:
 - `FOREIGN` -> `Language Mismatch Audit`.
