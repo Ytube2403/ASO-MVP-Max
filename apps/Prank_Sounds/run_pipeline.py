@@ -513,7 +513,8 @@ df['LanguageGroup'] = lang_groups
 print("[Step 2.5] Translating non-English keywords to English...")
 provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, provided_en=provided_en, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
+    df, provided_en=provided_en, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
+    market=config.get("market", ""),
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
 

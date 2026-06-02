@@ -1,13 +1,13 @@
 @echo off
 chcp 65001 >nul 2>&1
-title ASO-MVP Sync Tool
+title ASO-MVP-Max Sync Tool
 color 0F
 
 :MENU
 cls
 echo.
 echo  ╔══════════════════════════════════════════════════╗
-echo  ║          ASO-MVP   —  Sync Tool                 ║
+echo  ║        ASO-MVP-Max —  Sync Tool                 ║
 echo  ╠══════════════════════════════════════════════════╣
 echo  ║                                                  ║
 echo  ║   [1]  📥  Cap nhat code moi nhat (Pull)        ║
@@ -139,10 +139,10 @@ echo     gh auth login --web --git-protocol https
 echo     (Lam theo huong dan tren man hinh)
 echo.
 echo   Buoc 4: Clone du an:
-echo     git clone https://github.com/Ytube2403/ASO-MVP.git
+echo     git clone https://github.com/Ytube2403/ASO-MVP-Max.git
 echo.
 echo   Buoc 5: Cai dat Python packages:
-echo     cd ASO-MVP
+echo     cd ASO-MVP-Max
 echo     python -m venv .venv
 echo     .venv\Scripts\activate
 echo     python -m pip install --upgrade pip
@@ -170,10 +170,10 @@ if /i "%ready%"=="y" (
     set /p destdir="  Thu muc: "
     echo.
     echo  Dang clone du an...
-    git clone https://github.com/Ytube2403/ASO-MVP.git "%destdir%\ASO-MVP"
+    git clone https://github.com/Ytube2403/ASO-MVP-Max.git "%destdir%\ASO-MVP-Max"
     if %ERRORLEVEL% EQU 0 (
         echo.
-        echo  ✅  Clone thanh cong! Du an nam tai: %destdir%\ASO-MVP
+        echo  ✅  Clone thanh cong! Du an nam tai: %destdir%\ASO-MVP-Max
     ) else (
         echo.
         echo  ⚠️  Clone that bai. Kiem tra lai duong dan va ket noi mang.

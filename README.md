@@ -1,11 +1,11 @@
-# ASO Keyword Filter Pipeline & Tracker v4.0
+# ASO-MVP-Max Keyword Filter Pipeline & Tracker v4.0
 
-He thong ASO gom pipeline loc keyword, dashboard theo doi chi so va cong cu xuat Master Keywords. Tu v4.0, workspace duoc chia theo vai tro de de mo rong cho nhieu app ma khong tron code, data va tai lieu o thu muc goc.
+Ban Max dung LibreTranslate self-host de dich keyword local. He thong ASO gom pipeline loc keyword, dashboard theo doi chi so va cong cu xuat Master Keywords.
 
 ## Cau truc thu muc
 
 ```text
-ASO-MVP/
+ASO-MVP-Max/
 |-- apps/                         # Workspace rieng cua tung app
 |   |-- AR_Filter/
 |   |-- Control_Widget/
@@ -25,7 +25,9 @@ ASO-MVP/
 |
 |-- tools/                        # Cong cu van hanh
 |   |-- run_aso_batch.py
-|   `-- export_master_keywords.py
+|   |-- export_master_keywords.py
+|   |-- start_libretranslate.ps1
+|   `-- check_libretranslate_quality.py
 |
 |-- tracker/                      # Dashboard Flask va SQLite local
 |   |-- run_dashboard.py
@@ -79,6 +81,45 @@ Kiem tra nhanh:
 python -c "import flask, langdetect, numpy, openpyxl, pandas, snowballstemmer; print('Python environment OK')"
 ```
 
+## Chay LibreTranslate local
+
+Pipeline dich keyword moi sang English bang LibreTranslate self-host. Mo mot terminal PowerShell rieng tai thu muc `ASO-MVP-Max`, sau do chay daily profile:
+
+```powershell
+.\tools\start_libretranslate.ps1
+```
+
+Helper tao `.venv-libretranslate`, cai LibreTranslate `1.9.6`, load cac model daily `en,es,pt,pb,id,hi,tl` va khoi dong service tai `http://127.0.0.1:5001` voi `2` thread. Giu terminal nay mo khi chay pipeline.
+
+Khi can audit ngoai ngu rong hon:
+
+```powershell
+.\tools\start_libretranslate.ps1 -Profile extended
+```
+
+Chi dung `-Profile all` khi may du tai nguyen va that su can load tat ca model.
+
+Kiem tra service:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:5001/health
+python tools\check_libretranslate_quality.py
+```
+
+Neu can doi endpoint, dat bien moi truong truoc khi chay pipeline:
+
+```powershell
+$env:LIBRETRANSLATE_URL = "http://127.0.0.1:5001"
+```
+
+Neu endpoint da bat API key, dat them `$env:LIBRETRANSLATE_API_KEY`.
+
+Neu muon dich lai toan bo keyword bang model moi, xoa cache local:
+
+```powershell
+Remove-Item .cache\translations.sqlite3*
+```
+
 ## Chay pipeline
 
 Luon uu tien orchestrator trung tam:
@@ -113,8 +154,10 @@ Manifest mau:
 ```
 
 ```powershell
-python run_aso_batch.py --manifest path\to\manifest.json --max-workers 3
+python run_aso_batch.py --manifest path\to\manifest.json
 ```
+
+Khi cache LibreTranslate con trong, batch tu dong chay `1` locale moi luc. Khi cache da warm, mac dinh toi da `2` locale song song.
 
 ## Xuat Master Keywords
 

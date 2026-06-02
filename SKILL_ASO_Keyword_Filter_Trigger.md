@@ -3,7 +3,7 @@
 **SKILL_ID:** `aso_keyword_filter_trigger`  
 **VERSION:** 2.3  
 **AUTHOR:** AI Assistant  
-**SCOPE:** Tự động hóa việc nhận diện lệnh kích hoạt, định tuyến và chạy pipeline lọc từ khóa ASO dựa trên cấu trúc tên file CSV được gửi trong thư mục `d:\Antigravity\ASO-Project\ASO-MVP`.
+**SCOPE:** Tự động hóa việc nhận diện lệnh kích hoạt, định tuyến và chạy pipeline lọc từ khóa ASO dựa trên cấu trúc tên file CSV được gửi trong thư mục `d:\Antigravity\ASO-Project\ASO-MVP-Max`.
 **RUNTIME:** Python 3.9+  
 
 ---
@@ -33,13 +33,13 @@ Khi điều kiện kích hoạt được đáp ứng, Agent PHẢI thực hiện
 4. Script điều phối sẽ tự động copy file CSV này vào thư mục lưu trữ chuẩn: `apps/[AppFolder]/Input/[Tháng]/` (ví dụ: `apps/AR_Filter/Input/052026/ARFilter_US_EN.csv`). File gốc không bị xóa.
 
 ### Bước 2: Kích hoạt Pipeline điều phối
-Chạy bộ điều phối trung tâm [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-MVP/run_aso_filter.py) bằng Powershell/Terminal. Mặc định chạy chế độ không tương tác (headless):
+Chạy bộ điều phối trung tâm [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/run_aso_filter.py) bằng Powershell/Terminal. Mặc định chạy chế độ không tương tác (headless):
 ```powershell
-python d:\Antigravity\ASO-Project\ASO-MVP\run_aso_filter.py --csv d:\Antigravity\ASO-Project\ASO-MVP\<Ten_File_CSV>
+python d:\Antigravity\ASO-Project\ASO-MVP-Max\run_aso_filter.py --csv d:\Antigravity\ASO-Project\ASO-MVP-Max\<Ten_File_CSV>
 ```
 *Lưu ý:* Nếu người dùng muốn mở giao diện Web UI tương tác để chỉnh sửa thủ công, hãy thêm cờ `--interactive` (hoặc `-i`):
 ```powershell
-python d:\Antigravity\ASO-Project\ASO-MVP\run_aso_filter.py --csv d:\Antigravity\ASO-Project\ASO-MVP\<Ten_File_CSV> --interactive
+python d:\Antigravity\ASO-Project\ASO-MVP-Max\run_aso_filter.py --csv d:\Antigravity\ASO-Project\ASO-MVP-Max\<Ten_File_CSV> --interactive
 ```
 
 ### Bước 3: Phân tích & Trình bày kết quả cho USER
@@ -50,10 +50,10 @@ Sau khi script hoàn thành thành công:
    * Số lượng từ khóa sạch (After Clean).
    * Số lượng từ khóa tính năng (Features) và phong cách (Styles).
 3. Gửi đường dẫn trực tiếp đến file Excel kết quả ở thư mục con tương ứng để người dùng có thể nhấp vào và mở ngay lập tức.
-   * *Ví dụ link AR Filter:* [ARFilter_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP/apps/AR_Filter/Output/052026/ARFilter_US-EN_Output.xlsx)
-   * *Ví dụ link Control Widget:* [ControlWidget_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP/apps/Control_Widget/Output/052026/ControlWidget_US-EN_Output.xlsx)
-   * *Ví dụ link Game Emulator:* [GameEmulator_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP/apps/Game_Emulator/Output/052026/GameEmulator_US-EN_Output.xlsx)
-   * *Ví dụ link Prank Sounds:* [PrankSounds_PH-FIL_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP/apps/Prank_Sounds/Output/052026/PrankSounds_PH-FIL_Output.xlsx)
+   * *Ví dụ link AR Filter:* [ARFilter_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/AR_Filter/Output/052026/ARFilter_US-EN_Output.xlsx)
+   * *Ví dụ link Control Widget:* [ControlWidget_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/Control_Widget/Output/052026/ControlWidget_US-EN_Output.xlsx)
+   * *Ví dụ link Game Emulator:* [GameEmulator_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/Game_Emulator/Output/052026/GameEmulator_US-EN_Output.xlsx)
+   * *Ví dụ link Prank Sounds:* [PrankSounds_PH-FIL_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/Prank_Sounds/Output/052026/PrankSounds_PH-FIL_Output.xlsx)
 
 ### Ghi chu logic v4.0
 Pipeline hien dung shared logic:
@@ -76,16 +76,16 @@ Vi du `PH_FIL`: `tunog prank` la mixed Filipino/English hop le nen vao `Consider
 Sau khi pipeline hoàn tất, Agent có thể gợi ý thêm cho USER các tiện ích bổ trợ:
 * **Keyword Tracker Dashboard:** Mở dashboard theo dõi và so sánh hiệu suất keyword qua các tháng bằng lệnh:
   ```powershell
-  python d:\Antigravity\ASO-Project\ASO-MVP\tracker\run_dashboard.py
+  python d:\Antigravity\ASO-Project\ASO-MVP-Max\tracker\run_dashboard.py
   ```
 * **Master Keywords Export:** Xuất danh sách master keywords sạch (đã lọc bỏ irrelevant/noise) dùng để nhập vào AppTweak:
   ```powershell
-  python d:\Antigravity\ASO-Project\ASO-MVP\export_master_keywords.py --all
+  python d:\Antigravity\ASO-Project\ASO-MVP-Max\export_master_keywords.py --all
   ```
 
 ---
 
 ## ⚠️ RULES FOR AGENT (Quy tắc bắt buộc)
-1. **Không chạy thủ công từng bước:** Luôn sử dụng bộ điều phối trung tâm [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-MVP/run_aso_filter.py).
-2. **Không tìm kiếm ngoài thư mục làm việc:** Tất cả các thao tác và ghi file Excel/JSON phải được thực hiện hoàn toàn bên trong thư mục [ASO-MVP](file:///d:/Antigravity/ASO-Project/ASO-MVP).
+1. **Không chạy thủ công từng bước:** Luôn sử dụng bộ điều phối trung tâm [run_aso_filter.py](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/run_aso_filter.py).
+2. **Không tìm kiếm ngoài thư mục làm việc:** Tất cả các thao tác và ghi file Excel/JSON phải được thực hiện hoàn toàn bên trong thư mục [ASO-MVP-Max](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max).
 3. **Độ tin cậy:** Đảm bảo không tự động mở giao diện Web UI tương tác trừ khi được người dùng yêu cầu rõ ràng hoặc chạy kèm cờ `--interactive`.

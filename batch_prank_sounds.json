@@ -1,0 +1,32 @@
+{
+  "jobs": [
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_BR_PT-BR.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_ID_ID.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_IN_EN.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_IN_HI.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_MX_ES.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_PH_fil.csv"
+    },
+    {
+      "app": "prank_sounds",
+      "csv": "apps/Prank_Sounds/Input/052026/Pranky_US_EN.csv"
+    }
+  ]
+}

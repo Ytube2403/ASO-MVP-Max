@@ -40,6 +40,7 @@ class PipelineSharedContractTests(unittest.TestCase):
                 self.assertNotIn("ssl.CERT_NONE", source)
                 self.assertNotIn("_create_unverified_context", source)
                 self.assertIn("_shared_translation_service.translate_dataframe(", source)
+                self.assertIn('market=config.get("market", "")', source)
                 self.assertIn("_shared_profile_service.get_app_profile(", source)
                 self.assertEqual(source.count("_shared_text_dedup.prepare_dataframe("), 1)
                 self.assertNotIn("ReviewVariants", source)

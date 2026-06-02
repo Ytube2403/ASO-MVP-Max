@@ -15,6 +15,7 @@ if PROJECT_ROOT not in sys.path:
 from shared.app_registry import resolve_app
 from shared.keyword_filter import atomic_write_json
 from shared.locale_parser import extract_locale_from_filename
+from shared.translation_service import translation_cache_count
 
 
 def load_manifest(path):
@@ -107,7 +108,15 @@ def execute_job(job, project_root, python_executable=None):
     }
 
 
-def run_jobs(jobs, project_root, max_workers=3, executor_fn=None):
+def effective_worker_count(project_root, max_workers=2, cold_cache_workers=1):
+    cache_path = os.path.join(project_root, ".cache", "translations.sqlite3")
+    cache_count = translation_cache_count(cache_path)
+    cache_state = "WARM" if cache_count else "COLD"
+    workers = max_workers if cache_count else cold_cache_workers
+    return cache_state, cache_count, max(1, int(workers))
+
+
+def run_jobs(jobs, project_root, max_workers=2, executor_fn=None):
     executor_fn = executor_fn or (lambda job: execute_job(job, project_root))
     results = []
     with ThreadPoolExecutor(max_workers=max(1, int(max_workers))) as executor:
@@ -120,7 +129,8 @@ def run_jobs(jobs, project_root, max_workers=3, executor_fn=None):
 def main():
     parser = argparse.ArgumentParser(description="Run registered ASO app locales from a JSON manifest")
     parser.add_argument("--manifest", required=True, help="Path to JSON batch manifest")
-    parser.add_argument("--max-workers", type=int, default=3, help="Maximum concurrent locale jobs")
+    parser.add_argument("--max-workers", type=int, default=2, help="Maximum concurrent locale jobs with warm LibreTranslate cache")
+    parser.add_argument("--cold-cache-workers", type=int, default=1, help="Concurrent locale jobs before LibreTranslate cache is populated")
     parser.add_argument("--report", default="", help="Optional JSON report path")
     args = parser.parse_args()
 
@@ -131,7 +141,16 @@ def main():
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-    results = run_jobs(jobs, project_root, max_workers=args.max_workers)
+    cache_state, cache_count, effective_workers = effective_worker_count(
+        project_root,
+        max_workers=args.max_workers,
+        cold_cache_workers=args.cold_cache_workers,
+    )
+    print(
+        f"Translation cache: {cache_state} ({cache_count} LibreTranslate entries). "
+        f"Running {effective_workers} locale job(s) concurrently."
+    )
+    results = run_jobs(jobs, project_root, max_workers=effective_workers)
     report_path = args.report or os.path.join(
         project_root,
         ".cache",
@@ -140,7 +159,11 @@ def main():
     )
     report = {
         "generated_at": datetime.now().isoformat(),
-        "max_workers": max(1, int(args.max_workers)),
+        "cache_state": cache_state,
+        "translation_cache_entries": cache_count,
+        "requested_max_workers": max(1, int(args.max_workers)),
+        "cold_cache_workers": max(1, int(args.cold_cache_workers)),
+        "effective_workers": effective_workers,
         "jobs": results,
         "summary": {
             "total": len(results),

@@ -1,9 +1,11 @@
 import os
+import sqlite3
 import tempfile
 import time
 import unittest
+from contextlib import closing
 
-from run_aso_batch import load_manifest, run_jobs, validate_jobs
+from run_aso_batch import effective_worker_count, load_manifest, run_jobs, validate_jobs
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,6 +51,38 @@ class BatchRunnerTests(unittest.TestCase):
         results = run_jobs(jobs, PROJECT_ROOT, max_workers=2, executor_fn=execute)
         self.assertEqual(peak, 2)
         self.assertEqual([item["status"] for item in results], ["SUCCESS", "FAILED", "SUCCESS", "SUCCESS"])
+
+    def test_effective_workers_reduce_concurrency_for_cold_libre_cache(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state, count, workers = effective_worker_count(temp_dir, max_workers=3, cold_cache_workers=1)
+            self.assertEqual((state, count, workers), ("COLD", 0, 1))
+
+    def test_effective_workers_use_requested_limit_for_warm_libre_cache(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = os.path.join(temp_dir, ".cache")
+            os.makedirs(cache_dir)
+            cache_path = os.path.join(cache_dir, "translations.sqlite3")
+            with closing(sqlite3.connect(cache_path)) as connection:
+                connection.execute(
+                    """
+                    CREATE TABLE translations (
+                        provider TEXT NOT NULL,
+                        source_language TEXT NOT NULL,
+                        target_language TEXT NOT NULL,
+                        normalized_keyword TEXT NOT NULL,
+                        translated_text TEXT NOT NULL,
+                        updated_at REAL NOT NULL,
+                        PRIMARY KEY (provider, source_language, target_language, normalized_keyword)
+                    )
+                    """
+                )
+                connection.execute(
+                    "INSERT INTO translations VALUES (?, ?, ?, ?, ?, ?)",
+                    ("libretranslate_local", "es", "en", "broma", "prank", 1.0),
+                )
+                connection.commit()
+            state, count, workers = effective_worker_count(temp_dir, max_workers=2, cold_cache_workers=1)
+            self.assertEqual((state, count, workers), ("WARM", 1, 2))
 
 
 if __name__ == "__main__":

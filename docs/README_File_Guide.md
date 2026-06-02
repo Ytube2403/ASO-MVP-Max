@@ -6,7 +6,7 @@
 Entrypoint chinh. Script parse locale, resolve alias qua `shared/app_registry.py`, archive CSV vao `apps/<AppName>/Input/<MMYYYY>/`, chay runner va ghi workbook vao `apps/<AppName>/Output/<MMYYYY>/`.
 
 ### `run_aso_batch.py`
-Wrapper tuong thich cho `tools/run_aso_batch.py`. Chay nhieu locale tu JSON manifest, mac dinh toi da 3 job song song.
+Wrapper tuong thich cho `tools/run_aso_batch.py`. Chay nhieu locale tu JSON manifest; cold Libre cache chay 1 job, warm cache mac dinh toi da 2 job song song.
 
 ### `export_master_keywords.py`
 Wrapper tuong thich cho `tools/export_master_keywords.py`. Quet input va workbook output cua app, tim sheet theo suffix `Dropped_Audit`, loai hard-drop va ghi workbook tong hop vao `data/master_keywords/`.
@@ -45,13 +45,15 @@ App da dang ky:
 - `shared/language_detector.py`: nhan dien ngon ngu theo market policy.
 - `shared/keyword_filter/`: matcher precompiled, hard filter, classifier, validator, audit va cache atomic.
 - `shared/text_dedup.py`: dedup Unicode cho `01_Main_Keyword_Shortlist`.
-- `shared/translation_service.py`: dich EN, SQLite WAL cache, retry, rate limit va TLS verification.
+- `shared/translation_service.py`: dich EN bang LibreTranslate local, SQLite WAL cache, retry, rate limit, TLS verification va mapping model theo locale.
 - `shared/profile_service.py`: custom/generated profile cache va stale fallback.
 
 ## `tools/`
 
 - `tools/run_aso_batch.py`: batch implementation.
 - `tools/export_master_keywords.py`: Master Keywords exporter implementation.
+- `tools/start_libretranslate.ps1`: cai va khoi dong LibreTranslate local theo profile workload.
+- `tools/check_libretranslate_quality.py`: smoke quality model LibreTranslate chay thu cong.
 
 Wrapper tai root duoc giu de cac lenh cu van chay.
 

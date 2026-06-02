@@ -667,7 +667,8 @@ df['LanguageGroup'] = lang_groups
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3")
+    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
+    market=config.get("market", ""),
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
 
