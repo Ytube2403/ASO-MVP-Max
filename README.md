@@ -2,6 +2,8 @@
 
 Ban Max dung LibreTranslate self-host de dich keyword local. He thong ASO gom pipeline loc keyword, dashboard theo doi chi so va cong cu xuat Master Keywords.
 
+May yeu hoac khong muon cai model local? Dung [ASO-MVP-Lite](https://github.com/Ytube2403/ASO-MVP-Lite) voi Google GTX mien phi va translation cache.
+
 ## Cau truc thu muc
 
 ```text
