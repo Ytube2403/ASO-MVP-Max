@@ -5,7 +5,13 @@ import time
 import unittest
 from contextlib import closing
 
-from run_aso_batch import effective_worker_count, load_manifest, run_jobs, validate_jobs
+from run_aso_batch import (
+    effective_worker_count,
+    ensure_translation_preflight,
+    load_manifest,
+    run_jobs,
+    validate_jobs,
+)
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,6 +89,28 @@ class BatchRunnerTests(unittest.TestCase):
                 connection.commit()
             state, count, workers = effective_worker_count(temp_dir, max_workers=2, cold_cache_workers=1)
             self.assertEqual((state, count, workers), ("WARM", 1, 2))
+
+    def test_translation_preflight_requires_libretranslate_for_english_markets_too(self):
+        calls = []
+
+        result = ensure_translation_preflight(
+            [{"market": "US_EN"}, {"market": "IN_EN"}],
+            health_check_fn=lambda: calls.append(1) or (True, "http://127.0.0.1:5001", ""),
+        )
+
+        self.assertTrue(result["required"])
+        self.assertEqual(result["markets"], ["IN_EN", "US_EN"])
+        self.assertEqual(calls, [1])
+
+    def test_translation_preflight_requires_libretranslate_for_non_english_markets(self):
+        with self.assertRaises(RuntimeError) as context:
+            ensure_translation_preflight(
+                [{"market": "BR_PT-BR"}, {"market": "MX_ES"}],
+                health_check_fn=lambda: (False, "http://127.0.0.1:5001", "offline"),
+            )
+
+        self.assertIn("BR_PT-BR, MX_ES", str(context.exception))
+        self.assertIn("start_libretranslate.ps1", str(context.exception))
 
 
 if __name__ == "__main__":

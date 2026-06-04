@@ -16,11 +16,13 @@ from openpyxl.utils import get_column_letter
 import argparse
 import sys
 
-_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SHARED_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
+from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
@@ -1169,6 +1171,14 @@ df_shortlist = pd.DataFrame(all_shortlist)
 print("[Step 10] Exporting to stylized Excel Workbook...")
 wb = Workbook()
 wb.remove(wb.active)
+try:
+    _profile_for_memory, _raw_profile_for_memory, _ = _shared_project_memory.load_profile_from_app(SCRIPT_DIR, config)
+except Exception:
+    _raw_profile_for_memory = {}
+project_memory = _shared_project_memory.build_project_memory(
+    config, app_profile, _raw_profile_for_memory, SCRIPT_DIR, "runtime config", []
+)
+_shared_project_memory.add_project_memory_sheet(wb, project_memory)
 
 def style_sheet(ws, title, is_report=False):
     ws.views.sheetView[0].showGridLines = True
@@ -1223,9 +1233,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v4.0"),
+    ("Pipeline Version", "ASO Keyword Planner v4.1"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1311,7 +1321,7 @@ style_sheet(ws_dropped, "06_Dropped_Audit")
 # --- 07_Report_Summary ---
 ws_report = wb.create_sheet(title="07_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1457,6 +1467,12 @@ for row_idx, (_, row) in enumerate(df_seclang.iterrows(), 2):
 style_sheet(ws_seclang, "14_Secondary_Language")
 
 # Save
+try:
+    memory_path = _shared_project_memory.write_project_memory_markdown(SCRIPT_DIR, project_memory)
+    print(f"Project Memory updated: {memory_path}")
+except Exception as exc:
+    print(f"WARNING: Could not write PROJECT_MEMORY.md: {exc}")
+
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)

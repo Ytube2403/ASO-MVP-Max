@@ -153,7 +153,7 @@ Giao diện **ASO Keyword Tracker Dashboard** (`tracker/static/`) tuân thủ ho
 ### 7.3 Components
 - **App Bar:** Cố định trên đầu trang (sticky), nền trắng, viền dưới `#dadce0`.
 - **Control Panel:** Chứa 4 dropdowns (App, Locale, Month A, Month B) và nút Export.
-- **Tab Bar:** 4 tab ngang (Overview, Keywords, Trend, Movers) với indicator dưới tab active.
+- **Tab Bar:** 5 tab ngang (Overview, Keywords, Trend, Movers, Setup) với indicator dưới tab active.
 - **KPI Cards:** Grid 4 cột, chiều cao 120px cố định, hiển thị giá trị lớn và delta badge.
 - **Chart Cards:** Sử dụng Apache ECharts, tối thiểu 300px chiều cao, responsive resize.
 - **Data Table:** Hỗ trợ sort header, search, filter, pagination, zebra striping.
@@ -163,3 +163,11 @@ Giao diện **ASO Keyword Tracker Dashboard** (`tracker/static/`) tuân thủ ho
 - **Main content padding:** 24px.
 - **Card gap:** 16-24px.
 - **Grid breakpoints:** 4 cột → 2 cột (≤1200px) → 1 cột (≤650px).
+
+### 7.5 Setup Tab / Project Memory
+- **Purpose:** Tab `Setup` la read-only overview cua app dang chon, lay tu `app_config.py` va `App_Profile.json`; khong phu thuoc locale/month.
+- **Sections:** App identity, Positioning, Keyword setup, Competitor setup, Drop/risk setup, User overrides, Quota va Warnings.
+- **Cards:** Dung grid card 8px radius, khong long card trong card. Moi section co title ngan va list chip/row de scan nhanh.
+- **Badges:** Dung badge ro rang cho `Drop`, `Consider`, `Reserve`, `Boost` theo mau semantic cua dashboard.
+- **Warnings:** Hien thi warning card noi bat khi thieu competitor, thieu competitor brands, overlap config hoac profile/config mismatch.
+- **No editing:** Khong dat control chinh sua trong v1. Neu can sua setup, user sua source of truth trong `app_config.py` hoac `App_Profile.json`.

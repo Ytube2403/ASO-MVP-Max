@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 import numpy as np
 import re
 import os
@@ -26,140 +26,45 @@ from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
+# Resolve script and project root directories
+PROJECT_ROOT = _SHARED_ROOT
+
 # Parse arguments
-parser = argparse.ArgumentParser(description="ASO Keyword Planner for Control Widget")
-parser.add_argument("--csv", type=str, default=None, help="Path to input CSV")
-parser.add_argument("--market", type=str, default="US_EN", help="Market code (e.g. US_EN)")
+parser = argparse.ArgumentParser(description="ASO Keyword Planner Generic Pipeline")
+parser.add_argument("--csv", type=str, required=True, help="Path to input CSV")
+parser.add_argument("--market", type=str, default="", help="Market code (e.g. US_EN)")
 parser.add_argument("--output", type=str, default="", help="Path to output Excel file")
 parser.add_argument("--interactive", action="store_true", help="Run interactive Web UI selector")
 args, unknown = parser.parse_known_args()
 
-INPUT_PATH = args.csv
+# Load configuration from app_config.py
+try:
+    from app_config import APP_CONFIG as config
+except ImportError:
+    # Fallback if run from a different directory
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        from app_config import APP_CONFIG as config
+    except ImportError:
+        print("Error: Could not import APP_CONFIG from app_config.py.")
+        sys.exit(1)
+
+INPUT_PATH = os.path.abspath(args.csv)
+market = args.market if args.market else config.get("market", "US_EN")
+config["market"] = market # Override default market with cli arg
+
 if args.output:
     OUTPUT_PATH = args.output
 else:
     # Update OUTPUT_PATH dynamically
     csv_dir = os.path.dirname(os.path.abspath(INPUT_PATH))
-    OUTPUT_PATH = os.path.join(csv_dir, "Control_Widget", f"ControlWidget_{args.market.replace('_', '-')}_Output.xlsx")
-
-# Control Widget configuration
-config = {
-    "app_id": "com.control.widget.custom.panel.wallpaper.pack",
-    "app_name": "Control Widget: Theme & Panels",
-    "category": "Personalization / Widget",
-    "market": args.market,
-    "platform_mode": "google_play",
-    "semantic_mode": "personalization_widget",
-    "dedup_policy": {
-        "auto_merge_token_bag": False,
-        "review_overlap_threshold": 0.80,
-        "accent_fold_auto_merge_locales": [],
-        "enable_review_log": True,
-    },
-
-    "intent_core_terms": [
-        "control panel", "control center", "control widget", "quick settings",
-        "quick panel", "notification panel", "volume control", "shortcut widget",
-        "android panel", "settings panel", "control menu", "control hub panel",
-        "panel android", "panels control center", "simple control center",
-        "control widgets", "widget control"
-    ],
-    
-    "feature_terms": [
-        "control panel", "control center", "control widget", "quick settings",
-        "quick panel", "notification panel", "control menu", "settings",
-        "shortcut", "shortcuts", "toggle", "switch", "fast settings",
-        "panel android", "brightness", "volume", "wifi", "wi-fi", "bluetooth",
-        "flashlight", "screen recorder", "screenshot", "airplane mode",
-        "do not disturb", "control hub", "panel", "android panel", "widget control"
-    ],
-    
-    "style_terms": [
-        "theme", "themes", "themed", "style", "styles", "aesthetic", "cute",
-        "kawaii", "anime", "cartoon", "k-pop", "neon", "gradient", "glass",
-        "color", "colorful", "pastel", "minimal", "simple", "wallpaper",
-        "home screen", "icon", "custom", "customize", "personalize",
-        "personalization", "iphone", "ios", "os 17", "os 18"
-    ],
-    
-    "competitor_brands": [
-        "mi control center", "power shade", "one shade", "volume styles",
-        "super status bar", "bottom quick settings",
-        "dynamic spot", "notiguy", "edge action",
-        "theme kit", "themekit", "widgetkit", "widget lab", "magic widget",
-        "widcon", "skycenter", "themepack", "simple photo widget", "themify",
-        "themix", "themex", "themedy", "themica",
-        "themehub"
-    ],
-    
-    "typo_blacklist": [
-        "contol", "controll", "pannel", "widgit", "widjet", "wiget", "widg",
-        "custon", "custome", "setings", "sttings", "notifcation", "notificaion",
-        "brigthness", "volum", "togel", "toggl", "shotcut", "shorcut", "shrtcut",
-        "tontrol", "conditioners wi", "customize cstyle call", "bring icontrol"
-    ],
-    
-    "irrelevant_intent_terms": [
-        "call widget", "call theme", "price widget", "usage widget", "calculator",
-        "keyboard", "launcher", "ringtones", "compass", "remote", "hotspot",
-        "lock screen widget", "app icon aesthetic", "icon changer", "stable diffusion",
-        "redmi", "inoty", "control net", "multiplicat", "app specially",
-        "control designed", "control partner", "control drops", "control content",
-        "control enjoy", "control lay", "control bars", "control unlimited",
-        "control convenient", "control transform", "stylish apps control",
-        "control pack", "control changer", "control change", "control set",
-        "control unique", "mob quick"
-    ],
-    
-    "risky_platform_terms": [
-        "iphone", "ios", "ipad", "apple", "os 17", "os 18", "os17", "os18", "icontrol"
-    ],
-
-    "risky_ip_terms": ["assistive touch", "dynamic island"],
-    "ambiguous_brand_terms": ["sidebar"],
-    "platform_affiliation_terms": [],
-    "truncation_policy": {
-        "enabled": True,
-        "min_prefix_length": 2,
-        "allowed_partial_terms": [],
-        "protect_complete_tokens": True,
-        "ignore_inflection_prefix": True,
-        "low_confidence_action": "manual_review",
-        "dangling_action": "manual_review"
-    },
-    "risk_policy": {
-        "competitor_brand_action": "drop",
-        "ambiguous_brand_action": "consider",
-        "risky_ip_action": "consider",
-        "platform_context_action": "consider",
-        "platform_only_action": "drop",
-        "platform_affiliation_action": "drop",
-        "style_only_action": "reserve",
-        "core_intent_override": True
-    },
-    
-    "user_overrides": {
-        "force_top30_terms": [],
-        "force_consider_terms": [],
-        "force_drop_terms": []
-    },
-    
-    "balanced_weights": {
-        "VolumeN": 0.20,
-        "DifficultyN": 0.15,
-        "KEIN": 0.15,
-        "RelevancyScore": 0.30,
-        "CurrentRankN": 0.10,
-        "ExpansionValue": 0.10
-    }
-}
-
-from app_config import FILTER_POLICY
-config.update(FILTER_POLICY)
+    app_slug = config.get("app_name", "App").replace(" ", "_")
+    OUTPUT_PATH = os.path.join(csv_dir, f"{app_slug}_{market.replace('_', '-')}_Output.xlsx")
 
 # --- Shared Google Play profile service ---
-# Build or load App Profile using seed query 'Control Widget'
-app_profile = _shared_profile_service.get_app_profile(config, "Control Widget", os.path.dirname(__file__))
+# Build or load App Profile using seed query from config
+app_profile = _shared_profile_service.get_app_profile(config, config.get("app_name", "App"), SCRIPT_DIR)
 
 # --- Local HTTP Server for Selection & ASO Dashboard ---
 def start_interactive_server(df, config, app_profile):
@@ -601,8 +506,9 @@ df['LanguageGroup'] = lang_groups
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
+provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
+    df, provided_en=provided_en, cache_path=os.path.join(PROJECT_ROOT, ".cache", "translations.sqlite3"),
     market=config.get("market", ""),
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
@@ -625,6 +531,8 @@ def check_naturalness(kw, config):
     words = kw_lower.split()
     if len(words) == 0:
         return 'UNNATURAL', 'Empty keyword'
+    if len(words) < 2:
+        return 'UNNATURAL', 'Single-word keyword excluded'
     word_counts = {}
     for w in words:
         word_counts[w] = word_counts.get(w, 0) + 1
@@ -645,12 +553,20 @@ def check_naturalness(kw, config):
     for pat in grammar_patterns:
         if re.search(pat, kw_lower):
             return 'UNNATURAL', 'Fails structural validation'
+    allowed_chars = 'áéíóúüñ¿¡íóú'
+    # Add Vietnamese characters
+    allowed_chars += 'àảãạăắằẳẵặâấầẩẫậèẻẽẹêếềểễệìỉĩịòỏõọôốồổỗộơớờởỡợùủũụưứừửữựỳỷỹỵđ'
+    # Add Portuguese characters
+    allowed_chars += 'áàâãçéêíóôõú'
     for char in kw_lower:
-        if ord(char) > 127 and char not in 'Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±Â¿Â¡Ã­Ã³Ãº':
+        if ord(char) > 127 and char not in allowed_chars:
+            # Allow Devanagari (Hindi) script characters range
+            if '\u0900' <= char <= '\u097F':
+                continue
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
-naturalness = df.apply(lambda r: _shared_keyword_filter.check_naturalness(r, config), axis=1)
+naturalness = df.apply(lambda r: check_naturalness(r['Keyword'], config), axis=1)
 df['NaturalnessFlag'] = [n[0] for n in naturalness]
 df['NaturalnessReason'] = [n[1] for n in naturalness]
 
@@ -914,7 +830,6 @@ def build_shortlist(df_all, config):
     
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
-        tokens = " ".join(sorted(norm.split()))
         if not norm:
             return True, "Empty normalized keyword", ""
         if norm in selected_normalized:
@@ -925,22 +840,28 @@ def build_shortlist(df_all, config):
                     kept_kw = item['Keyword']
                     break
             return True, f"Exact normalized duplicate of '{kept_kw}'", kept_kw
-        if tokens in selected_tokens:
-            all_selected = selected_core + selected_broad + selected_consider
-            kept_kw = ""
-            for item in all_selected:
-                t = " ".join(sorted(normalize_text(item['Keyword']).split()))
-                if t == tokens:
-                    kept_kw = item['Keyword']
-                    break
-            return True, f"Same normalized token set as '{kept_kw}'", kept_kw
+        
+        auto_merge_token_bag = config.get("dedup_policy", {}).get("auto_merge_token_bag", True)
+        if auto_merge_token_bag:
+            tokens = " ".join(sorted(norm.split()))
+            if tokens in selected_tokens:
+                all_selected = selected_core + selected_broad + selected_consider
+                kept_kw = ""
+                for item in all_selected:
+                    t = " ".join(sorted(normalize_text(item['Keyword']).split()))
+                    if t == tokens:
+                        kept_kw = item['Keyword']
+                        break
+                return True, f"Same normalized token set as '{kept_kw}'", kept_kw
         return False, "", ""
         
     def add_to_shortlist(item, section):
         norm = normalize_text(item['Keyword'])
-        tokens = " ".join(sorted(norm.split()))
         selected_normalized.add(norm)
-        selected_tokens.add(tokens)
+        auto_merge_token_bag = config.get("dedup_policy", {}).get("auto_merge_token_bag", True)
+        if auto_merge_token_bag:
+            tokens = " ".join(sorted(norm.split()))
+            selected_tokens.add(tokens)
         entry = item.to_dict()
         entry['Section'] = section
         entry['QuotaStatus'] = 'EXACT'
@@ -1207,15 +1128,15 @@ for idx, entry in enumerate(all_shortlist):
     sec = entry['Section']
     if sec == 'Core Intent Final':
         if idx < 2:
-            entry['WhereToUse'] = 'ðŸ·ï¸ Title'
+            entry['WhereToUse'] = '🏷️ Title'
         elif idx < 9:
-            entry['WhereToUse'] = 'ðŸ“± Short Description'
+            entry['WhereToUse'] = '📱 Short Description'
         else:
-            entry['WhereToUse'] = 'ðŸ“„ Full Description'
+            entry['WhereToUse'] = '📄 Full Description'
     elif sec == 'Broad Expansion':
-        entry['WhereToUse'] = 'ðŸ“„ Full Description'
+        entry['WhereToUse'] = '📄 Full Description'
     else:
-        entry['WhereToUse'] = 'ðŸ” Consider / Research Only'
+        entry['WhereToUse'] = '🔍 Consider / Research Only'
 
 df_shortlist = pd.DataFrame(all_shortlist)
 
@@ -1398,7 +1319,8 @@ sheets_info = [
     ("09_Manual_Review", "Audit sheet for keywords flagged with mixed or unknown languages"),
     ("10_Top_By_Score", "Candidates sorted by BalancedScore before diversity overlap filtering"),
     ("11_Secondary_Language", "Research candidates matching Spanish (Secondary Language)"),
-    ("12_Text_Dedup_Log", "Log of equivalent keyword variants pruned from the main shortlist")
+    ("12_Text_Dedup_Log", "Log of equivalent keyword variants pruned from the main shortlist"),
+    ("13_Top_15_Keywords", "Top 15 selected ASO keywords for quick reference")
 ]
 for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
@@ -1496,6 +1418,15 @@ if not df_dedup_log.empty:
             ws_dedup.cell(row=row_idx, column=col_idx, value=row.get(col, ''))
 style_sheet(ws_dedup, "12_Text_Dedup_Log")
 
+# --- 13_Top_15_Keywords ---
+ws_top15 = wb.create_sheet(title="13_Top_15_Keywords")
+for col_idx, col in enumerate(cols_shortlist, 1):
+    ws_top15.cell(row=1, column=col_idx, value=col)
+for row_idx, entry in enumerate(all_shortlist[:15], 2):
+    for col_idx, col in enumerate(cols_shortlist, 1):
+        ws_top15.cell(row=row_idx, column=col_idx, value=entry.get(col, ''))
+style_sheet(ws_top15, "13_Top_15_Keywords")
+
 # Save
 try:
     memory_path = _shared_project_memory.write_project_memory_markdown(SCRIPT_DIR, project_memory)
@@ -1506,7 +1437,7 @@ except Exception as exc:
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)
-    print("Pipeline for Control Widget complete!")
+    print("Pipeline for Emoji Battery complete!")
 except PermissionError:
     alt_path = OUTPUT_PATH.replace(".xlsx", "_temp.xlsx")
     print(f"WARNING: Permission denied to write to {OUTPUT_PATH} (file is likely open in another program).")

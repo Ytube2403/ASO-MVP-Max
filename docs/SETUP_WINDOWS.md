@@ -119,7 +119,15 @@ $env:LIBRETRANSLATE_URL = "http://127.0.0.1:5002"
 
 Neu endpoint da bat API key, dat them `$env:LIBRETRANSLATE_API_KEY`.
 
-Pipeline van tiep tuc tao workbook neu LibreTranslate tam thoi khong chay: keyword chua co cache duoc giu nguyen va ghi audit ky thuat.
+Pipeline dung lai neu LibreTranslate khong chay. Hay bat service truoc khi chay ASO-MVP-Max de tranh workbook sai semantic.
+
+Workflow chuan khi chay ASO-MVP-Max:
+
+1. Bat LibreTranslate trong terminal rieng bang `.\tools\start_libretranslate.ps1`.
+2. Kiem tra `Invoke-RestMethod http://127.0.0.1:5001/health`.
+3. Chay single pipeline hoac batch sau khi health check OK.
+
+Runner se tu dong preflight moi market, ke ca `US_EN`, vi input co the chua keyword secondary/non-English can dich. Neu health check fail, job dung lai truoc khi ghi workbook.
 
 ## 7. Dang nhap GitHub cho Sync.bat
 
@@ -141,7 +149,7 @@ python run_aso_filter.py --csv C:\duong_dan\Pranky_US_EN.csv
 python tracker\run_dashboard.py
 ```
 
-Dashboard mo tai `http://localhost:5000`.
+Dashboard mo tai `http://localhost:5000`. Sau khi chay pipeline, workbook phai co sheet `00_Project_Memory`, app folder phai co `PROJECT_MEMORY.md`, va Dashboard tab `Setup` phai hien thi setup cua app dang chon.
 
 ## 9. Ket noi mang
 

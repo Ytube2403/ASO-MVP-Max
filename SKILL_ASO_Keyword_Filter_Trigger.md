@@ -1,7 +1,7 @@
 # 🎯 SKILL: ASO Keyword Filter Trigger & Automation
 
 **SKILL_ID:** `aso_keyword_filter_trigger`  
-**VERSION:** 2.3  
+**VERSION:** 4.1  
 **AUTHOR:** AI Assistant  
 **SCOPE:** Tự động hóa việc nhận diện lệnh kích hoạt, định tuyến và chạy pipeline lọc từ khóa ASO dựa trên cấu trúc tên file CSV được gửi trong thư mục `d:\Antigravity\ASO-Project\ASO-MVP-Max`.
 **RUNTIME:** Python 3.9+  
@@ -55,13 +55,15 @@ Sau khi script hoàn thành thành công:
    * *Ví dụ link Game Emulator:* [GameEmulator_US-EN_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/Game_Emulator/Output/052026/GameEmulator_US-EN_Output.xlsx)
    * *Ví dụ link Prank Sounds:* [PrankSounds_PH-FIL_Output.xlsx](file:///d:/Antigravity/ASO-Project/ASO-MVP-Max/apps/Prank_Sounds/Output/052026/PrankSounds_PH-FIL_Output.xlsx)
 
-### Ghi chu logic v4.0
+### Ghi chu logic v4.1
 Pipeline hien dung shared logic:
-- `shared/language_detector.py` cho `detect_keyword_language`.
-- `shared/keyword_filter/` cho matcher precompiled, hard filter raw + EN, classification, validator, audit va selection cache metadata.
-- `shared/text_dedup.py` cho indexed Unicode `NFKC` + `casefold()`, stemming theo locale, va `MergedVariants` trong main shortlist. Bien the chi gan giong duoc giu nhu keyword doc lap.
+- `shared/language_detector.py` cho `detect_keyword_language` va co che hoan doi `LANG_COUNTRY` sang `COUNTRY_LANG` trong `parse_market`.
+- `shared/keyword_filter/` cho matcher precompiled, hard filter raw + EN, classification, validator, audit va selection cache metadata. Keyword volume thap (Volume <= 5) khong bi auto-drop ma nhan diem VolumeN bang 0.
+- Truncation logic trong `shared/keyword_filter/` da harden: complete token va singular/plural nhu `emoji`, `icon`, `sound`, `filter`, `widget` khong bi hard-drop; prefix thieu anchor vao `possible_truncated_keyword` va Manual Review.
+- `shared/text_dedup.py` cho indexed Unicode `NFKC` + `casefold()`, stemming theo locale, va `MergedVariants` trong main shortlist. Cac hoan vi tu duoc giu lai khi tat option gop token bag (`auto_merge_token_bag = False`).
 - `shared/translation_service.py` cho dich EN voi SQLite WAL cache, retry, global rate limit va TLS verification.
 - `shared/profile_service.py` cho custom/generated profile, atomic cache va stale fallback.
+- `shared/project_memory.py` cho Project Memory read-only tu `app_config.py` + `App_Profile.json`, render ra Dashboard tab `Setup`, sheet `00_Project_Memory` va `PROJECT_MEMORY.md`.
 - `shared/app_registry.py` cho routing alias app chinh xac; app chua dang ky phai fail ro rang.
 
 Khi doc ket qua, can hieu bucket ngon ngu nhu sau:

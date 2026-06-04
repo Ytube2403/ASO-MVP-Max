@@ -33,6 +33,12 @@ APP_REGISTRY = {
         "config": "apps/App_Template/app_config.py",
         "aliases": ["AppTemplate", "App_Template"],
     },
+    "emoji_battery_icon_customize": {
+        "folder": "apps/Emoji_Battery_Icon_Customize",
+        "runner": "apps/Emoji_Battery_Icon_Customize/run_pipeline.py",
+        "config": "apps/Emoji_Battery_Icon_Customize/app_config.py",
+        "aliases": ["EmojiBatteryIconCustomize", "Emoji_Battery_Icon_Customize", "EmojiBattery", "emoji_battery_icon_customize"],
+    },
 }
 
 

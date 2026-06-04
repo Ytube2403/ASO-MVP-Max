@@ -15,6 +15,7 @@ if PROJECT_ROOT not in sys.path:
 from shared.app_registry import resolve_app
 from shared.keyword_filter import atomic_write_json
 from shared.locale_parser import extract_locale_from_filename
+from shared.translation_preflight import check_libretranslate_health, translation_required_for_market
 from shared.translation_service import translation_cache_count
 
 
@@ -116,6 +117,26 @@ def effective_worker_count(project_root, max_workers=2, cold_cache_workers=1):
     return cache_state, cache_count, max(1, int(workers))
 
 
+def ensure_translation_preflight(jobs, health_check_fn=None):
+    markets = sorted({
+        str(job.get("market", "") or "")
+        for job in jobs
+        if translation_required_for_market(job.get("market", ""))
+    })
+    if not markets:
+        return {"required": False, "markets": [], "url": "", "error": ""}
+    health_check_fn = health_check_fn or check_libretranslate_health
+    ok, url, error = health_check_fn()
+    if not ok:
+        raise RuntimeError(
+            "LibreTranslate is required before running ASO-MVP-Max markets "
+            f"({', '.join(markets)}), but {url}/health is not reachable. "
+            "Start it in a separate PowerShell terminal with: .\\tools\\start_libretranslate.ps1. "
+            f"Health error: {error}"
+        )
+    return {"required": True, "markets": markets, "url": url, "error": ""}
+
+
 def run_jobs(jobs, project_root, max_workers=2, executor_fn=None):
     executor_fn = executor_fn or (lambda job: execute_job(job, project_root))
     results = []
@@ -141,6 +162,16 @@ def main():
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+    try:
+        preflight = ensure_translation_preflight(jobs)
+    except Exception as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    if preflight["required"]:
+        print(
+            "LibreTranslate preflight OK: "
+            f"{preflight['url']} for markets {', '.join(preflight['markets'])}."
+        )
     cache_state, cache_count, effective_workers = effective_worker_count(
         project_root,
         max_workers=args.max_workers,

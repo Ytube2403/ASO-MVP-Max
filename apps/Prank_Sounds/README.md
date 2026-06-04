@@ -15,6 +15,7 @@ apps/Prank_Sounds/
 ├── README.md                      (Tài liệu hướng dẫn này)
 ├── app_config.py                  (Nơi điền từ khóa, thương hiệu đối thủ, trọng số điểm)
 ├── App_Profile.json               (Nơi điền mô tả hiện tại và đối thủ của app)
+├── PROJECT_MEMORY.md              (Snapshot setup tự sinh sau mỗi lần chạy pipeline thành công)
 ├── run_pipeline.py                (Mã nguồn chạy 10 bước lọc - KHÔNG cần chỉnh sửa)
 ├── interactive_optimizer.html     (Giao diện Web tối ưu hóa từ khóa)
 └── interactive_description_editor.html (Giao diện Web soạn thảo mô tả ASO)
@@ -42,6 +43,8 @@ Mở file `App_Profile.json` và điền:
 2. `live_store_metadata`: Short Description hiện tại của bạn.
 3. `suggested_competitors`: Danh sách từ 3-5 đối thủ cạnh tranh chính. Đối với mỗi đối thủ, điền `package_id`, `title`, `short_description` và một đoạn mô tả ngắn (`desc200`). Script sẽ quét thông tin này để tự động cộng điểm ưu tiên (`Competitor Boost`) cho các từ khóa mà đối thủ của bạn đang sử dụng hiệu quả.
 
+Project Memory đọc trực tiếp `app_config.py` và `App_Profile.json` để hiển thị lại setup hiện tại trong Dashboard tab `Setup`, sheet `00_Project_Memory` và file `PROJECT_MEMORY.md`. Không cần nhập thêm dữ liệu riêng cho phần này.
+
 ### Bước 3: Đặt tên file dữ liệu đầu vào chuẩn
 Lấy file CSV từ khoá thô từ Apptweak hoặc SensorTower về và lưu tên theo chuẩn:
 `[AppName]_[Country]_[Language].csv` (Ví dụ: `PrankSounds_US_EN.csv`, `Pranky_PH_FIL.csv`).
@@ -67,11 +70,11 @@ python run_aso_filter.py --csv C:\duong-dan-den\PrankSounds_US_EN.csv
 python run_aso_filter.py --csv C:\duong-dan-den\Pranky_PH_FIL.csv --interactive
 ```
 
-Kết quả sẽ được xuất thành một file Excel duy nhất chứa đầy đủ báo cáo, shortlist Top 30, danh sách Consider và lý do cụ thể loại/giữ từng từ khóa.
+Kết quả sẽ được xuất thành một file Excel duy nhất chứa đầy đủ báo cáo, shortlist Top 30, danh sách Consider, sheet `00_Project_Memory` và lý do cụ thể loại/giữ từng từ khóa. Pipeline cũng cập nhật `PROJECT_MEMORY.md` trong thư mục app để bàn giao hoặc audit setup.
 
 ---
 
-## Shared platform logic từ v4.0
+## Shared platform logic v4.1
 
 Pipeline hiện sử dụng các module chung trong `ASO-MVP-Max/shared/`:
 
@@ -80,6 +83,7 @@ Pipeline hiện sử dụng các module chung trong `ASO-MVP-Max/shared/`:
 - `shared/text_dedup.py`: dedup Unicode indexed `NFKC` + `casefold()`, stemming theo locale, và ghi `MergedVariants` cho main shortlist.
 - `shared/translation_service.py`: dịch EN với SQLite WAL cache, retry, global rate limit và TLS verification.
 - `shared/profile_service.py`: ưu tiên tuyệt đối `App_Profile.json`, generated cache atomic và stale fallback.
+- `shared/project_memory.py`: tạo setup overview cho Tracker tab `Setup`, sheet `00_Project_Memory` và `PROJECT_MEMORY.md`.
 
 Quy tắc cần nhớ:
 
@@ -88,7 +92,10 @@ Quy tắc cần nhớ:
 - `MIXED` vào `Consider Keywords` nếu market cho phép `mixed_allowed=True`.
 - `SECONDARY` mặc định giữ ở `Consider Keywords`; raw keyword khớp chính xác `intent_core_terms` vẫn giữ vai trò Core.
 - Naturalness không hard-drop non-Latin/script khác bằng `LANGUAGE_BLEED`; ngôn ngữ do language detector xử lý.
-- Selection cache chỉ được dùng lại khi metadata `app_id`, market, input hash, config hash và engine version khớp run hiện tại.
+- Selection cache chỉ được dùng lại khi metadata `app_id`, market, input hash, config hash và engine version khớp run hiện tại.
+- Low-volume keyword co the vao shortlist/Consider khi config v4.1 dat `exclude_low_tier_from_metadata_shortlist=False` va `max_low_tier_consider_keywords=999`.
+- Truncation v4.1 bao ve complete token va singular/plural: `prank sound`, `hair clipper prank`, `battery icon`, `emoji` khong bi hard-drop; prefix nghi ngo se vao `possible_truncated_keyword`/Manual Review.
+- Hoan vi thu tu tu duoc giu nhu keyword doc lap khi `auto_merge_token_bag=False`.
 - Dedup chỉ áp dụng cho `01_Main_Keyword_Shortlist`. Các sheet âm thanh chỉ sort theo ưu tiên thông thường.
 - Accent-fold và keyword chỉ gần giống được giữ như keyword độc lập; không còn `ReviewVariants`.
 

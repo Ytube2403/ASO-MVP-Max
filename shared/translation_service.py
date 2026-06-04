@@ -12,6 +12,10 @@ from dataclasses import dataclass
 from shared.keyword_filter.matcher import normalize_filter_text
 
 
+class TranslationUnavailableError(ConnectionError):
+    pass
+
+
 PROVIDER = "libretranslate_local"
 TARGET_LANGUAGE = "en"
 TRANSLATION_COLUMNS = ["TranslationStatus", "TranslationError"]
@@ -182,12 +186,12 @@ class TranslationService:
     def _ensure_healthy(self):
         if self._health_checked:
             if self._health_error:
-                raise ConnectionError(self._health_error)
+                raise TranslationUnavailableError(self._health_error)
             return
         with self._health_lock:
             if self._health_checked:
                 if self._health_error:
-                    raise ConnectionError(self._health_error)
+                    raise TranslationUnavailableError(self._health_error)
                 return
             request = urllib.request.Request(f"{self.base_url}/health")
             context = ssl.create_default_context()
@@ -200,7 +204,7 @@ class TranslationService:
                     f"{type(exc).__name__}: {exc}"
                 )
                 self._health_checked = True
-                raise ConnectionError(self._health_error) from exc
+                raise TranslationUnavailableError(self._health_error) from exc
             self._health_checked = True
 
     def _fetch(self, keyword, source_language, target_language):
@@ -244,6 +248,8 @@ class TranslationService:
                 translated = self._fetch(keyword, source_language, target_language)
                 self._store_cached(keyword, source_language, target_language, translated)
                 return TranslationResult(translated, "TRANSLATED")
+            except TranslationUnavailableError:
+                raise
             except Exception as exc:
                 errors.append(f"{type(exc).__name__}: {exc}")
                 if self._health_error:

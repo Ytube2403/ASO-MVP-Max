@@ -14,9 +14,10 @@ const AppState = {
     overviewData: null,
     keywordsData: null,
     moversData: null,
+    setupData: null,
     
     // Tab tracking
-    activeTab: "overview", // 'overview', 'keywords', 'trends', 'movers'
+    activeTab: "overview", // 'overview', 'setup', 'keywords', 'trends', 'movers'
 };
 
 // DOM Elements
@@ -49,8 +50,10 @@ function initEventListeners() {
         AppState.selectedLocale = "";
         AppState.selectedMonthA = "";
         AppState.selectedMonthB = "";
+        AppState.setupData = null;
         resetDropdowns(["locale", "month-a", "month-b"]);
         fetchLocales(AppState.selectedApp);
+        fetchSetup(AppState.selectedApp);
     });
 
     elements.selectLocale.addEventListener("change", (e) => {
@@ -105,8 +108,10 @@ function resetDropdowns(types) {
     elements.btnExport.disabled = true;
     
     // Hide content
-    elements.tabContent.classList.add("hidden");
-    elements.emptyState.classList.remove("hidden");
+    if (AppState.activeTab !== "setup" || !AppState.selectedApp) {
+        elements.tabContent.classList.add("hidden");
+        elements.emptyState.classList.remove("hidden");
+    }
 }
 
 // Show/Hide Loader
@@ -159,8 +164,19 @@ function switchTab(tabName) {
     AppState.activeTab = tabName;
     
     // Render the active tab content if we have data loaded
-    if (AppState.keywordsData) {
+    if (tabName === "setup" && AppState.selectedApp) {
+        elements.emptyState.classList.add("hidden");
+        elements.tabContent.classList.remove("hidden");
+        if (AppState.setupData) {
+            renderActiveTab();
+        } else {
+            fetchSetup(AppState.selectedApp);
+        }
+    } else if (AppState.keywordsData) {
         renderActiveTab();
+    } else {
+        elements.tabContent.classList.add("hidden");
+        elements.emptyState.classList.remove("hidden");
     }
 }
 
@@ -278,6 +294,26 @@ async function fetchMonths(appName, locale) {
     }
 }
 
+async function fetchSetup(appName) {
+    if (!appName) return;
+    try {
+        const response = await fetch(`/api/setup/${appName}`);
+        const result = await response.json();
+        if (result.success) {
+            AppState.setupData = result.data;
+            if (AppState.activeTab === "setup") {
+                elements.emptyState.classList.add("hidden");
+                elements.tabContent.classList.remove("hidden");
+                renderActiveTab();
+            }
+        } else {
+            showToast("Failed to fetch setup: " + result.error, "danger");
+        }
+    } catch (e) {
+        showToast("Error loading setup: " + e.message, "danger");
+    }
+}
+
 // Trigger selection changes (App, Locale, Month A, Month B selected)
 async function handleSelectionChange() {
     if (!AppState.selectedApp || !AppState.selectedLocale || !AppState.selectedMonthB) {
@@ -296,20 +332,23 @@ async function handleSelectionChange() {
     
     // Fetch tab data in parallel for smooth instantaneous transitions
     try {
-        const [overviewRes, keywordsRes, moversRes] = await Promise.all([
+        const [overviewRes, keywordsRes, moversRes, setupRes] = await Promise.all([
             fetch(`/api/overview/${AppState.selectedApp}/${AppState.selectedLocale}`),
             fetch(`/api/keywords/${AppState.selectedApp}/${AppState.selectedLocale}?month_a=${AppState.selectedMonthA}&month_b=${AppState.selectedMonthB}`),
-            fetch(`/api/movers/${AppState.selectedApp}/${AppState.selectedLocale}?month_a=${AppState.selectedMonthA}&month_b=${AppState.selectedMonthB}`)
+            fetch(`/api/movers/${AppState.selectedApp}/${AppState.selectedLocale}?month_a=${AppState.selectedMonthA}&month_b=${AppState.selectedMonthB}`),
+            AppState.setupData ? Promise.resolve(null) : fetch(`/api/setup/${AppState.selectedApp}`)
         ]);
         
         const overviewResult = await overviewRes.json();
         const keywordsResult = await keywordsRes.json();
         const moversResult = await moversRes.json();
+        const setupResult = setupRes ? await setupRes.json() : { success: true, data: AppState.setupData };
         
-        if (overviewResult.success && keywordsResult.success && moversResult.success) {
+        if (overviewResult.success && keywordsResult.success && moversResult.success && setupResult.success) {
             AppState.overviewData = overviewResult.data;
             AppState.keywordsData = keywordsResult.data;
             AppState.moversData = moversResult.data;
+            AppState.setupData = setupResult.data;
             
             // Render the active tab
             renderActiveTab();
@@ -334,6 +373,11 @@ function renderActiveTab() {
         case "overview":
             if (typeof renderOverviewTab === "function") {
                 renderOverviewTab(AppState.overviewData, AppState.selectedMonthA, AppState.selectedMonthB);
+            }
+            break;
+        case "setup":
+            if (typeof renderSetupTab === "function") {
+                renderSetupTab(AppState.setupData);
             }
             break;
         case "keywords":

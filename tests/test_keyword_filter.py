@@ -145,8 +145,124 @@ class KeywordFilterTests(unittest.TestCase):
     def test_conservative_truncation_detection(self):
         self.assertTrue(keyword_filter.is_truncated_keyword(row("prank so"), BASE_CONFIG))
         self.assertTrue(keyword_filter.is_truncated_keyword(row("prank sou"), BASE_CONFIG))
-        self.assertTrue(keyword_filter.is_truncated_keyword(row("pegadinhas de"), BASE_CONFIG))
         self.assertFalse(keyword_filter.is_truncated_keyword(row("prank sounds"), BASE_CONFIG))
+
+    def test_dangling_connectors_go_to_manual_review_by_default(self):
+        flags = keyword_filter.evaluate_hard_filters(row("pegadinhas de"), BASE_CONFIG)
+        self.assertFalse(flags["is_truncated"])
+        self.assertEqual(flags["HardFilterRule"], "possible_truncated_keyword")
+        self.assertEqual(flags["HardFilterTerm"], "de")
+        self.assertEqual(
+            keyword_filter.classify_keyword(row("pegadinhas de"), BASE_CONFIG),
+            ("Manual Review", "possible_truncated_keyword", "Manual Review: Possible truncated keyword"),
+        )
+
+    def test_dangling_connectors_can_be_configured_as_hard_drop(self):
+        config = dict(BASE_CONFIG, truncation_policy={"enabled": True, "min_prefix_length": 2, "dangling_action": "drop"})
+        self.assertTrue(keyword_filter.is_truncated_keyword(row("pegadinhas de"), config))
+
+    def test_truncation_does_not_drop_complete_singular_tokens(self):
+        config = dict(
+            BASE_CONFIG,
+            intent_core_terms=[
+                "emoji battery",
+                "emoji battery icon",
+                "battery icon",
+                "emoji widget",
+                "emoji stickers",
+                "prank sound",
+                "soundboard prank",
+                "ar filter",
+                "ar filters",
+                "control widget",
+            ],
+            intent_core_words=["emoji", "battery", "prank", "filter", "widget"],
+            feature_terms=["animated emojis", "battery icons", "status bar icon", "sound effects"],
+        )
+        for keyword in (
+            "battery emoji",
+            "widget emoji",
+            "cute emoji",
+            "emoji battery icon",
+            "battery icon",
+            "prank sound",
+            "ar filter",
+            "control widget",
+        ):
+            with self.subTest(keyword=keyword):
+                self.assertFalse(keyword_filter.is_truncated_keyword(row(keyword), config))
+
+    def test_truncation_complete_token_protection_covers_primary_locales(self):
+        localized_configs = [
+            (
+                "ES_US",
+                ["bateria emoji", "widget de bateria", "icono de bateria", "emoji stickers"],
+                ["emojis animados", "tema de icono"],
+                ["bateria emoji", "widget de bateria emoji", "icono de bateria"],
+            ),
+            (
+                "BR_PT",
+                ["bateria emoji", "widget de bateria", "icone de bateria", "emoji stickers"],
+                ["emojis animados", "tema de icone"],
+                ["bateria emoji", "widget de bateria emoji", "icone de bateria"],
+            ),
+            (
+                "VN_VI",
+                ["pin emoji", "widget pin", "icon pin", "emoji stickers"],
+                ["hieu ung emoji", "battery icons"],
+                ["pin emoji", "widget pin", "icon pin"],
+            ),
+            (
+                "ID_ID",
+                ["baterai emoji", "widget baterai", "ikon baterai", "emoji stickers"],
+                ["animated emojis", "battery icons"],
+                ["baterai emoji", "widget baterai emoji", "ikon baterai"],
+            ),
+            (
+                "PH_FIL",
+                ["emoji baterya", "widget ng baterya", "sticker ng emoji", "emoji stickers"],
+                ["animated emojis", "battery icons"],
+                ["emoji baterya", "widget ng baterya emoji", "sticker ng emoji"],
+            ),
+        ]
+        for market, core_terms, feature_terms, keywords in localized_configs:
+            config = dict(
+                BASE_CONFIG,
+                market=market,
+                intent_core_terms=core_terms,
+                intent_core_words=[],
+                feature_terms=feature_terms,
+                style_terms=[],
+            )
+            for keyword in keywords:
+                with self.subTest(market=market, keyword=keyword):
+                    self.assertFalse(keyword_filter.is_truncated_keyword(row(keyword), config))
+
+    def test_truncation_still_catches_broken_prefixes(self):
+        config = dict(
+            BASE_CONFIG,
+            intent_core_terms=["control widget", "prank sound", "hair clipper prank"],
+            intent_core_words=["control", "prank", "hair", "clipper"],
+            feature_terms=["widget", "sound", "sounds"],
+        )
+        self.assertTrue(keyword_filter.is_truncated_keyword(row("control widg"), config))
+        self.assertTrue(keyword_filter.is_truncated_keyword(row("center widg"), dict(config, intent_core_words=["center"])))
+        self.assertTrue(keyword_filter.is_truncated_keyword(row("prank sou"), config))
+
+    def test_low_confidence_truncation_goes_to_manual_review_not_drop(self):
+        config = dict(
+            BASE_CONFIG,
+            intent_core_terms=["control widget"],
+            intent_core_words=["control"],
+            feature_terms=["widget"],
+        )
+        flags = keyword_filter.evaluate_hard_filters(row("unknown widg"), config)
+        self.assertFalse(flags["is_truncated"])
+        self.assertEqual(flags["HardFilterRule"], "possible_truncated_keyword")
+        self.assertEqual(
+            keyword_filter.classify_keyword(row("unknown widg"), config),
+            ("Manual Review", "possible_truncated_keyword", "Manual Review: Possible truncated keyword"),
+        )
 
     def test_force_top30_cannot_promote_risk_or_hard_drop(self):
         config = dict(BASE_CONFIG, user_overrides={"force_top30_terms": ["pokemon prank", "picsart prank"]})

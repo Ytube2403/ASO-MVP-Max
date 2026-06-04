@@ -72,6 +72,10 @@
             <span class="material-icons-outlined">dashboard</span>
             <span>Overview</span>
         </button>
+        <button class="tab-item" data-tab="setup">
+            <span class="material-icons-outlined">settings_suggest</span>
+            <span>Setup</span>
+        </button>
         <button class="tab-item" data-tab="keywords">
             <span class="material-icons-outlined">list_alt</span>
             <span>Keyword Comparison</span>
@@ -149,6 +153,13 @@
                         <h3>Rank Tier Distribution</h3>
                         <div id="chart-rank-distribution" class="chart-container"></div>
                     </div>
+                </div>
+            </section>
+
+            <!-- TAB: Setup -->
+            <section id="content-setup" class="tab-pane">
+                <div id="setup-root" class="setup-layout">
+                    <!-- Dynamic setup memory -->
                 </div>
             </section>
 
@@ -366,6 +377,7 @@
 
     <!-- Scripts -->
     <script src="js/app.js"></script>
+    <script src="js/setup.js"></script>
     <script src="js/overview.js"></script>
     <script src="js/keyword_table.js"></script>
     <script src="js/trend.js"></script>

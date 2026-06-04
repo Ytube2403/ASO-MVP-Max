@@ -84,6 +84,12 @@ def classify_keyword(row, config):
         return "Dropped", "irrelevant_intent", "Dropped: Irrelevant category/intent"
     if row.get("is_noise") or flags["is_noise"]:
         return "Dropped", "noise_only", "Dropped: Noise-only generic term"
+    if flags.get("HardFilterRule") == "possible_truncated_keyword":
+        action = str((config.get("truncation_policy", {}) or {}).get("low_confidence_action", "manual_review")).strip().lower()
+        if action == "consider":
+            return "Consider Keywords", "possible_truncated_keyword", "Consider: Possible truncated keyword"
+        if action != "ignore":
+            return "Manual Review", "possible_truncated_keyword", "Manual Review: Possible truncated keyword"
 
     naturalness = str(row.get("NaturalnessFlag", "OK"))
     if naturalness != "OK":

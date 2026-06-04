@@ -1,4 +1,4 @@
-import pandas as pd
+﻿import pandas as pd
 import numpy as np
 import re
 import os
@@ -16,11 +16,13 @@ from openpyxl.utils import get_column_letter
 import argparse
 import sys
 
-_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SHARED_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
+from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
@@ -49,7 +51,7 @@ config = {
     "platform_mode": "google_play",
     "semantic_mode": "game_emulator",
     "dedup_policy": {
-        "auto_merge_token_bag": True,
+        "auto_merge_token_bag": False,
         "review_overlap_threshold": 0.80,
         "accent_fold_auto_merge_locales": [],
         "enable_review_log": True,
@@ -75,7 +77,7 @@ config = {
         'xbox', 'sega', 'dreamcast', 'arcade', 'fliperama',
         'handheld', 'console', 'portable',
         # Retro/Classic indicators
-        'retro', 'classic', 'classicos', 'clássico', 'klasik',
+        'retro', 'classic', 'classicos', 'clÃ¡ssico', 'klasik',
         '8bit', '8-bit', '16bit', '16-bit', '32bit',
         'old', 'vintage', 'nostalgic', 'nostalgia',
         'jadul', 'lawas', 'advance', 'collection'
@@ -232,9 +234,9 @@ config = {
     ],
     
     "typo_blacklist": [
-        'gretro', 'restro', 'gaem', 'gam emulador', 'imulator', 'gbã', 'gbã emulator', 'emulsio',
+        'gretro', 'restro', 'gaem', 'gam emulador', 'imulator', 'gbÃ£', 'gbÃ£ emulator', 'emulsio',
         '0s5', 'pspusado', 'ps4ps5', 'ps ps ps', 'ps5ps4', 'pxp', 'pps', 'pc5', 'eio', 'psdp', 'pspp', 'ppsp', 'ssip', 'ds3',
-        'pintasan', '870 fitness', 'maldives', 'dolphin browser', 'restaurați poza', 'memperlambat',
+        'pintasan', '870 fitness', 'maldives', 'dolphin browser', 'restauraÈ›i poza', 'memperlambat',
         'ukuran panjang', 'seperti apa', 'seperti apa itu', 'tujuan', 'posisi', 'tercepat',
         'calculator', 'calendar', 'weather', 'clock', 'alarm', 'reminder',
         'note', 'notes', 'file manager', 'gallery', 'camera', 'video player',
@@ -259,7 +261,11 @@ config = {
     "truncation_policy": {
         "enabled": True,
         "min_prefix_length": 2,
-        "allowed_partial_terms": []
+        "allowed_partial_terms": [],
+        "protect_complete_tokens": True,
+        "ignore_inflection_prefix": True,
+        "low_confidence_action": "manual_review",
+        "dangling_action": "manual_review"
     },
     "risk_policy": {
         "competitor_brand_action": "drop",
@@ -779,7 +785,7 @@ def check_naturalness(kw, config):
         if re.search(pat, kw_lower):
             return 'UNNATURAL', 'Fails structural validation'
     for char in kw_lower:
-        if ord(char) > 127 and char not in 'áéíóúüñ¿¡íóú':
+        if ord(char) > 127 and char not in 'Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±Â¿Â¡Ã­Ã³Ãº':
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
@@ -874,16 +880,16 @@ def calculate_relevancy(row, config):
         
     # +0.10: Retro/Classic style
     retro_match = [
-        'retro', 'retrô', 'classic', 'klasik', 'clássico',
+        'retro', 'retrÃ´', 'classic', 'klasik', 'clÃ¡ssico',
         '8bit', '8-bit', '16bit', '16-bit',
-        'old', 'nostalgic', 'nostalgia', 'nostálgia', 'vintage', 'jadul', 'lawas'
+        'old', 'nostalgic', 'nostalgia', 'nostÃ¡lgia', 'vintage', 'jadul', 'lawas'
     ]
     if any(r in kw for r in retro_match):
         score += 0.10
         
     # +0.05: Game title IP
     ip_match = [
-        'pokemon', 'pokémon', 'mario', 'zelda', 'naruto', 'sonic',
+        'pokemon', 'pokÃ©mon', 'mario', 'zelda', 'naruto', 'sonic',
         'tetris', 'pacman', 'metroid', 'street fighter', 'crash',
         'god of war', 'gta', 'tekken', 'wwe', 'super smash bros'
     ]
@@ -1023,7 +1029,7 @@ def classify_keyword(row, config):
         return 'Core Intent Final', 'core_intent_final', 'Strong core game emulator search intent'
         
     if has_style:
-        generic_game_terms = ["retro games", "classic games", "gba games", "arcade games", "jogos retrô", "jogos gba", "game emulator"]
+        generic_game_terms = ["retro games", "classic games", "gba games", "arcade games", "jogos retrÃ´", "jogos gba", "game emulator"]
         if any(term in kw for term in generic_game_terms):
             return 'Broad Expansion', 'broad_expansion', 'Generic game/emulator variant'
         else:
@@ -1359,15 +1365,15 @@ for idx, entry in enumerate(all_shortlist):
     sec = entry['Section']
     if sec == 'Core Intent Final':
         if idx < 2:
-            entry['WhereToUse'] = '🏷️ Title'
+            entry['WhereToUse'] = 'ðŸ·ï¸ Title'
         elif idx < 9:
-            entry['WhereToUse'] = '📱 Short Description'
+            entry['WhereToUse'] = 'ðŸ“± Short Description'
         else:
-            entry['WhereToUse'] = '📄 Full Description'
+            entry['WhereToUse'] = 'ðŸ“„ Full Description'
     elif sec == 'Broad Expansion':
-        entry['WhereToUse'] = '📄 Full Description'
+        entry['WhereToUse'] = 'ðŸ“„ Full Description'
     else:
-        entry['WhereToUse'] = '🔍 Consider / Research Only'
+        entry['WhereToUse'] = 'ðŸ” Consider / Research Only'
 
 df_shortlist = pd.DataFrame(all_shortlist)
 
@@ -1375,6 +1381,14 @@ df_shortlist = pd.DataFrame(all_shortlist)
 print("[Step 10] Exporting to stylized Excel Workbook...")
 wb = Workbook()
 wb.remove(wb.active)
+try:
+    _profile_for_memory, _raw_profile_for_memory, _ = _shared_project_memory.load_profile_from_app(SCRIPT_DIR, config)
+except Exception:
+    _raw_profile_for_memory = {}
+project_memory = _shared_project_memory.build_project_memory(
+    config, app_profile, _raw_profile_for_memory, SCRIPT_DIR, "runtime config", []
+)
+_shared_project_memory.add_project_memory_sheet(wb, project_memory)
 
 def style_sheet(ws, title, is_report=False):
     ws.views.sheetView[0].showGridLines = True
@@ -1429,9 +1443,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v4.0"),
+    ("Pipeline Version", "ASO Keyword Planner v4.1"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1499,7 +1513,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1641,6 +1655,12 @@ if not df_dedup_log.empty:
 style_sheet(ws_dedup, "12_Text_Dedup_Log")
 
 # Save
+try:
+    memory_path = _shared_project_memory.write_project_memory_markdown(SCRIPT_DIR, project_memory)
+    print(f"Project Memory updated: {memory_path}")
+except Exception as exc:
+    print(f"WARNING: Could not write PROJECT_MEMORY.md: {exc}")
+
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)

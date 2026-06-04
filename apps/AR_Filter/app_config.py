@@ -1,4 +1,4 @@
-FILTER_POLICY = {
+﻿FILTER_POLICY = {
     "semantic_mode": "ar_filter",
     "risky_ip_terms": [],
     "ambiguous_brand_terms": ["snow"],
@@ -7,6 +7,10 @@ FILTER_POLICY = {
         "enabled": True,
         "min_prefix_length": 2,
         "allowed_partial_terms": [],
+        "protect_complete_tokens": True,
+        "ignore_inflection_prefix": True,
+        "low_confidence_action": "manual_review",
+        "dangling_action": "manual_review",
     },
     "risk_policy": {
         "competitor_brand_action": "drop",

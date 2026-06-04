@@ -196,6 +196,8 @@
 
         .deck-stage {
             position: absolute;
+            width: 1920px;
+            height: 1080px;
             transform-origin: 0 0;
             background-color: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -1815,7 +1817,7 @@
                             <div class="cover-text">
                                 <span class="slide-subtitle reveal reveal-1">Antigravity ASO Package</span>
                                 <h1 class="cover-h1 reveal reveal-2">Lọc Từ Khoá ASO Tự Động Bằng Antigravity</h1>
-                                <p class="cover-subtitle reveal reveal-3">Hướng dẫn cho người mới (Bản v4.0): quy chuẩn đầu vào, thiết lập bộ lọc ngôn ngữ & naturalness, kiểm soát quota và cách đọc hiểu workbook Excel tổng hợp duy nhất.</p>
+                                <p class="cover-subtitle reveal reveal-3">Hướng dẫn cho người mới (Bản v4.1): quy chuẩn đầu vào, thiết lập bộ lọc ngôn ngữ & naturalness, kiểm soát quota và cách đọc hiểu workbook Excel tổng hợp duy nhất.</p>
                                 
                                 <div class="cover-meta-grid reveal reveal-4">
                                     <div class="cover-meta-card">
@@ -1851,7 +1853,7 @@
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>ASO Antigravity v4.0</span>
+                            <span>ASO Antigravity v4.1</span>
                             <div class="slide-footer-meta">
                                 <span>Trang 1 / 22</span>
                             </div>
@@ -2141,11 +2143,11 @@
                         </div>
                     </section>
                     <!-- ===========================================
-                       SLIDE A: SHARED MODULES & ARCHITECTURE (v4.0)
+                       SLIDE A: SHARED MODULES & ARCHITECTURE (v4.1)
                        =========================================== -->
                     <section class="slide" data-slide="6">
                         <div class="slide-header">
-                            <h2 class="slide-title">Shared Modules & Kiến Trúc Dự Án v4.0</h2>
+                            <h2 class="slide-title">Shared Modules & Kiến Trúc Dự Án v4.1</h2>
                             <span class="slide-subtitle">Tránh trùng lặp code & Đồng bộ logic</span>
                         </div>
                         <div class="slide-body">
@@ -2153,18 +2155,19 @@
                                 <div class="col">
                                     <h3 class="card-title text-indigo"><i class="fa-solid fa-share-nodes"></i> Thư mục shared/ dùng chung</h3>
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Trong bản v4.0, toàn bộ thuật toán core và dịch vụ nền tảng được đóng gói trong thư mục <code>shared/</code> để mọi app (AR_Filter, Prank_Sounds...) gọi chung, đảm bảo cập nhật logic đồng bộ:
+                                        Trong bản v4.1, toàn bộ thuật toán core và dịch vụ nền tảng được đóng gói trong thư mục <code>shared/</code> để mọi app (AR_Filter, Prank_Sounds...) gọi chung, đảm bảo cập nhật logic đồng bộ:
                                     </p>
                                     <ul class="slide-list star-list" style="font-size: 17px;">
                                         <li><strong>shared/keyword_filter/ :</strong> Gồm 10 bộ lọc con chuyên sâu (lọc độ dài, bộ lọc chữ thường, lọc ngôn ngữ, loại bỏ competitor brand, kiểm tra naturalness, sửa lỗi chính tả typo...).</li>
                                         <li><strong>shared/text_dedup.py :</strong> Phát hiện trùng lặp từ đơn / cụm từ, tối ưu hóa quota và ghi nhật ký loại bỏ.</li>
                                         <li><strong>shared/language_detector.py & translation_service.py :</strong> Tự động dịch và nhận diện ngôn ngữ của từ khóa chính xác.</li>
                                         <li><strong>shared/profile_service.py :</strong> Chuẩn hóa việc đọc và phân tích file <code>App_Profile.json</code>.</li>
+                                        <li><strong>shared/project_memory.py :</strong> Render lại setup hiện có thành Dashboard tab <code>Setup</code>, sheet <code>00_Project_Memory</code> và file <code>PROJECT_MEMORY.md</code>.</li>
                                     </ul>
                                 </div>
                                 <div class="col">
                                     <div class="glass-card card-indigo" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                                        <h3 class="card-title text-indigo" style="margin-top: 0;"><i class="fa-solid fa-diagram-project"></i> Luồng Xử Lý Hệ Thống v4.0</h3>
+                                        <h3 class="card-title text-indigo" style="margin-top: 0;"><i class="fa-solid fa-diagram-project"></i> Luồng Xử Lý Hệ Thống v4.1</h3>
                                         <div style="display: flex; flex-direction: column; gap: 14px; font-size: 17px; color: var(--text-muted);">
                                             <div style="display: flex; align-items: center; gap: 10px;">
                                                 <span class="pill-badge pill-indigo" style="width: 80px; text-align: center;">Bước 1</span>
@@ -2184,7 +2187,7 @@
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 10px;">
                                                 <span class="pill-badge pill-success" style="width: 80px; text-align: center;">Bước 5</span>
-                                                <span><strong>Excel Output</strong> (Ghi báo cáo & cập nhật DB / Dashboard)</span>
+                                                <span><strong>Excel Output + Project Memory</strong> (Ghi báo cáo, setup snapshot & cập nhật DB / Dashboard)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2192,7 +2195,7 @@
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Kiến trúc Shared Modules v4.0</span>
+                            <span>Kiến trúc Shared Modules v4.1</span>
                             <span>Trang 6 / 26</span>
                         </div>
                     </section>
@@ -2211,7 +2214,7 @@
                                 <div class="col">
                                     <h3 class="card-title text-indigo"><i class="fa-solid fa-laptop-code"></i> Phần mềm nền tảng cần có</h3>
                                     <ul class="slide-list info-list">
-                                        <li><strong>Python 3.11+ 64-bit:</strong> Môi trường chạy mã nguồn chính v4.0. Tải tại python.org (Nhớ chọn <code>Add Python to PATH</code>).</li>
+                                        <li><strong>Python 3.11+ 64-bit:</strong> Môi trường chạy mã nguồn chính v4.1. Tải tại python.org (Nhớ chọn <code>Add Python to PATH</code>).</li>
                                         <li><strong>Trình duyệt Web:</strong> Chrome/Edge/Firefox để chạy giao diện tối ưu hóa tương tác (chế độ <code>--interactive</code>).</li>
                                         <li><strong>Trình đọc Excel:</strong> Microsoft Excel, Google Sheets hoặc WPS Office để duyệt báo cáo <code>.xlsx</code> đầu ra.</li>
                                         <li><strong>Text/Code Editor:</strong> VS Code hoặc Notepad++ để chỉnh sửa file cấu hình <code>app_config.py</code>.</li>
@@ -2269,7 +2272,7 @@ pip install -r requirements.txt</div>
                                         <li><code>GameEmulator_ID_ID.csv</code> (Indonesia - Tiếng Indo)</li>
                                     </ul>
                                     <div class="warning-box">
-                                        <h4><i class="fa-solid fa-triangle-exclamation"></i> Chú ý Tên Cột & Format v4.0</h4>
+                                        <h4><i class="fa-solid fa-triangle-exclamation"></i> Chú ý Tên Cột & Format v4.1</h4>
                                         1. Đảm bảo tên cột khớp <strong>chính xác</strong> với bảng quy định.<br>
                                         2. Lưu file ở dạng mã hóa <strong>UTF-8</strong> hoặc <strong>UTF-8 with BOM</strong> để tránh lỗi ký tự tiếng Việt/có dấu.<br>
                                         3. Đặt file trong thư mục: <code>[Component]/Input/[MMYYYY]/[Tên_File].csv</code> (Ví dụ: <code>apps/AR_Filter/Input/052026/ARFilter_US_EN.csv</code>).
@@ -2603,22 +2606,22 @@ Requirements:
                             <div class="grid-2">
                                 <div class="col">
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        <code>app_config.py</code> lưu trữ các tham số điều hướng cho bộ lọc của pipeline v4.0. Nó cấu hình chi tiết từ luật ngôn ngữ đến định lượng quota.
+                                        <code>app_config.py</code> lưu trữ các tham số điều hướng cho bộ lọc của pipeline v4.1. Nó cấu hình chi tiết từ luật ngôn ngữ đến định lượng quota.
                                     </p>
-                                    <h3 class="card-title text-indigo"><i class="fa-solid fa-gears"></i> Cấu hình quan trọng trong v4.0</h3>
+                                    <h3 class="card-title text-indigo"><i class="fa-solid fa-gears"></i> Cấu hình quan trọng trong v4.1</h3>
                                     <ul class="slide-list info-list" style="font-size: 18px;">
                                         <li><strong>market_language_policy:</strong> Quy định ngôn ngữ chính (Primary) và phụ (Secondary). Giúp giữ lại từ khóa ngôn ngữ phụ hữu ích.</li>
                                         <li><strong>language_naturalness:</strong> Thiết lập luật tự nhiên (grammar, redundancy, length anomaly, cross-language bleed) loại bỏ spam.</li>
                                         <li><strong>keyword_quota & fallback_policy:</strong> Định mức và phương án dự phòng bù quota từ bucket tiếp theo.</li>
                                         <li><strong>semantic_mode & ambiguous_brand_terms:</strong> Lọc ngữ nghĩa AI và danh mục từ khóa thương hiệu nhạy cảm dễ gây hiểu nhầm.</li>
-                                        <li><strong>dedup_policy & truncation_policy:</strong> Quy tắc xử lý trùng lặp và giới hạn độ dài ký tự tránh bị store cắt bớt.</li>
+                                        <li><strong>dedup_policy & truncation_policy:</strong> Quy tắc xử lý trùng lặp, giữ hoán vị từ khóa và phân biệt từ khóa bị cắt cụt với token hợp lệ như emoji, icon, sound, filter, widget.</li>
                                     </ul>
                                 </div>
                                 <div class="col" style="justify-content: center;">
                                     <table class="table-mockup" style="font-size: 18px;">
                                         <thead>
                                             <tr>
-                                                <th>Cấu hình v4.0</th>
+                                                <th>Cấu hình v4.1</th>
                                                 <th>Chức năng chính</th>
                                                 <th>Ví dụ thiết lập</th>
                                             </tr>
@@ -2646,8 +2649,8 @@ Requirements:
                                             </tr>
                                             <tr>
                                                 <td>Truncation Policy</td>
-                                                <td>Giới hạn ký tự store</td>
-                                                <td><code>"max_char_length": 30</code></td>
+                                                <td>Bảo vệ token hoàn chỉnh, bắt prefix cắt cụt</td>
+                                                <td><code>"protect_complete_tokens": true</code></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -2718,7 +2721,7 @@ Rules:
                             <div class="grid-2">
                                 <div class="col">
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Sau khi chuẩn bị đủ các file: CSV raw, Profile JSON và config, hãy mở ô chat Antigravity và ra lệnh chạy, hoặc tự chạy trực tiếp bằng Command Line (CLI) với các tùy chọn linh hoạt của bản v4.0.
+                                        Sau khi chuẩn bị đủ các file: CSV raw, Profile JSON và config, hãy mở ô chat Antigravity và ra lệnh chạy, hoặc tự chạy trực tiếp bằng Command Line (CLI) với các tùy chọn linh hoạt của bản v4.1.
                                     </p>
                                     <div class="terminal-btn-tray">
                                         <button class="terminal-trigger-btn" onclick="runSimulatedCommand('help')">Xem Help</button>
@@ -2739,7 +2742,8 @@ Mode: headless or interactive
 Requirements:
 - Scan Input folder for CSV files.
 - Use current App_Profile.json and app_config.py.
-- Export Excel workbook with 12_Text_Dedup_Log.
+- Export Excel workbook with 00_Project_Memory and 12_Text_Dedup_Log.
+- Update PROJECT_MEMORY.md for handoff.
 - Sync data to SQLite database aso_tracker.db.
 - Summarize top selected keywords and major drop reasons afterward.</div>
                                     </div>
@@ -2772,11 +2776,11 @@ Requirements:
                         </div>
                     </section>
                     <!-- ===========================================
-                       SLIDE B: BATCH RUNNER & MASTER KEYWORDS (v4.0)
+                       SLIDE B: BATCH RUNNER & MASTER KEYWORDS (v4.1)
                        =========================================== -->
                     <section class="slide" data-slide="18">
                         <div class="slide-header">
-                            <h2 class="slide-title">Chạy Hàng Loạt (Batch) & Master Keywords v4.0</h2>
+                            <h2 class="slide-title">Chạy Hàng Loạt (Batch) & Master Keywords v4.1</h2>
                             <span class="slide-subtitle">Tối ưu hóa quy trình làm việc quy mô lớn</span>
                         </div>
                         <div class="slide-body">
@@ -2814,17 +2818,17 @@ Requirements:
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Chạy Batch & Công cụ tổng hợp v4.0</span>
+                            <span>Chạy Batch & Công cụ tổng hợp v4.1</span>
                             <span>Trang 18 / 26</span>
                         </div>
                     </section>
 
                     <!-- ===========================================
-                       SLIDE C: KEYWORD TRACKER DASHBOARD (v4.0)
+                       SLIDE C: KEYWORD TRACKER DASHBOARD (v4.1)
                        =========================================== -->
                     <section class="slide" data-slide="19">
                         <div class="slide-header">
-                            <h2 class="slide-title">Keyword Tracker Dashboard v4.0</h2>
+                            <h2 class="slide-title">Keyword Tracker Dashboard v4.1</h2>
                             <span class="slide-subtitle">Theo dõi & Phân tích trực quan hiệu quả từ khóa</span>
                         </div>
                         <div class="slide-body">
@@ -2832,12 +2836,13 @@ Requirements:
                                 <div class="col">
                                     <h3 class="card-title text-success"><i class="fa-solid fa-chart-line"></i> Dashboard SPA & Quản Lý SQLite</h3>
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Bản v4.0 giới thiệu Dashboard trực quan (nền tảng Flask + SQLite) giúp hiển thị kết quả từ khóa, theo dõi độ biến động volume/score và so sánh chéo hiệu suất giữa các app:
+                                        Bản v4.1 giới thiệu Dashboard trực quan (nền tảng Flask + SQLite) giúp hiển thị kết quả từ khóa, theo dõi độ biến động volume/score và so sánh chéo hiệu suất giữa các app:
                                     </p>
                                     <ul class="slide-list success-list" style="font-size: 17px;">
                                         <li><strong>SQLite Database (db_manager.py):</strong> Lưu trữ tập trung lịch sử quét từ khóa, các chỉ số Balanced Score, Relevancy, Volume để vẽ biểu đồ tăng trưởng.</li>
                                         <li><strong>Data Scanner (data_scanner.py):</strong> Script tự động quét thư mục <code>Output/</code> để cập nhật dữ liệu Excel mới nhất vào SQLite DB.</li>
                                         <li><strong>Giao diện SPA hiện đại (tracker/):</strong> Dashboard hiển thị biểu đồ tương tác, lọc theo app, quốc gia, ngôn ngữ và hiển thị lịch sử biến động từ khóa.</li>
+                                        <li><strong>Setup tab:</strong> Hiển thị Project Memory của app đang chọn, gồm đối thủ, blocked brands, core/feature terms, policy loại bỏ và warnings.</li>
                                     </ul>
                                     <div class="code-container" style="margin-top: 15px;">
                                         <div class="code-header">
@@ -2850,7 +2855,7 @@ Requirements:
                                 <div class="col" style="justify-content: center;">
                                     <div class="glass-card card-success" style="padding: 20px; border: 1px solid rgba(52, 211, 153, 0.3); background: rgba(16, 185, 129, 0.05); display: flex; flex-direction: column; width: 100%;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
-                                            <span style="font-weight: 700; color: var(--accent-success);"><i class="fa-solid fa-gauge-high"></i> ASO KEYWORD TRACKER v4.0</span>
+                                            <span style="font-weight: 700; color: var(--accent-success);"><i class="fa-solid fa-gauge-high"></i> ASO KEYWORD TRACKER v4.1</span>
                                             <span class="pill-badge pill-success" style="font-size: 11px;">Server Live</span>
                                         </div>
                                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
@@ -2881,7 +2886,7 @@ Requirements:
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Keyword Tracker Dashboard v4.0</span>
+                            <span>Keyword Tracker Dashboard v4.1</span>
                             <span>Trang 19 / 26</span>
                         </div>
                     </section>
@@ -2955,9 +2960,9 @@ Requirements:
                                         Bản báo cáo Excel xuất ra chứa nhiều sheet để phục vụ các mục đích cụ thể. Hãy click vào các tab Excel mô phỏng bên phải để xem mô tả.
                                     </p>
                                     <div class="glass-card card-indigo" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px;">
-                                        <h4 id="sheetExTitle" style="margin: 0 0 10px 0; font-family: var(--font-display); font-size: 22px; color: var(--accent-indigo);"><i class="fa-solid fa-file-excel"></i> 00_README_CONFIG</h4>
+                                        <h4 id="sheetExTitle" style="margin: 0 0 10px 0; font-family: var(--font-display); font-size: 22px; color: var(--accent-indigo);"><i class="fa-solid fa-file-excel"></i> 00_Project_Memory</h4>
                                         <p id="sheetExDesc" style="margin: 0; font-size: 18px; line-height: 1.5; color: var(--text-muted);">
-                                            Lưu vết các thiết lập cấu hình đầu vào, danh mục đối thủ đã chặn, thị trường chạy và mốc thời gian thực hiện để tiện hậu kiểm.
+                                            Snapshot setup hiện tại để user nhớ app identity, positioning, keyword groups, competitor setup, drop policy, overrides, quota và warnings.
                                         </p>
                                     </div>
                                 </div>
@@ -2977,22 +2982,23 @@ Requirements:
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td>App Title</td>
+                                                        <td>App Identity</td>
                                                         <td>AR Filter Photo Editor</td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Market Run</td>
-                                                        <td>US_EN</td>
+                                                        <td>Competitors</td>
+                                                        <td>Snapchat, FaceApp, Instagram</td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Run Time</td>
-                                                        <td>2026-05-27 12:00:00</td>
+                                                        <td>Blocked Brands</td>
+                                                        <td>snapchat, faceapp, instagram</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="excel-tabs-bar">
-                                            <div class="excel-tab-item active" onclick="selectExcelTab('readme', this)">00_README_CONFIG</div>
+                                            <div class="excel-tab-item active" onclick="selectExcelTab('memory', this)">00_Project_Memory</div>
+                                            <div class="excel-tab-item" onclick="selectExcelTab('readme', this)">00_README_CONFIG</div>
                                             <div class="excel-tab-item" onclick="selectExcelTab('shortlist', this)">01_Main_Shortlist</div>
                                             <div class="excel-tab-item" onclick="selectExcelTab('features', this)">02_Feature_Keywords</div>
                                             <div class="excel-tab-item" onclick="selectExcelTab('dropped', this)">04_Dropped_Audit</div>
@@ -3079,12 +3085,12 @@ Requirements:
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
                                         Đừng bỏ qua sheet <code>04_Dropped_Audit</code>. Đây là nguồn kiểm toán xem hệ thống có loại nhầm từ khóa giá trị nào không.
                                     </p>
-                                    <h3 class="card-title text-danger"><i class="fa-solid fa-circle-exclamation"></i> Các lý do loại v4.0</h3>
+                                    <h3 class="card-title text-danger"><i class="fa-solid fa-circle-exclamation"></i> Các lý do loại v4.1</h3>
                                     <ul class="slide-list danger-list" style="font-size: 17px;">
                                         <li><strong>Competitor Brand:</strong> Tên đối thủ cạnh tranh chặn cứng hoặc thương hiệu nhạy cảm (ambiguous_brand_terms).</li>
                                         <li><strong>Noise/Generic:</strong> Từ khóa rác, từ vô nghĩa (app, free, download).</li>
                                         <li><strong>Language Mismatch:</strong> Sai biệt ngôn ngữ so với cấu hình market_language_policy.</li>
-                                        <li><strong>Truncation Policy:</strong> Chiều dài từ khóa vượt quá giới hạn store tối đa.</li>
+                                        <li><strong>Truncation Policy:</strong> Từ khóa bị cắt cụt high-confidence như <code>prank sou</code> hoặc <code>control widg</code>; token hoàn chỉnh như <code>emoji</code>, <code>icon</code>, <code>sound</code> không bị drop nhầm.</li>
                                         <li><strong>Platform Affiliation:</strong> Trùng nền tảng đối thủ (ios, iphone trên Google Play...).</li>
                                     </ul>
                                 </div>
@@ -3105,8 +3111,8 @@ Requirements:
                                             </tr>
                                             <tr>
                                                 <td>free funny widgets for android ios download</td>
-                                                <td><span class="pill-badge pill-warning">Truncation Policy / Platform</span></td>
-                                                <td>Độ dài vượt 30 ký tự & chứa nhãn nền tảng chéo</td>
+                                                <td><span class="pill-badge pill-warning">Possible Truncation / Platform</span></td>
+                                                <td>Prefix nghi ngờ hoặc chứa nhãn nền tảng chéo; case thiếu anchor vào Manual Review thay vì hard-drop</td>
                                             </tr>
                                             <tr>
                                                 <td>como fazer widgets</td>
@@ -3460,7 +3466,7 @@ Requirements:
         /* ===========================================
            SLIDE PRESENTATION SCALING & RUNNER ENGINE
            =========================================== */
-        const TOTAL_SLIDES = 26;
+        const TOTAL_SLIDES = document.querySelectorAll('section.slide').length || 26;
         let currentSlide = 1;
         let editModeActive = false;
 
@@ -3580,7 +3586,10 @@ Requirements:
         // Initialize slide index storage
         const savedSlide = localStorage.getItem('antigravity_current_slide');
         if (savedSlide) {
-            currentSlide = parseInt(savedSlide);
+            const parsedSlide = parseInt(savedSlide, 10);
+            if (!Number.isNaN(parsedSlide)) {
+                currentSlide = Math.min(Math.max(parsedSlide, 1), TOTAL_SLIDES);
+            }
         }
 
         /* ===========================================
@@ -3715,7 +3724,7 @@ Requirements:
             },
             shared: {
                 title: '<i class="fa-solid fa-folder text-warning"></i> Thư mục shared/',
-                desc: 'Thư mục chứa các module và thuật toán dùng chung của hệ thống v4.0. Bao gồm bộ lọc từ khóa chi tiết (keyword_filter/), bộ de-dedup từ khóa (text_dedup.py) và dịch vụ ngôn ngữ.'
+                desc: 'Thư mục chứa các module và thuật toán dùng chung của hệ thống v4.1. Bao gồm bộ lọc từ khóa chi tiết (keyword_filter/), bộ de-dedup từ khóa (text_dedup.py) và dịch vụ ngôn ngữ.'
             },
             apps: {
                 title: '<i class="fa-solid fa-folder text-warning"></i> Thư mục apps/',
@@ -3753,7 +3762,7 @@ Requirements:
                 title: '<i class="fa-solid fa-folder text-warning"></i> Thư mục tracker/',
                 desc: 'Nơi đặt ứng dụng Dashboard trực quan để theo dõi từ khóa. Bao gồm server Flask, database SQLite (aso_tracker.db), data_scanner.py và giao diện SPA.'
             }
-        };'
+        };
 
         function selectTreeNode(nodeKey) {
             synth.playClick();
@@ -3897,7 +3906,7 @@ Requirements:
   python run_aso_batch.py                                 Run pipeline in batch mode for all apps
   clear                                                   Clear the screen`,
             
-            run: `Starting ASO Keyword Lọc Pipeline v4.0...
+            run: `Starting ASO Keyword Lọc Pipeline v4.1...
 [STEP 1/10] Đang tải cấu hình App Profile (apps/AR_Filter/App_Profile.json)... OK
 [STEP 2/10] Đang quét thư mục Input tìm CSV raw... Phát hiện: Input/052026/ARFilter_US_EN.csv
 [STEP 3/10] Chuẩn hóa cột & ép kiểu volume/difficulty... OK (Loaded 420 keywords)
@@ -3954,6 +3963,19 @@ Tổng thời gian xử lý: 5.2 giây.`
            INTERACTIVE COMPONENT: EXCEL TABS VIEW
            =========================================== */
         const excelTabContents = {
+            memory: `<table class="table-mockup" style="font-size:18px;">
+                <thead>
+                    <tr><th>Setup Area</th><th>Current Snapshot</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>App Identity</td><td>AR Filter Photo Editor</td></tr>
+                    <tr><td>Core Terms</td><td>face filter, camera effect, photo editor</td></tr>
+                    <tr><td>Competitors</td><td>Snapchat, FaceApp, Instagram</td></tr>
+                    <tr><td>Blocked Brands</td><td>snapchat, faceapp, instagram</td></tr>
+                    <tr><td>Warnings</td><td>No critical setup warning</td></tr>
+                </tbody>
+            </table>`,
+
             readme: `<table class="table-mockup" style="font-size:18px;">
                 <thead>
                     <tr><th>Cấu hình hệ thống</th><th>Giá trị thiết lập</th></tr>
@@ -4002,6 +4024,10 @@ Tổng thời gian xử lý: 5.2 giây.`
         };
 
         const excelTabMeta = {
+            memory: {
+                title: '<i class="fa-solid fa-file-excel"></i> 00_Project_Memory',
+                desc: 'Snapshot setup hiện tại: app identity, positioning, keyword groups, competitor setup, drop policy, overrides, quota và warnings để bàn giao hoặc audit nhanh.'
+            },
             readme: {
                 title: '<i class="fa-solid fa-file-excel"></i> 00_README_CONFIG',
                 desc: 'Lưu vết các thiết lập cấu hình đầu vào, danh mục đối thủ đã chặn, thị trường chạy và mốc thời gian thực hiện để tiện hậu kiểm.'
@@ -4202,7 +4228,8 @@ Mode: headless
 
 Requirements:
 - Use current App_Profile.json and app_config.py.
-- Export Excel workbook.
+- Export Excel workbook with 00_Project_Memory.
+- Update PROJECT_MEMORY.md for handoff.
 - Summarize top selected keywords and drop reasons.`
             },
             
@@ -4307,10 +4334,11 @@ Requirements:
             "6. Mở file app_config.py cấu hình list core terms, feature terms.",
             "7. Điền danh sách competitor brands và noise terms để lọc chặn.",
             "8. Chạy pipeline qua CLI hoặc gọi Antigravity hỗ trợ.",
-            "9. Kiểm tra file Excel output vừa được tạo trong folder Output.",
-            "10. Rà soát sheet Dropped Audit và Text_Dedup_Log xem bộ lọc.",
-            "11. Đồng bộ kết quả vào DB và khởi chạy Dashboard tracker xem biểu đồ.",
-            "12. Sử dụng run_aso_batch.py nếu cần chạy hàng loạt nhiều ứng dụng."
+            "9. Kiểm tra file Excel output vừa được tạo trong folder Output, gồm sheet 00_Project_Memory.",
+            "10. Kiểm tra PROJECT_MEMORY.md trong thư mục app để xác nhận setup snapshot.",
+            "11. Rà soát sheet Dropped Audit và Text_Dedup_Log xem bộ lọc.",
+            "12. Đồng bộ kết quả vào DB và khởi chạy Dashboard tracker xem biểu đồ và tab Setup.",
+            "13. Sử dụng run_aso_batch.py nếu cần chạy hàng loạt nhiều ứng dụng."
         ];
 
         function initChecklistTracker() {
@@ -4409,7 +4437,7 @@ Requirements:
                 ]
             },
             {
-                q: "6. Thư mục shared/ trong v4.0 được thiết kế nhằm mục đích gì?",
+                q: "6. Thư mục shared/ trong v4.1 được thiết kế nhằm mục đích gì?",
                 a: [
                     { text: "Để chứa các file CSV keyword thô của các app khác nhau.", correct: false },
                     { text: "Đóng gói toàn bộ thuật toán core và dịch vụ dùng chung để các app gọi thống nhất.", correct: true },
@@ -4542,7 +4570,7 @@ Requirements:
                 "Hệ thống phân nhóm làm gì?",
                 "Workflow tổng quan 5 bước",
                 "Cấu trúc thư mục package",
-                "Shared Modules & Kiến Trúc v4.0",
+                "Shared Modules & Kiến Trúc v4.1",
                 "Chuẩn bị công cụ & thư viện",
                 "File CSV input chuẩn",
                 "Khái niệm App Profile",
@@ -4554,8 +4582,8 @@ Requirements:
                 "app_config.py là gì?",
                 "Cách chỉnh app_config.py",
                 "Chạy Pipeline với Antigravity",
-                "Chạy Batch & Master Keywords v4.0",
-                "Keyword Tracker Dashboard v4.0",
+                "Chạy Batch & Master Keywords v4.1",
+                "Keyword Tracker Dashboard v4.1",
                 "Chi tiết quy trình 10 bước",
                 "Đọc hiểu Excel Output",
                 "Cách review sheet Shortlist",

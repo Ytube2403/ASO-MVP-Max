@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime
 from shared.app_registry import resolve_app
 from shared.locale_parser import split_app_and_locale
+from shared.translation_preflight import require_translation_service_for_market
 
 def detect_month(csv_path):
     # Tìm kiếm chuỗi định dạng MMYYYY (6 chữ số) trong đường dẫn file CSV
@@ -43,6 +44,12 @@ def main():
 
     print(f"Detected App Name: {app_name}")
     print(f"Detected Market: {market}")
+
+    try:
+        require_translation_service_for_market(market)
+    except RuntimeError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     try:

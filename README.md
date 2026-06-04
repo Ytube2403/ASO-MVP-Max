@@ -1,4 +1,4 @@
-# ASO-MVP-Max Keyword Filter Pipeline & Tracker v4.0
+# ASO-MVP-Max Keyword Filter Pipeline & Tracker v4.1
 
 Ban Max dung LibreTranslate self-host de dich keyword local. He thong ASO gom pipeline loc keyword, dashboard theo doi chi so va cong cu xuat Master Keywords.
 
@@ -36,7 +36,7 @@ ASO-MVP-Max/
 |   `-- static/
 |
 |-- docs/                         # Dac ta, template, guide va tu dien
-|   |-- ASO_Keyword_Planner_v4_0.md
+|   |-- ASO_Keyword_Planner_v4_1.md
 |   |-- SETUP_WINDOWS.md
 |   |-- README_File_Guide.md
 |   `-- english_words_10k.txt
@@ -59,6 +59,7 @@ ASO-MVP-Max/
 
 - Moi app giu `app_config.py`, `App_Profile.json`, `Input/`, `Output/` va runner rieng trong `apps/<AppName>/`.
 - Logic loc, parser locale, dich, profile va dedup phai dung module trong `shared/`.
+- Truncation logic v4.1 duoc harden trong shared engine: token hoan chinh nhu `emoji`, `icon`, `sound`, `filter`, `widget` khong bi drop nham; prefix nghi ngo vao Manual Review thay vi hard-drop.
 - Tai nguyen dung chung nam trong `data/`; tai lieu nam trong `docs/`.
 - Lenh cu tai root van duoc giu de khong lam hong workflow hien co.
 
@@ -178,7 +179,7 @@ python -m compileall -q .
 
 ## Tai lieu
 
-- [Dac ta pipeline v4.0](docs/ASO_Keyword_Planner_v4_0.md)
+- [Dac ta pipeline v4.1](docs/ASO_Keyword_Planner_v4_1.md)
 - [Cai dat Windows day du](docs/SETUP_WINDOWS.md)
 - [Huong dan cac file](docs/README_File_Guide.md)
 - [Template app moi](apps/App_Template/README.md)

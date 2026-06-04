@@ -8,10 +8,74 @@ DEFAULT_DANGLING_TERMS = {
     "and", "com", "con", "da", "das", "de", "do", "dos", "e", "et",
     "for", "of", "ou", "para", "por", "with", "y",
 }
+DEFAULT_DANGLING_TERMS_BY_LANG = {
+    "en": {"and", "for", "of", "or", "to", "with"},
+    "es": {"con", "de", "del", "el", "la", "los", "las", "para", "por", "sin", "y"},
+    "pt": {"com", "da", "das", "de", "do", "dos", "e", "ou", "para", "por", "sem"},
+    "fr": {"avec", "de", "des", "du", "et", "la", "le", "les", "pour"},
+    "id": {"dan", "dengan", "di", "ke", "untuk"},
+    "fil": {"at", "ng", "para", "sa"},
+    "tl": {"at", "ng", "para", "sa"},
+    "vi": {"cho", "cua", "của", "va", "và", "voi", "với"},
+}
 
 
 def _raw_text(value):
     return value.get("Keyword", "") if hasattr(value, "get") and not isinstance(value, str) else value
+
+
+def _configured_bool(policy, key, default):
+    return bool(policy.get(key, default))
+
+
+def _simple_inflection_variant(prefix, candidate):
+    if not prefix or not candidate or candidate == prefix:
+        return False
+    if candidate in {prefix + "s", prefix + "es"}:
+        return True
+    if prefix.endswith("y") and candidate == prefix[:-1] + "ies":
+        return True
+    if prefix.endswith(("s", "x", "z", "ch", "sh")) and candidate == prefix + "es":
+        return True
+    return False
+
+
+def _dangling_terms(policy, runtime):
+    configured = policy.get("dangling_terms")
+    if configured is not None:
+        return {
+            normalize_filter_text(term)
+            for term in configured
+            if normalize_filter_text(term)
+        }
+
+    terms = set(DEFAULT_DANGLING_TERMS)
+    language_policy = runtime.config.get("market_language_policy", {}) or {}
+    configured_languages = (
+        language_policy.get("primary_languages", [])
+        + language_policy.get("secondary_languages", [])
+        + language_policy.get("optional_secondary_languages", [])
+    )
+    for language in configured_languages:
+        language = str(language or "").lower().split("-")[0]
+        terms.update(DEFAULT_DANGLING_TERMS_BY_LANG.get(language, set()))
+    return {normalize_filter_text(term) for term in terms if normalize_filter_text(term)}
+
+
+def _low_confidence_action(policy):
+    action = str(policy.get("low_confidence_action", "manual_review") or "manual_review").strip().lower()
+    if action not in {"manual_review", "consider", "ignore"}:
+        return "manual_review"
+    return action
+
+
+def _dangling_action(policy):
+    action = str(policy.get("dangling_action", "manual_review") or "manual_review").strip().lower()
+    if action in {"drop", "hard_drop", "truncated_keyword"}:
+        return "drop"
+    if action not in {"manual_review", "consider", "ignore"}:
+        return "manual_review"
+    return action
 
 
 def find_competitor_keyword(value, config):
@@ -83,26 +147,32 @@ def find_truncated_keyword(value, config):
     if len(words) < 2:
         return None
     prefix = words[-1]
-    dangling_terms = {
-        normalize_filter_text(term)
-        for term in policy.get("dangling_terms", DEFAULT_DANGLING_TERMS)
-        if normalize_filter_text(term)
-    }
-    if prefix in dangling_terms:
-        return AuditMatch(rule="truncated_keyword", term=prefix, source="raw")
+    if prefix in _dangling_terms(policy, runtime):
+        if _dangling_action(policy) == "drop":
+            return AuditMatch(rule="truncated_keyword", term=prefix, source="raw")
+        if _dangling_action(policy) != "ignore":
+            return AuditMatch(rule="possible_truncated_keyword", term=prefix, source="raw", completion="dangling_term")
+        return None
     min_length = int(policy.get("min_prefix_length", 2) or 2)
     if len(prefix) < min_length:
         return None
-    if not any(token in runtime.truncation_anchor_tokens for token in words[:-1]):
+    if _configured_bool(policy, "protect_complete_tokens", True) and prefix in runtime.truncation_complete_tokens:
         return None
+    has_anchor = any(token in runtime.truncation_anchor_tokens for token in words[:-1])
     for candidate in runtime.truncation_candidates:
         if len(candidate) > len(prefix) and candidate.startswith(prefix):
-            return AuditMatch(rule="truncated_keyword", term=prefix, source="raw", completion=candidate)
+            if _configured_bool(policy, "ignore_inflection_prefix", True) and _simple_inflection_variant(prefix, candidate):
+                continue
+            if has_anchor:
+                return AuditMatch(rule="truncated_keyword", term=prefix, source="raw", completion=candidate)
+            if _low_confidence_action(policy) != "ignore":
+                return AuditMatch(rule="possible_truncated_keyword", term=prefix, source="raw", completion=candidate)
     return None
 
 
 def is_truncated_keyword(value, config):
-    return bool(find_truncated_keyword(value, config))
+    match = find_truncated_keyword(value, config)
+    return bool(match and match.rule == "truncated_keyword")
 
 
 def _platform_only(value, config, platform_match):
@@ -112,10 +182,11 @@ def _platform_only(value, config, platform_match):
 def evaluate_hard_filters(value, config):
     runtime = resolve_filter_runtime(config)
     config = runtime.config
+    truncation_match = find_truncated_keyword(value, config)
     matches = {
         "is_competitor": find_competitor_keyword(value, config),
         "is_typo": find_typo_keyword(value, config),
-        "is_truncated": find_truncated_keyword(value, config),
+        "is_truncated": truncation_match,
         "is_irrelevant": find_irrelevant_keyword(value, config),
         "is_noise": find_noise_only(value, config),
         "is_platform_affiliation": find_any_term(value, runtime.matchers["platform_affiliation_terms"], rule="platform_affiliation"),
@@ -131,6 +202,8 @@ def evaluate_hard_filters(value, config):
     ]
     primary = next((matches[key] for key in priority if matches.get(key)), None)
     result = {key: bool(match) for key, match in matches.items()}
+    if truncation_match and truncation_match.rule == "possible_truncated_keyword":
+        result["is_truncated"] = False
     result.update({
         "HardFilterRule": primary.rule if primary else "",
         "HardFilterTerm": primary.term if primary else "",

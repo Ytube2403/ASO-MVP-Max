@@ -17,6 +17,13 @@ except ImportError:
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
+ASO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ASO_ROOT not in sys.path:
+    sys.path.insert(0, ASO_ROOT)
+
+from shared.app_registry import resolve_app
+from shared.project_memory import build_project_memory_for_app
+
 # Ensure DB initialized and initial scan performed on startup
 print("Initializing database and scanning directories...")
 db_manager.init_db()
@@ -31,6 +38,23 @@ def get_apps():
     try:
         apps = db_manager.get_available_apps()
         return jsonify({"success": True, "apps": apps})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/setup/<app_name>")
+def get_setup(app_name):
+    try:
+        try:
+            registered_app = resolve_app(app_name, ASO_ROOT)
+            app_folder = os.path.join(ASO_ROOT, *registered_app["folder"].split("/"))
+            runner_path = registered_app.get("runner_path")
+        except KeyError:
+            app_folder = os.path.join(ASO_ROOT, "apps", app_name)
+            runner_path = None
+        if not os.path.isdir(app_folder):
+            return jsonify({"success": False, "error": f"Unknown app setup folder: {app_name}"}), 404
+        memory = build_project_memory_for_app(app_folder, runner_path=runner_path)
+        return jsonify({"success": True, "data": memory})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
