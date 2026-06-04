@@ -95,7 +95,7 @@ class BatchRunnerTests(unittest.TestCase):
 
         result = ensure_translation_preflight(
             [{"market": "US_EN"}, {"market": "IN_EN"}],
-            health_check_fn=lambda: calls.append(1) or (True, "http://127.0.0.1:5001", ""),
+            health_check_fn=lambda: calls.append(1) or (True, "http://127.0.0.1:5102", ""),
         )
 
         self.assertTrue(result["required"])
@@ -106,7 +106,7 @@ class BatchRunnerTests(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             ensure_translation_preflight(
                 [{"market": "BR_PT-BR"}, {"market": "MX_ES"}],
-                health_check_fn=lambda: (False, "http://127.0.0.1:5001", "offline"),
+                health_check_fn=lambda: (False, "http://127.0.0.1:5102", "offline"),
             )
 
         self.assertIn("BR_PT-BR, MX_ES", str(context.exception))

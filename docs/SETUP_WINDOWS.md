@@ -93,7 +93,7 @@ Mo mot terminal PowerShell rieng tai thu muc `ASO-MVP-Max`:
 .\tools\start_libretranslate.ps1
 ```
 
-Helper tao `.venv-libretranslate`, cai LibreTranslate `1.9.6` neu can va chay foreground tai `http://127.0.0.1:5001`. Mac dinh daily profile chi load `en,es,pt,pb,id,hi,tl`, dung `2` thread, tat web UI va file translation de giam workload.
+Helper tao `.venv-libretranslate`, cai LibreTranslate `1.9.6` neu can va chay foreground tai `http://127.0.0.1:5102`. Mac dinh daily profile chi load `en,es,pt,pb,id,hi,tl`, dung `2` thread, tat web UI va file translation de giam workload.
 
 Khi can audit ngoai ngu rong hon:
 
@@ -106,15 +106,15 @@ Chi dung `-Profile all` tren may du tai nguyen khi that su can load tat ca model
 Kiem tra service tu terminal khac:
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:5001/health
+Invoke-RestMethod http://127.0.0.1:5102/health
 python tools\check_libretranslate_quality.py
 ```
 
-Port `5001` duoc dung de tranh xung dot voi Keyword Tracker Dashboard tai port `5000`. Neu can endpoint khac:
+Port `5102` duoc dung rieng cho LibreTranslate Max de tranh xung dot voi Keyword Tracker Dashboard Lite tai `5100` va Max tai `5101`. Neu can endpoint khac:
 
 ```powershell
-$env:LIBRETRANSLATE_URL = "http://127.0.0.1:5002"
-.\tools\start_libretranslate.ps1 -Port 5002
+$env:LIBRETRANSLATE_URL = "http://127.0.0.1:5102"
+.\tools\start_libretranslate.ps1 -Port 5102
 ```
 
 Neu endpoint da bat API key, dat them `$env:LIBRETRANSLATE_API_KEY`.
@@ -124,7 +124,7 @@ Pipeline dung lai neu LibreTranslate khong chay. Hay bat service truoc khi chay 
 Workflow chuan khi chay ASO-MVP-Max:
 
 1. Bat LibreTranslate trong terminal rieng bang `.\tools\start_libretranslate.ps1`.
-2. Kiem tra `Invoke-RestMethod http://127.0.0.1:5001/health`.
+2. Kiem tra `Invoke-RestMethod http://127.0.0.1:5102/health`.
 3. Chay single pipeline hoac batch sau khi health check OK.
 
 Runner se tu dong preflight moi market, ke ca `US_EN`, vi input co the chua keyword secondary/non-English can dich. Neu health check fail, job dung lai truoc khi ghi workbook.
@@ -149,7 +149,7 @@ python run_aso_filter.py --csv C:\duong_dan\Pranky_US_EN.csv
 python tracker\run_dashboard.py
 ```
 
-Dashboard mo tai `http://localhost:5000`. Sau khi chay pipeline, workbook phai co sheet `00_Project_Memory`, app folder phai co `PROJECT_MEMORY.md`, va Dashboard tab `Setup` phai hien thi setup cua app dang chon.
+Dashboard mo tai `http://127.0.0.1:5101`. Sau khi chay pipeline, workbook phai co sheet `00_Project_Memory`, app folder phai co `PROJECT_MEMORY.md`, va Dashboard tab `Setup` phai hien thi setup cua app dang chon.
 
 ## 9. Ket noi mang
 

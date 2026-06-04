@@ -1,1 +1,1 @@
-FILTER_LOGIC_VERSION = "v4.1_truncation_hardening"
+FILTER_LOGIC_VERSION = "v4.2_ai_prefilter"

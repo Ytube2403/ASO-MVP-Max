@@ -1,4 +1,4 @@
-# ASO-MVP-Max Keyword Filter Pipeline & Tracker v4.1
+# ASO-MVP-Max Keyword Filter Pipeline & Tracker v4.2
 
 Ban Max dung LibreTranslate self-host de dich keyword local. He thong ASO gom pipeline loc keyword, dashboard theo doi chi so va cong cu xuat Master Keywords.
 
@@ -36,7 +36,7 @@ ASO-MVP-Max/
 |   `-- static/
 |
 |-- docs/                         # Dac ta, template, guide va tu dien
-|   |-- ASO_Keyword_Planner_v4_1.md
+|   |-- ASO_Keyword_Planner_v4_2.md
 |   |-- SETUP_WINDOWS.md
 |   |-- README_File_Guide.md
 |   `-- english_words_10k.txt
@@ -59,9 +59,20 @@ ASO-MVP-Max/
 
 - Moi app giu `app_config.py`, `App_Profile.json`, `Input/`, `Output/` va runner rieng trong `apps/<AppName>/`.
 - Logic loc, parser locale, dich, profile va dedup phai dung module trong `shared/`.
-- Truncation logic v4.1 duoc harden trong shared engine: token hoan chinh nhu `emoji`, `icon`, `sound`, `filter`, `widget` khong bi drop nham; prefix nghi ngo vao Manual Review thay vi hard-drop.
+- Truncation logic v4.2 duoc harden trong shared engine: token hoan chinh nhu `emoji`, `icon`, `sound`, `filter`, `widget` khong bi drop nham; prefix nghi ngo vao Manual Review thay vi hard-drop.
+- DeepSeek AI classifier v4.2 chay sau `pre_ai_filter`: duplicate/noise/competitor/typo/irrelevant ro rang duoc skip truoc API, con keyword rong lien quan van duoc gui AI va cache de tai su dung.
 - Tai nguyen dung chung nam trong `data/`; tai lieu nam trong `docs/`.
 - Lenh cu tai root van duoc giu de khong lam hong workflow hien co.
+
+## AI keyword classifier v4.2
+
+Dat API key ngoai repo truoc khi chay pipeline co keyword moi:
+
+```powershell
+$env:DEEPSEEK_API_KEY = "your_key_here"
+```
+
+Ket qua AI duoc cache tai `.cache/ai_keyword_analysis.sqlite3`. Sheet `06_All_Candidates` co cac cot audit `NeedsAI`, `PreAIAction`, `PreAIRule`, `PreAIReason`, `CanonicalKeyword`, `AISemanticBucket`, `AIDecisionRule`, `AIReason`, `AIConfidence`, `AIStatus` de biet keyword nao duoc goi AI, keyword nao dung cache, keyword nao reuse canonical hoac bi skip truoc API.
 
 ## Cai dat
 
@@ -92,7 +103,7 @@ Pipeline dich keyword moi sang English bang LibreTranslate self-host. Mo mot ter
 .\tools\start_libretranslate.ps1
 ```
 
-Helper tao `.venv-libretranslate`, cai LibreTranslate `1.9.6`, load cac model daily `en,es,pt,pb,id,hi,tl` va khoi dong service tai `http://127.0.0.1:5001` voi `2` thread. Giu terminal nay mo khi chay pipeline.
+Helper tao `.venv-libretranslate`, cai LibreTranslate `1.9.6`, load cac model daily `en,es,pt,pb,id,hi,tl` va khoi dong service tai `http://127.0.0.1:5102` voi `2` thread. Giu terminal nay mo khi chay pipeline.
 
 Khi can audit ngoai ngu rong hon:
 
@@ -105,14 +116,14 @@ Chi dung `-Profile all` khi may du tai nguyen va that su can load tat ca model.
 Kiem tra service:
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:5001/health
+Invoke-RestMethod http://127.0.0.1:5102/health
 python tools\check_libretranslate_quality.py
 ```
 
 Neu can doi endpoint, dat bien moi truong truoc khi chay pipeline:
 
 ```powershell
-$env:LIBRETRANSLATE_URL = "http://127.0.0.1:5001"
+$env:LIBRETRANSLATE_URL = "http://127.0.0.1:5102"
 ```
 
 Neu endpoint da bat API key, dat them `$env:LIBRETRANSLATE_API_KEY`.
@@ -141,7 +152,7 @@ Orchestrator archive CSV vao `apps/<AppName>/Input/<MMYYYY>/` va ghi workbook va
 python tracker/run_dashboard.py
 ```
 
-Dashboard mo tai `http://localhost:5000`.
+Dashboard mo tai `http://127.0.0.1:5101`.
 
 ## Chay batch
 
@@ -179,7 +190,7 @@ python -m compileall -q .
 
 ## Tai lieu
 
-- [Dac ta pipeline v4.1](docs/ASO_Keyword_Planner_v4_1.md)
+- [Dac ta pipeline v4.2](docs/ASO_Keyword_Planner_v4_2.md)
 - [Cai dat Windows day du](docs/SETUP_WINDOWS.md)
 - [Huong dan cac file](docs/README_File_Guide.md)
 - [Template app moi](apps/App_Template/README.md)

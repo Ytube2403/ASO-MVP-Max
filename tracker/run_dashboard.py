@@ -16,6 +16,8 @@ except ImportError:
     import db_manager
 
 app = Flask(__name__, static_folder="static", static_url_path="")
+DASHBOARD_HOST = os.environ.get("ASO_DASHBOARD_HOST", "127.0.0.1")
+DASHBOARD_PORT = int(os.environ.get("ASO_DASHBOARD_PORT", "5101"))
 
 ASO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ASO_ROOT not in sys.path:
@@ -445,7 +447,7 @@ def export_excel(app_name, locale):
 def open_browser():
     # Wait for flask to start
     time.sleep(1.5)
-    url = "http://127.0.0.1:5000"
+    url = f"http://{DASHBOARD_HOST}:{DASHBOARD_PORT}"
     print(f"Opening dashboard in browser at {url}...")
     webbrowser.open(url)
 
@@ -454,4 +456,4 @@ if __name__ == "__main__":
     threading.Thread(target=open_browser, daemon=True).start()
     
     # Run server
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host=DASHBOARD_HOST, port=DASHBOARD_PORT, debug=False)

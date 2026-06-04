@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 import numpy as np
 import re
 import os
@@ -24,6 +24,7 @@ from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
 from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
+from shared import ai_keyword_classifier as _shared_ai_keyword_classifier
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
 # Parse arguments
@@ -56,6 +57,34 @@ config = {
         "accent_fold_auto_merge_locales": [],
         "enable_review_log": True,
     },
+    "ai_keyword_classifier": {
+        "enabled": True,
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "batch_size": 50,
+        "requests_per_second": 2.0,
+        "prompt_version": "aso-keyword-classifier-v1",
+        "fail_on_api_error": True,
+        "min_confidence": 0.55,
+        "cache_path": ".cache/ai_keyword_analysis.sqlite3",
+        "pre_filter": {
+            "enabled": True,
+            "duplicate_strategy": "canonical_reuse",
+            "preserve_if_matches_intent": True,
+            "allow_possible_truncated_to_ai": True,
+            "skip_rules": [
+                "empty_keyword",
+                "duplicate_keyword",
+                "competitor_brand",
+                "typo_blacklist",
+                "truncated_keyword",
+                "irrelevant_intent",
+                "noise_only",
+                "platform_affiliation",
+                "platform_only"
+            ]
+        }
+    },
 
     "intent_core_terms": [
         "game emulator", "retro game emulator", "retro games emulator", 
@@ -77,7 +106,7 @@ config = {
         'xbox', 'sega', 'dreamcast', 'arcade', 'fliperama',
         'handheld', 'console', 'portable',
         # Retro/Classic indicators
-        'retro', 'classic', 'classicos', 'clÃ¡ssico', 'klasik',
+        'retro', 'classic', 'classicos', 'clássico', 'klasik',
         '8bit', '8-bit', '16bit', '16-bit', '32bit',
         'old', 'vintage', 'nostalgic', 'nostalgia',
         'jadul', 'lawas', 'advance', 'collection'
@@ -234,9 +263,9 @@ config = {
     ],
     
     "typo_blacklist": [
-        'gretro', 'restro', 'gaem', 'gam emulador', 'imulator', 'gbÃ£', 'gbÃ£ emulator', 'emulsio',
+        'gretro', 'restro', 'gaem', 'gam emulador', 'imulator', 'gbã', 'gbã emulator', 'emulsio',
         '0s5', 'pspusado', 'ps4ps5', 'ps ps ps', 'ps5ps4', 'pxp', 'pps', 'pc5', 'eio', 'psdp', 'pspp', 'ppsp', 'ssip', 'ds3',
-        'pintasan', '870 fitness', 'maldives', 'dolphin browser', 'restauraÈ›i poza', 'memperlambat',
+        'pintasan', '870 fitness', 'maldives', 'dolphin browser', 'restaurați poza', 'memperlambat',
         'ukuran panjang', 'seperti apa', 'seperti apa itu', 'tujuan', 'posisi', 'tercepat',
         'calculator', 'calendar', 'weather', 'clock', 'alarm', 'reminder',
         'note', 'notes', 'file manager', 'gallery', 'camera', 'video player',
@@ -719,29 +748,23 @@ except Exception as e:
     print(f"Warning loading shared language detector: {e}. Falling back to legacy detector.")
 
 # Populate language columns in df
-detected_langs = []
-lang_groups = []
-
-for idx, row in df.iterrows():
-    # If columns already exist in raw data, use them
-    raw_lang = df_raw.loc[idx, 'DetectedLanguage'] if 'DetectedLanguage' in df_raw.columns else None
-    raw_group = df_raw.loc[idx, 'LanguageGroup'] if 'LanguageGroup' in df_raw.columns else None
-    
-    if pd.notna(raw_lang) and pd.notna(raw_group):
-        detected_langs.append(raw_lang)
-        lang_groups.append(raw_group)
-    else:
-        lang, group = detect_keyword_language(row['Keyword'], config.get('market', 'US_EN'), config)
-        detected_langs.append(lang)
-        lang_groups.append(group)
-
-df['DetectedLanguage'] = detected_langs
-df['LanguageGroup'] = lang_groups
+ai_language_frame = _shared_ai_keyword_classifier.analyze_dataframe(
+    df,
+    config,
+    app_profile=app_profile,
+    cache_path=os.path.join(_SHARED_ROOT, ".cache", "ai_keyword_analysis.sqlite3"),
+    market=config.get("market", ""),
+    english_vocab=english_vocab,
+)
+for column in _shared_ai_keyword_classifier.OUTPUT_COLUMNS:
+    df[column] = ai_language_frame[column]
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
+provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else pd.Series("", index=df.index)
+provided_en = provided_en.where(provided_en.str.strip() != "", df['AIEnglishGloss'].fillna('').astype(str))
 translation_frame = _shared_translation_service.translate_dataframe(
-    df, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
+    df, provided_en=provided_en, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
     market=config.get("market", ""),
 )
 df[['EN', 'TranslationStatus', 'TranslationError']] = translation_frame
@@ -785,7 +808,7 @@ def check_naturalness(kw, config):
         if re.search(pat, kw_lower):
             return 'UNNATURAL', 'Fails structural validation'
     for char in kw_lower:
-        if ord(char) > 127 and char not in 'Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±Â¿Â¡Ã­Ã³Ãº':
+        if ord(char) > 127 and char not in 'áéíóúüñ¿¡íóú':
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
@@ -880,16 +903,16 @@ def calculate_relevancy(row, config):
         
     # +0.10: Retro/Classic style
     retro_match = [
-        'retro', 'retrÃ´', 'classic', 'klasik', 'clÃ¡ssico',
+        'retro', 'retrô', 'classic', 'klasik', 'clássico',
         '8bit', '8-bit', '16bit', '16-bit',
-        'old', 'nostalgic', 'nostalgia', 'nostÃ¡lgia', 'vintage', 'jadul', 'lawas'
+        'old', 'nostalgic', 'nostalgia', 'nostálgia', 'vintage', 'jadul', 'lawas'
     ]
     if any(r in kw for r in retro_match):
         score += 0.10
         
     # +0.05: Game title IP
     ip_match = [
-        'pokemon', 'pokÃ©mon', 'mario', 'zelda', 'naruto', 'sonic',
+        'pokemon', 'pokémon', 'mario', 'zelda', 'naruto', 'sonic',
         'tetris', 'pacman', 'metroid', 'street fighter', 'crash',
         'god of war', 'gta', 'tekken', 'wwe', 'super smash bros'
     ]
@@ -1029,7 +1052,7 @@ def classify_keyword(row, config):
         return 'Core Intent Final', 'core_intent_final', 'Strong core game emulator search intent'
         
     if has_style:
-        generic_game_terms = ["retro games", "classic games", "gba games", "arcade games", "jogos retrÃ´", "jogos gba", "game emulator"]
+        generic_game_terms = ["retro games", "classic games", "gba games", "arcade games", "jogos retrô", "jogos gba", "game emulator"]
         if any(term in kw for term in generic_game_terms):
             return 'Broad Expansion', 'broad_expansion', 'Generic game/emulator variant'
         else:
@@ -1365,15 +1388,15 @@ for idx, entry in enumerate(all_shortlist):
     sec = entry['Section']
     if sec == 'Core Intent Final':
         if idx < 2:
-            entry['WhereToUse'] = 'ðŸ·ï¸ Title'
+            entry['WhereToUse'] = '🏷️ Title'
         elif idx < 9:
-            entry['WhereToUse'] = 'ðŸ“± Short Description'
+            entry['WhereToUse'] = '📱 Short Description'
         else:
-            entry['WhereToUse'] = 'ðŸ“„ Full Description'
+            entry['WhereToUse'] = '📄 Full Description'
     elif sec == 'Broad Expansion':
-        entry['WhereToUse'] = 'ðŸ“„ Full Description'
+        entry['WhereToUse'] = '📄 Full Description'
     else:
-        entry['WhereToUse'] = 'ðŸ” Consider / Research Only'
+        entry['WhereToUse'] = '🔍 Consider / Research Only'
 
 df_shortlist = pd.DataFrame(all_shortlist)
 
@@ -1585,6 +1608,7 @@ ws_report.column_dimensions['E'].width = 65
 # --- 06_All_Candidates ---
 ws_all = wb.create_sheet(title="06_All_Candidates")
 cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket',
+            'NeedsAI', 'PreAIAction', 'PreAIRule', 'PreAIReason', 'CanonicalKeyword', 'AISemanticBucket', 'AIDecisionRule', 'AIReason', 'AIConfidence', 'AIStatus',
             'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_all, 1):
     ws_all.cell(row=1, column=col_idx, value=col)

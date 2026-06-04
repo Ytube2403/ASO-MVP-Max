@@ -1,6 +1,6 @@
-﻿# ASO Keyword Planner
+# ASO Keyword Planner
 
-**PhiÃªn báº£n:** 4.1
+**PhiÃªn báº£n:** 4.2
 **TÃªn cÅ©:** ASO Keyword Master Pipeline â€” Universal Template  
 **TÃªn má»›i:** ASO Keyword Planner  
 **Má»¥c Ä‘Ã­ch:** Lá»c, cháº¥m Ä‘iá»ƒm, phÃ¢n nhÃ³m vÃ  xuáº¥t shortlist keyword ASO theo tá»«ng app, tá»«ng market, tá»«ng ngÃ´n ngá»¯ vÃ  tá»«ng ná»n táº£ng metadata.  
@@ -1794,7 +1794,7 @@ CÃ¡ch sá»­a:
 
 ---
 
-*ASO Keyword Planner v4.1*
+*ASO Keyword Planner v4.2*
 *Updated for the shared hard-filter platform, compiled matcher runtime, indexed multilingual dedup, reliable translation/profile services, exact app registry, scoped cache and concurrent batch execution.*
 
 
@@ -2382,3 +2382,107 @@ Phien ban 4.1 dieu chinh mot so quy tac quan trong de tranh mat mat tu khoa co v
 - **Thay doi (v4.1)**: Shared engine tao tap complete token tu semantic terms, feature/style/visual terms, noise terms va language lexicons. Token hoan chinh va bien the singular/plural don gian (`emoji/emojis`, `icon/icons`, `sound/sounds`, `filter/filters`) khong bi hard-drop.
 - **Ket qua**: Prefix co anchor ro rang van bi drop high-confidence (`prank sou -> sound`, `control widg -> widget`); prefix thieu anchor vao `possible_truncated_keyword` va mac dinh `Manual Review`.
 - **Config moi**: `protect_complete_tokens=True`, `ignore_inflection_prefix=True`, `low_confidence_action="manual_review"`, `dangling_action="manual_review"`.
+
+---
+
+## 30. Cap nhat v4.2 - DeepSeek AI Classifier & Conservative Pre-AI Filter
+
+Phien ban 4.2 thay doi huong nhan dien ngon ngu/semantic cho keyword bang cach dua DeepSeek AI classifier vao truoc cac buoc bucket chinh, dong thoi them `pre_ai_filter` de tiet kiem API ma khong lam mat keyword rong co lien quan.
+
+### 30.1 Vi tri moi trong pipeline
+
+```text
+Input CSV
+-> normalize keyword
+-> pre_ai_filter
+-> cache lookup / DeepSeek only for NeedsAI=True
+-> merge AI result back to full dataframe
+-> hard filters
+-> naturalness
+-> keyword bucket classifier
+-> shortlist/export
+```
+
+`pre_ai_filter` khong thay the semantic classifier. No chi chan cac truong hop deterministic/high-confidence waste truoc khi goi cache/API.
+
+### 30.2 Nguyen tac bao ve keyword rong lien quan
+
+Keyword rong, gan nghia hoac lien quan gian tiep van duoc gui AI neu co kha nang phuc vu ASO intent, vi du `theme pin`, `trang tri dien thoai`, `icon pack`, `battery widget`, `status bar`, `pin de thuong`, `cute charging`, `phone personalization`.
+
+Mac dinh khong pre-skip `possible_truncated_keyword`, `risky_ip`, `ambiguous_brand` hoac `platform_context`; cac rule nay van duoc hard filter/classifier phia sau xu ly khi da co ngu canh semantic.
+
+### 30.3 Cac truong hop duoc skip truoc AI
+
+- Keyword rong/invalid/khong co token hop le.
+- Duplicate sau normalize/canonicalize: chi goi AI cho canonical dau tien, cac ban lap dung lai ket qua.
+- Competitor brand ro rang.
+- Typo blacklist ro rang.
+- `truncated_keyword` hard-drop ro rang.
+- `noise_only` khong co core/feature/style/visual intent.
+- `platform_affiliation` hoac `platform_only` khong co app intent.
+- `irrelevant_intent` ro rang va khong co tin hieu lien quan den core/feature/style/visual terms.
+
+### 30.4 Config moi
+
+```python
+"ai_keyword_classifier": {
+    "enabled": True,
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "batch_size": 50,
+    "requests_per_second": 2.0,
+    "prompt_version": "aso-keyword-classifier-v1",
+    "fail_on_api_error": True,
+    "min_confidence": 0.55,
+    "cache_path": ".cache/ai_keyword_analysis.sqlite3",
+    "pre_filter": {
+        "enabled": True,
+        "duplicate_strategy": "canonical_reuse",
+        "preserve_if_matches_intent": True,
+        "allow_possible_truncated_to_ai": True,
+        "skip_rules": [
+            "empty_keyword",
+            "duplicate_keyword",
+            "competitor_brand",
+            "typo_blacklist",
+            "truncated_keyword",
+            "irrelevant_intent",
+            "noise_only",
+            "platform_affiliation",
+            "platform_only"
+        ]
+    }
+}
+```
+
+API key khong duoc luu vao repo/config. Dat qua bien moi truong `DEEPSEEK_API_KEY` tren may chay pipeline.
+
+### 30.5 Audit columns moi
+
+Sheet `06_All_Candidates` va dataframe noi bo co cac cot moi de truy vet chi phi API va ly do pre-filter:
+
+```text
+NeedsAI
+PreAIAction
+PreAIRule
+PreAIReason
+CanonicalKeyword
+AISemanticBucket
+AIDecisionRule
+AIReason
+AIConfidence
+AIStatus
+```
+
+`AIStatus` co cac trang thai chinh: `AI_CLASSIFIED`, `AI_CACHE_HIT`, `AI_REUSED_CANONICAL`, `AI_SKIPPED_PREFILTER`, `AI_DISABLED_HEURISTIC`.
+
+### 30.6 Kiem thu v4.2
+
+Regression bat buoc:
+
+```powershell
+python -m unittest discover -s ASO-MVP-Max\tests
+python -m unittest discover -s ASO-MVP-Lite\tests
+```
+
+Test moi can dam bao keyword rong lien quan khong bi pre-skip, duplicate chi goi AI mot lan, va keyword waste deterministic bi `AI_SKIPPED_PREFILTER`.

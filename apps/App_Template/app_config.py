@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration File
 Version: 4.1
@@ -7,24 +7,24 @@ Purpose: Configuration file for deploying ASO Keyword Planner on a new applicati
 
 APP_CONFIG = {
     # =========================================================================
-    # 1. IDENTITY & META (ThÃ´ng tin Ä‘á»‹nh danh)
+    # 1. IDENTITY & META (Thông tin định danh)
     # =========================================================================
-    "app_id": "com.example.mynewapp",      # Package ID / Bundle ID cá»§a á»©ng dá»¥ng
-    "app_name": "My New App Name",         # TÃªn á»©ng dá»¥ng Ä‘áº§y Ä‘á»§ hiá»ƒn thá»‹ trÃªn Store
-    "category": "Photo Editor",            # Danh má»¥c á»©ng dá»¥ng (VD: Photo Editor, VPN, Launcher, Widget...)
-    "category_slug": "photo_editor",       # Slug dÃ¹ng cho Ä‘Æ°á»ng dáº«n (viáº¿t thÆ°á»ng, khÃ´ng dáº¥u, phÃ¢n cÃ¡ch bá»Ÿi gáº¡ch dÆ°á»›i)
-    "market": "US_EN",                     # MÃ£ thá»‹ trÆ°á»ng máº·c Ä‘á»‹nh (VD: US_EN, BR_PT, VN_VI...)
-    "platform_mode": "google_play",        # Ná»n táº£ng: 'google_play' hoáº·c 'app_store'
+    "app_id": "com.example.mynewapp",      # Package ID / Bundle ID của ứng dụng
+    "app_name": "My New App Name",         # Tên ứng dụng đầy đủ hiển thị trên Store
+    "category": "Photo Editor",            # Danh mục ứng dụng (VD: Photo Editor, VPN, Launcher, Widget...)
+    "category_slug": "photo_editor",       # Slug dùng cho đường dẫn (viết thường, không dấu, phân cách bởi gạch dưới)
+    "market": "US_EN",                     # Mã thị trường mặc định (VD: US_EN, BR_PT, VN_VI...)
+    "platform_mode": "google_play",        # Nền tảng: 'google_play' hoặc 'app_store'
     "semantic_mode": "photo_editor",
 
     # =========================================================================
-    # 2. MARKET LANGUAGE POLICY (ChÃ­nh sÃ¡ch ngÃ´n ngá»¯)
+    # 2. MARKET LANGUAGE POLICY (Chính sách ngôn ngữ)
     # =========================================================================
     "market_language_policy": {
         "enabled": True,
         "required": True,
-        "primary_languages": ["en"],              # NgÃ´n ngá»¯ chÃ­nh Ä‘Æ°á»£c phÃ©p xuáº¥t hiá»‡n trong Top 25 Core
-        "secondary_languages": ["es", "es-MX"],   # NgÃ´n ngá»¯ phá»¥ (VD: Tiáº¿ng TÃ¢y Ban Nha á»Ÿ thá»‹ trÆ°á»ng Má»¹), Ä‘Æ°a vÃ o Consider
+        "primary_languages": ["en"],              # Ngôn ngữ chính được phép xuất hiện trong Top 25 Core
+        "secondary_languages": ["es", "es-MX"],   # Ngôn ngữ phụ (VD: Tiếng Tây Ban Nha ở thị trường Mỹ), đưa vào Consider
         "optional_secondary_languages": [],
         
         "primary_language_action": "keep",
@@ -44,59 +44,88 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 3. PHÃ‚N NHÃ“M Tá»ª KHÃ“A NGá»® NGHÄ¨A (SEMANTIC GROUPS)
+    # 3. PHÂN NHÓM TỪ KHÓA NGỮ NGHĨA (SEMANTIC GROUPS)
     # =========================================================================
+    "ai_keyword_classifier": {
+        "enabled": True,
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "batch_size": 50,
+        "requests_per_second": 2.0,
+        "prompt_version": "aso-keyword-classifier-v1",
+        "fail_on_api_error": True,
+        "min_confidence": 0.55,
+        "cache_path": ".cache/ai_keyword_analysis.sqlite3",
+        "pre_filter": {
+            "enabled": True,
+            "duplicate_strategy": "canonical_reuse",
+            "preserve_if_matches_intent": True,
+            "allow_possible_truncated_to_ai": True,
+            "skip_rules": [
+                "empty_keyword",
+                "duplicate_keyword",
+                "competitor_brand",
+                "typo_blacklist",
+                "truncated_keyword",
+                "irrelevant_intent",
+                "noise_only",
+                "platform_affiliation",
+                "platform_only"
+            ]
+        }
+    },
+
     "intent_core_terms": [
-        # CÃ¡c tá»« khÃ³a cá»‘t lÃµi thá»ƒ hiá»‡n Ã½ Ä‘á»‹nh tÃ¬m kiáº¿m chÃ­nh cá»§a á»©ng dá»¥ng
-        # VÃ­ dá»¥ náº¿u lÃ  Photo Editor: "photo editor", "picture editor", "image editor"
+        # Các từ khóa cốt lõi thể hiện ý định tìm kiếm chính của ứng dụng
+        # Ví dụ nếu là Photo Editor: "photo editor", "picture editor", "image editor"
         "photo editor", "picture editor", "image editor", "photo editing"
     ],
     
     "feature_terms": [
-        # CÃ¡c tá»« khÃ³a mÃ´ táº£ tÃ­nh nÄƒng / chá»©c nÄƒng cá»¥ thá»ƒ cá»§a á»©ng dá»¥ng
-        # VÃ­ dá»¥: "retouch", "background eraser", "collage maker", "filter"
+        # Các từ khóa mô tả tính năng / chức năng cụ thể của ứng dụng
+        # Ví dụ: "retouch", "background eraser", "collage maker", "filter"
         "retouch", "background eraser", "remove bg", "collage maker", "photo collage",
         "photo filters", "photo effects", "magic eraser", "photo enhancer", "crop photo"
     ],
     
     "style_terms": [
-        # CÃ¡c tá»« khÃ³a mÃ´ táº£ phong cÃ¡ch, giao diá»‡n, IP hoáº·c theme tháº©m má»¹
-        # VÃ­ dá»¥: "aesthetic", "vintage", "retro", "neon", "cute", "anime"
-        # LÆ¯U Ã: style_terms chá»‰ Ä‘Æ°á»£c phÃ¢n bá»• vÃ o Full Description, khÃ´ng dÃ¹ng á»Ÿ Title/Subtitle Ä‘á»ƒ trÃ¡nh vi pháº¡m IP
+        # Các từ khóa mô tả phong cách, giao diện, IP hoặc theme thẩm mỹ
+        # Ví dụ: "aesthetic", "vintage", "retro", "neon", "cute", "anime"
+        # LƯU Ý: style_terms chỉ được phân bổ vào Full Description, không dùng ở Title/Subtitle để tránh vi phạm IP
         "aesthetic", "vintage", "retro", "neon", "cute", "anime", "kawaii", "cyberpunk"
     ],
     
     "visual_terms": [
-        # CÃ¡c tá»« khÃ³a mÃ´ táº£ giao diá»‡n phá»¥ trá»£, hiá»‡u á»©ng hÃ¬nh áº£nh
+        # Các từ khóa mô tả giao diện phụ trợ, hiệu ứng hình ảnh
         "camera", "selfie", "gallery", "album", "frame", "sticker", "stickers"
     ],
 
     # =========================================================================
-    # 4. Bá»˜ Lá»ŒC VÃ€ DANH SÃCH ÄEN (FILTERS & BLACKLIST)
+    # 4. BỘ LỌC VÀ DANH SÁCH ĐEN (FILTERS & BLACKLIST)
     # =========================================================================
     "competitor_brands": [
-        # TÃªn cÃ¡c Ä‘á»‘i thá»§ cáº¡nh tranh ná»•i tiáº¿ng. Keyword chá»©a cÃ¡c tá»« nÃ y sáº½ bá»‹ cáº¥m dÃ¹ng trong metadata chÃ­nh
+        # Tên các đối thủ cạnh tranh nổi tiếng. Keyword chứa các từ này sẽ bị cấm dùng trong metadata chính
         "picsart", "canva", "lightroom", "snapseed", "vsco", "meitu"
     ],
     
     "noise_terms": [
-        # CÃ¡c tá»« khÃ³a chung chung, generic quÃ¡ rá»™ng khÃ´ng mang Ã½ Ä‘á»‹nh tÃ¬m app cá»¥ thá»ƒ
+        # Các từ khóa chung chung, generic quá rộng không mang ý định tìm app cụ thể
         "app", "apps", "free", "download", "android", "for android", "new", "best", "top"
     ],
     
     "typo_blacklist": [
-        # CÃ¡c tá»« khÃ³a gÃµ sai chÃ­nh táº£ phá»• biáº¿n hoáº·c cÃ¡c tá»« khÃ³a vÃ´ nghÄ©a thu Ä‘Æ°á»£c tá»« auto-suggest
+        # Các từ khóa gõ sai chính tả phổ biến hoặc các từ khóa vô nghĩa thu được từ auto-suggest
         "editer", "edtor", "filtre", "efect", "colage", "rettouch"
     ],
     
     "irrelevant_intent_terms": [
-        # Tá»« khÃ³a thuá»™c danh má»¥c khÃ¡c, hoÃ n toÃ n khÃ´ng liÃªn quan Ä‘áº¿n á»©ng dá»¥ng cá»§a báº¡n
-        # VÃ­ dá»¥: app cá»§a báº¡n lÃ  photo editor thÃ¬ khÃ´ng nÃªn chá»©a tá»« khÃ³a vá» widget, launcher hay game
+        # Từ khóa thuộc danh mục khác, hoàn toàn không liên quan đến ứng dụng của bạn
+        # Ví dụ: app của bạn là photo editor thì không nên chứa từ khóa về widget, launcher hay game
         "widget", "widgets", "launcher", "theme launcher", "game", "games", "calculator"
     ],
     
     "risky_ip_terms": [
-        # Tá»« khÃ³a chá»©a IP hoáº·c báº£n quyá»n nháº¡y cáº£m cáº§n háº¡n cháº¿
+        # Từ khóa chứa IP hoặc bản quyền nhạy cảm cần hạn chế
         "brandname"
     ],
 
@@ -114,7 +143,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 5. RISK HANDLING & PRECEDENCE (ChÃ­nh sÃ¡ch rá»§i ro & Thá»© tá»± Æ°u tiÃªn)
+    # 5. RISK HANDLING & PRECEDENCE (Chính sách rủi ro & Thứ tự ưu tiên)
     # =========================================================================
     "risk_policy": {
         "competitor_brand_action": "drop",
@@ -124,21 +153,21 @@ APP_CONFIG = {
         "platform_only_action": "drop",
         "platform_affiliation_action": "drop",
         "style_only_action": "reserve",
-        "core_intent_override": True  # Náº¿u chá»©a core intent máº¡nh, khÃ´ng tá»± Ä‘á»™ng loáº¡i khi dÃ­nh lá»—i nháº¹
+        "core_intent_override": True  # Nếu chứa core intent mạnh, không tự động loại khi dính lỗi nhẹ
     },
 
     # =========================================================================
-    # 6. KEYWORD QUOTA (Háº¡n ngáº¡ch phÃ¢n bá»• tá»« khÃ³a)
+    # 6. KEYWORD QUOTA (Hạn ngạch phân bổ từ khóa)
     # =========================================================================
     "keyword_quota": {
         "main_file": {
-            "core_intent": 25,       # Sá»‘ lÆ°á»£ng keyword core chÃ­nh (Top 25)
-            "broad_expansion": 5,    # Sá»‘ lÆ°á»£ng keyword má»Ÿ rá»™ng rá»™ng hÆ¡n (Top 5)
-            "consider": 10,          # Sá»‘ lÆ°á»£ng keyword Ä‘Æ°a vÃ o danh sÃ¡ch Consider
+            "core_intent": 25,       # Số lượng keyword core chính (Top 25)
+            "broad_expansion": 5,    # Số lượng keyword mở rộng rộng hơn (Top 5)
+            "consider": 10,          # Số lượng keyword đưa vào danh sách Consider
             "consider_subquota": {
-                "platform_style": 4,      # Quota cho keyword dÃ­nh platform risk (iPhone, iOS...)
-                "secondary_language": 3,  # Quota cho keyword ngÃ´n ngá»¯ phá»¥
-                "missed_opportunity": 3   # Quota cho keyword Ä‘iá»ƒm cao nhÆ°ng trÆ°á»£t Top 30
+                "platform_style": 4,      # Quota cho keyword dính platform risk (iPhone, iOS...)
+                "secondary_language": 3,  # Quota cho keyword ngôn ngữ phụ
+                "missed_opportunity": 3   # Quota cho keyword điểm cao nhưng trượt Top 30
             }
         },
         "feature_file": {
@@ -163,12 +192,12 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 7. LANGUAGE NATURALNESS (Äá»™ tá»± nhiÃªn ngÃ´n ngá»¯)
+    # 7. LANGUAGE NATURALNESS (Độ tự nhiên ngôn ngữ)
     # =========================================================================
     "language_naturalness": {
         "enabled": True,
-        "penalty_unnatural": -0.35,      # Äiá»ƒm pháº¡t khi cá»¥m tá»« kÃ©m tá»± nhiÃªn
-        "auto_drop_score_below": 0.15,   # Tá»± Ä‘á»™ng loáº¡i náº¿u Ä‘iá»ƒm Relevancy sau pháº¡t dÆ°á»›i má»©c nÃ y
+        "penalty_unnatural": -0.35,      # Điểm phạt khi cụm từ kém tự nhiên
+        "auto_drop_score_below": 0.15,   # Tự động loại nếu điểm Relevancy sau phạt dưới mức này
         "rules": {
             "grammar_violation": {
                 "patterns": [
@@ -187,7 +216,7 @@ APP_CONFIG = {
                 "flag": "TOO_LONG"
             },
             "cross_language_bleed": {
-                "note": "Chá»‰ dÃ¹ng Ä‘á»ƒ loáº¡i bá» ngÃ´n ngá»¯ láº¡, khÃ´ng flag nháº§m secondary language",
+                "note": "Chỉ dùng để loại bỏ ngôn ngữ lạ, không flag nhầm secondary language",
                 "forbidden_foreign_in_market": {},
                 "flag": "LANGUAGE_BLEED"
             }
@@ -195,7 +224,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 8. SCORING WEIGHTS (Trá»ng sá»‘ Relevancy & Balanced Score)
+    # 8. SCORING WEIGHTS (Trọng số Relevancy & Balanced Score)
     # =========================================================================
     "relevancy_weights": {
         "base": 0.30,
@@ -210,12 +239,12 @@ APP_CONFIG = {
     },
 
     "balanced_weights": {
-        "VolumeN": 0.20,          # Trá»ng sá»‘ Ä‘iá»ƒm Volume (LÆ°á»£ng tÃ¬m kiáº¿m)
-        "DifficultyN": 0.15,      # Trá»ng sá»‘ Ä‘iá»ƒm Difficulty (Äá»™ cáº¡nh tranh - cÃ ng tháº¥p Ä‘iá»ƒm cÃ ng cao)
-        "KEIN": 0.15,             # Trá»ng sá»‘ Ä‘iá»ƒm KEI (Hiá»‡u quáº£ tá»« khÃ³a)
-        "RelevancyScore": 0.30,   # Trá»ng sá»‘ Ä‘iá»ƒm liÃªn quan (Relevancy - Quan trá»ng nháº¥t)
-        "CurrentRankN": 0.10,     # Trá»ng sá»‘ Ä‘iá»ƒm thá»© háº¡ng hiá»‡n táº¡i cá»§a app
-        "ExpansionValue": 0.10    # Trá»ng sá»‘ Ä‘iá»ƒm má»Ÿ rá»™ng semantic
+        "VolumeN": 0.20,          # Trọng số điểm Volume (Lượng tìm kiếm)
+        "DifficultyN": 0.15,      # Trọng số điểm Difficulty (Độ cạnh tranh - càng thấp điểm càng cao)
+        "KEIN": 0.15,             # Trọng số điểm KEI (Hiệu quả từ khóa)
+        "RelevancyScore": 0.30,   # Trọng số điểm liên quan (Relevancy - Quan trọng nhất)
+        "CurrentRankN": 0.10,     # Trọng số điểm thứ hạng hiện tại của app
+        "ExpansionValue": 0.10    # Trọng số điểm mở rộng semantic
     },
 
     "scoring_normalization": {
@@ -239,7 +268,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 9. METADATA SLOTS & OUTPUT (PhÃ¢n bá»• & Äá»‹nh dáº¡ng Ä‘áº§u ra)
+    # 9. METADATA SLOTS & OUTPUT (Phân bổ & Định dạng đầu ra)
     # =========================================================================
     "metadata_slots": {
         "google_play": {
@@ -255,7 +284,7 @@ APP_CONFIG = {
         }
     },
 
-    "max_word_overlap": 0.5,  # Tá»· lá»‡ trÃ¹ng láº·p tá»« tá»‘i Ä‘a giá»¯a cÃ¡c keyword trong Top N (trÃ¡nh láº·p Ã½)
+    "max_word_overlap": 0.5,  # Tỷ lệ trùng lặp từ tối đa giữa các keyword trong Top N (tránh lặp ý)
     "dedup_policy": {
         "auto_merge_token_bag": False,
         "review_overlap_threshold": 0.80,
@@ -294,7 +323,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 10. USER OVERRIDES (Ghi Ä‘Ã¨ thá»§ cÃ´ng tá»« User)
+    # 10. USER OVERRIDES (Ghi đè thủ công từ User)
     # =========================================================================
     "user_overrides": {
         "do_not_auto_drop_terms": [],

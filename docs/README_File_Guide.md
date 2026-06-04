@@ -1,4 +1,4 @@
-# Huong dan cau truc file ASO Keyword Filter v4.1
+# Huong dan cau truc file ASO Keyword Filter v4.2
 
 ## Root
 
@@ -44,6 +44,7 @@ App da dang ky:
 - `shared/app_registry.py`: map alias app chinh xac toi folder, runner va config.
 - `shared/locale_parser.py`: parser locale dung chung cho orchestrator, exporter, tracker va batch.
 - `shared/language_detector.py`: nhan dien ngon ngu theo market policy.
+- `shared/ai_keyword_classifier.py`: DeepSeek classifier, SQLite cache va `pre_ai_filter` conservative truoc API.
 - `shared/keyword_filter/`: matcher precompiled, hard filter, classifier, validator, audit, cache atomic va truncation hardening complete-token aware.
 - `shared/text_dedup.py`: dedup Unicode cho `01_Main_Keyword_Shortlist`.
 - `shared/translation_service.py`: dich EN bang LibreTranslate local, SQLite WAL cache, retry, rate limit, TLS verification va mapping model theo locale.
@@ -70,7 +71,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 
 ## `docs/`
 
-- `docs/ASO_Keyword_Planner_v4_1.md`: dac ta logic pipeline.
+- `docs/ASO_Keyword_Planner_v4_2.md`: dac ta logic pipeline v4.2, gom DeepSeek AI classifier va `pre_ai_filter`.
 - `docs/SETUP_WINDOWS.md`: checklist phan mem, extension, Python packages va cach kiem tra moi truong Windows.
 - `docs/App_Config_Template.py`: template config.
 - `docs/App_Profile_Template.json`: template profile.
@@ -85,6 +86,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 ## `tests/`
 
 Regression test cho registry, parser locale, hard filter, truncation false positive, dedup, translation, profile, project memory, exporter va batch runner.
+`tests/test_ai_keyword_classifier.py` bao phu cache hit, API call, canonical duplicate reuse va pre-AI skip/preserve rule.
 
 ## `releases/`
 

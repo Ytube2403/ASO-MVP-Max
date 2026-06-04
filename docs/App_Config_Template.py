@@ -1,7 +1,7 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration Template
-Version: 4.1
+Version: 4.2
 Purpose: Template configuration for deploying ASO Keyword Planner on a new application.
 """
 
@@ -42,6 +42,38 @@ APP_CONFIG = {
         
         "mixed_language_action": "manual_review",
         "unknown_language_action": "manual_review_if_high_score"
+    },
+
+    # ==========================================
+    # 2.5 AI KEYWORD CLASSIFIER (DeepSeek + cache + pre-filter)
+    # ==========================================
+    "ai_keyword_classifier": {
+        "enabled": True,
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "batch_size": 50,
+        "requests_per_second": 2.0,
+        "prompt_version": "aso-keyword-classifier-v1",
+        "fail_on_api_error": True,
+        "min_confidence": 0.55,
+        "cache_path": ".cache/ai_keyword_analysis.sqlite3",
+        "pre_filter": {
+            "enabled": True,
+            "duplicate_strategy": "canonical_reuse",
+            "preserve_if_matches_intent": True,
+            "allow_possible_truncated_to_ai": True,
+            "skip_rules": [
+                "empty_keyword",
+                "duplicate_keyword",
+                "competitor_brand",
+                "typo_blacklist",
+                "truncated_keyword",
+                "irrelevant_intent",
+                "noise_only",
+                "platform_affiliation",
+                "platform_only"
+            ]
+        }
     },
 
     # ==========================================

@@ -64,6 +64,29 @@ def _action_result(action, rule, label):
     return "Consider Keywords", rule, f"Consider: {label}"
 
 
+def _ai_classification_result(row, config):
+    bucket = str(row.get("AISemanticBucket", "") or "").strip()
+    if not bucket:
+        return None
+    try:
+        confidence = float(row.get("AIConfidence", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        confidence = 0.0
+    minimum = float(((config.get("ai_keyword_classifier", {}) or {}).get("min_confidence", 0.55)) or 0.55)
+    if confidence < minimum:
+        return None
+
+    language_group = str(row.get("LanguageGroup", "PRIMARY")).upper()
+    if language_group == "FOREIGN" and bucket not in {"Dropped", "Language Mismatch Audit", "Manual Review"}:
+        return "Language Mismatch Audit", "foreign_language_mismatch", "Foreign language mismatch"
+    if language_group == "UNKNOWN" and bucket not in {"Dropped", "Manual Review"}:
+        return "Manual Review", "manual_review", "Unknown language"
+
+    rule = str(row.get("AIDecisionRule", "") or "ai_semantic_classification")
+    reason = str(row.get("AIReason", "") or "AI semantic classification")
+    return bucket, rule, reason
+
+
 def classify_keyword(row, config):
     flags = _row_flags(row, config)
     policy = _risk_policy(config)
@@ -96,6 +119,10 @@ def classify_keyword(row, config):
         return "Dropped", "unnatural", f"Dropped: Unnatural phrase ({row.get('NaturalnessReason', '')})"
 
     language_group = str(row.get("LanguageGroup", "PRIMARY")).upper()
+    ai_result = _ai_classification_result(row, config)
+    if ai_result:
+        return ai_result
+
     if language_group == "FOREIGN":
         return "Language Mismatch Audit", "foreign_language_mismatch", "Foreign language mismatch"
     if language_group == "UNKNOWN":

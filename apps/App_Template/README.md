@@ -93,7 +93,7 @@ Theo dõi và so sánh hiệu suất keyword qua các tháng bằng giao diện 
 ```powershell
 python tracker/run_dashboard.py
 ```
-Dashboard sẽ tự động mở trình duyệt tại `http://127.0.0.1:5000` với các biểu đồ ASO Power Score, bảng so sánh keyword chi tiết, danh sách biến động thứ hạng và tab `Setup` để xem Project Memory của app đang chọn.
+Dashboard sẽ tự động mở trình duyệt tại `http://127.0.0.1:5101` với các biểu đồ ASO Power Score, bảng so sánh keyword chi tiết, danh sách biến động thứ hạng và tab `Setup` để xem Project Memory của app đang chọn.
 
 ---
 

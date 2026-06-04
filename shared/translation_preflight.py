@@ -6,6 +6,8 @@ from shared.translation_service import DEFAULT_BASE_URL
 
 
 def translation_required_for_market(market):
+    if str(os.environ.get("ASO_SKIP_TRANSLATION_PREFLIGHT", "")).strip().lower() in {"1", "true", "yes"}:
+        return False
     return True
 
 

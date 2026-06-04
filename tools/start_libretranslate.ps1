@@ -2,7 +2,7 @@
 param(
     [Alias("Host")]
     [string]$BindHost = "127.0.0.1",
-    [int]$Port = 5001,
+    [int]$Port = 5102,
     [string]$Version = "1.9.6",
     [ValidateSet("daily", "extended", "all")]
     [string]$Profile = "daily",

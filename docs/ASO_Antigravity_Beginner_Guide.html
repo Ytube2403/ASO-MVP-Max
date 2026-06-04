@@ -1817,7 +1817,7 @@
                             <div class="cover-text">
                                 <span class="slide-subtitle reveal reveal-1">Antigravity ASO Package</span>
                                 <h1 class="cover-h1 reveal reveal-2">Lọc Từ Khoá ASO Tự Động Bằng Antigravity</h1>
-                                <p class="cover-subtitle reveal reveal-3">Hướng dẫn cho người mới (Bản v4.1): quy chuẩn đầu vào, thiết lập bộ lọc ngôn ngữ & naturalness, kiểm soát quota và cách đọc hiểu workbook Excel tổng hợp duy nhất.</p>
+                                <p class="cover-subtitle reveal reveal-3">Hướng dẫn cho người mới (Bản v4.2): quy chuẩn đầu vào, thiết lập bộ lọc ngôn ngữ & naturalness, kiểm soát quota và cách đọc hiểu workbook Excel tổng hợp duy nhất.</p>
                                 
                                 <div class="cover-meta-grid reveal reveal-4">
                                     <div class="cover-meta-card">
@@ -1853,7 +1853,7 @@
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>ASO Antigravity v4.1</span>
+                            <span>ASO Antigravity v4.2</span>
                             <div class="slide-footer-meta">
                                 <span>Trang 1 / 22</span>
                             </div>
@@ -2143,11 +2143,11 @@
                         </div>
                     </section>
                     <!-- ===========================================
-                       SLIDE A: SHARED MODULES & ARCHITECTURE (v4.1)
+                       SLIDE A: SHARED MODULES & ARCHITECTURE (v4.2)
                        =========================================== -->
                     <section class="slide" data-slide="6">
                         <div class="slide-header">
-                            <h2 class="slide-title">Shared Modules & Kiến Trúc Dự Án v4.1</h2>
+                            <h2 class="slide-title">Shared Modules & Kiến Trúc Dự Án v4.2</h2>
                             <span class="slide-subtitle">Tránh trùng lặp code & Đồng bộ logic</span>
                         </div>
                         <div class="slide-body">
@@ -2155,10 +2155,11 @@
                                 <div class="col">
                                     <h3 class="card-title text-indigo"><i class="fa-solid fa-share-nodes"></i> Thư mục shared/ dùng chung</h3>
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Trong bản v4.1, toàn bộ thuật toán core và dịch vụ nền tảng được đóng gói trong thư mục <code>shared/</code> để mọi app (AR_Filter, Prank_Sounds...) gọi chung, đảm bảo cập nhật logic đồng bộ:
+                                        Trong bản v4.2, toàn bộ thuật toán core và dịch vụ nền tảng được đóng gói trong thư mục <code>shared/</code> để mọi app (AR_Filter, Prank_Sounds...) gọi chung, đảm bảo cập nhật logic đồng bộ:
                                     </p>
                                     <ul class="slide-list star-list" style="font-size: 17px;">
                                         <li><strong>shared/keyword_filter/ :</strong> Gồm 10 bộ lọc con chuyên sâu (lọc độ dài, bộ lọc chữ thường, lọc ngôn ngữ, loại bỏ competitor brand, kiểm tra naturalness, sửa lỗi chính tả typo...).</li>
+                                        <li><strong>shared/ai_keyword_classifier.py :</strong> Gọi DeepSeek theo batch, dùng SQLite cache và pre-AI filter để tránh lãng phí request nhưng vẫn giữ keyword rộng có liên quan.</li>
                                         <li><strong>shared/text_dedup.py :</strong> Phát hiện trùng lặp từ đơn / cụm từ, tối ưu hóa quota và ghi nhật ký loại bỏ.</li>
                                         <li><strong>shared/language_detector.py & translation_service.py :</strong> Tự động dịch và nhận diện ngôn ngữ của từ khóa chính xác.</li>
                                         <li><strong>shared/profile_service.py :</strong> Chuẩn hóa việc đọc và phân tích file <code>App_Profile.json</code>.</li>
@@ -2167,7 +2168,7 @@
                                 </div>
                                 <div class="col">
                                     <div class="glass-card card-indigo" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                                        <h3 class="card-title text-indigo" style="margin-top: 0;"><i class="fa-solid fa-diagram-project"></i> Luồng Xử Lý Hệ Thống v4.1</h3>
+                                        <h3 class="card-title text-indigo" style="margin-top: 0;"><i class="fa-solid fa-diagram-project"></i> Luồng Xử Lý Hệ Thống v4.2</h3>
                                         <div style="display: flex; flex-direction: column; gap: 14px; font-size: 17px; color: var(--text-muted);">
                                             <div style="display: flex; align-items: center; gap: 10px;">
                                                 <span class="pill-badge pill-indigo" style="width: 80px; text-align: center;">Bước 1</span>
@@ -2195,7 +2196,7 @@
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Kiến trúc Shared Modules v4.1</span>
+                            <span>Kiến trúc Shared Modules v4.2</span>
                             <span>Trang 6 / 26</span>
                         </div>
                     </section>
@@ -2214,7 +2215,7 @@
                                 <div class="col">
                                     <h3 class="card-title text-indigo"><i class="fa-solid fa-laptop-code"></i> Phần mềm nền tảng cần có</h3>
                                     <ul class="slide-list info-list">
-                                        <li><strong>Python 3.11+ 64-bit:</strong> Môi trường chạy mã nguồn chính v4.1. Tải tại python.org (Nhớ chọn <code>Add Python to PATH</code>).</li>
+                                        <li><strong>Python 3.11+ 64-bit:</strong> Môi trường chạy mã nguồn chính v4.2. Tải tại python.org (Nhớ chọn <code>Add Python to PATH</code>).</li>
                                         <li><strong>Trình duyệt Web:</strong> Chrome/Edge/Firefox để chạy giao diện tối ưu hóa tương tác (chế độ <code>--interactive</code>).</li>
                                         <li><strong>Trình đọc Excel:</strong> Microsoft Excel, Google Sheets hoặc WPS Office để duyệt báo cáo <code>.xlsx</code> đầu ra.</li>
                                         <li><strong>Text/Code Editor:</strong> VS Code hoặc Notepad++ để chỉnh sửa file cấu hình <code>app_config.py</code>.</li>
@@ -2272,7 +2273,7 @@ pip install -r requirements.txt</div>
                                         <li><code>GameEmulator_ID_ID.csv</code> (Indonesia - Tiếng Indo)</li>
                                     </ul>
                                     <div class="warning-box">
-                                        <h4><i class="fa-solid fa-triangle-exclamation"></i> Chú ý Tên Cột & Format v4.1</h4>
+                                        <h4><i class="fa-solid fa-triangle-exclamation"></i> Chú ý Tên Cột & Format v4.2</h4>
                                         1. Đảm bảo tên cột khớp <strong>chính xác</strong> với bảng quy định.<br>
                                         2. Lưu file ở dạng mã hóa <strong>UTF-8</strong> hoặc <strong>UTF-8 with BOM</strong> để tránh lỗi ký tự tiếng Việt/có dấu.<br>
                                         3. Đặt file trong thư mục: <code>[Component]/Input/[MMYYYY]/[Tên_File].csv</code> (Ví dụ: <code>apps/AR_Filter/Input/052026/ARFilter_US_EN.csv</code>).
@@ -2606,9 +2607,9 @@ Requirements:
                             <div class="grid-2">
                                 <div class="col">
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        <code>app_config.py</code> lưu trữ các tham số điều hướng cho bộ lọc của pipeline v4.1. Nó cấu hình chi tiết từ luật ngôn ngữ đến định lượng quota.
+                                        <code>app_config.py</code> lưu trữ các tham số điều hướng cho bộ lọc của pipeline v4.2. Nó cấu hình chi tiết từ luật ngôn ngữ đến định lượng quota.
                                     </p>
-                                    <h3 class="card-title text-indigo"><i class="fa-solid fa-gears"></i> Cấu hình quan trọng trong v4.1</h3>
+                                    <h3 class="card-title text-indigo"><i class="fa-solid fa-gears"></i> Cấu hình quan trọng trong v4.2</h3>
                                     <ul class="slide-list info-list" style="font-size: 18px;">
                                         <li><strong>market_language_policy:</strong> Quy định ngôn ngữ chính (Primary) và phụ (Secondary). Giúp giữ lại từ khóa ngôn ngữ phụ hữu ích.</li>
                                         <li><strong>language_naturalness:</strong> Thiết lập luật tự nhiên (grammar, redundancy, length anomaly, cross-language bleed) loại bỏ spam.</li>
@@ -2621,7 +2622,7 @@ Requirements:
                                     <table class="table-mockup" style="font-size: 18px;">
                                         <thead>
                                             <tr>
-                                                <th>Cấu hình v4.1</th>
+                                                <th>Cấu hình v4.2</th>
                                                 <th>Chức năng chính</th>
                                                 <th>Ví dụ thiết lập</th>
                                             </tr>
@@ -2721,7 +2722,7 @@ Rules:
                             <div class="grid-2">
                                 <div class="col">
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Sau khi chuẩn bị đủ các file: CSV raw, Profile JSON và config, hãy mở ô chat Antigravity và ra lệnh chạy, hoặc tự chạy trực tiếp bằng Command Line (CLI) với các tùy chọn linh hoạt của bản v4.1.
+                                        Sau khi chuẩn bị đủ các file: CSV raw, Profile JSON và config, hãy mở ô chat Antigravity và ra lệnh chạy, hoặc tự chạy trực tiếp bằng Command Line (CLI) với các tùy chọn linh hoạt của bản v4.2.
                                     </p>
                                     <div class="terminal-btn-tray">
                                         <button class="terminal-trigger-btn" onclick="runSimulatedCommand('help')">Xem Help</button>
@@ -2776,11 +2777,11 @@ Requirements:
                         </div>
                     </section>
                     <!-- ===========================================
-                       SLIDE B: BATCH RUNNER & MASTER KEYWORDS (v4.1)
+                       SLIDE B: BATCH RUNNER & MASTER KEYWORDS (v4.2)
                        =========================================== -->
                     <section class="slide" data-slide="18">
                         <div class="slide-header">
-                            <h2 class="slide-title">Chạy Hàng Loạt (Batch) & Master Keywords v4.1</h2>
+                            <h2 class="slide-title">Chạy Hàng Loạt (Batch) & Master Keywords v4.2</h2>
                             <span class="slide-subtitle">Tối ưu hóa quy trình làm việc quy mô lớn</span>
                         </div>
                         <div class="slide-body">
@@ -2818,17 +2819,17 @@ Requirements:
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Chạy Batch & Công cụ tổng hợp v4.1</span>
+                            <span>Chạy Batch & Công cụ tổng hợp v4.2</span>
                             <span>Trang 18 / 26</span>
                         </div>
                     </section>
 
                     <!-- ===========================================
-                       SLIDE C: KEYWORD TRACKER DASHBOARD (v4.1)
+                       SLIDE C: KEYWORD TRACKER DASHBOARD (v4.2)
                        =========================================== -->
                     <section class="slide" data-slide="19">
                         <div class="slide-header">
-                            <h2 class="slide-title">Keyword Tracker Dashboard v4.1</h2>
+                            <h2 class="slide-title">Keyword Tracker Dashboard v4.2</h2>
                             <span class="slide-subtitle">Theo dõi & Phân tích trực quan hiệu quả từ khóa</span>
                         </div>
                         <div class="slide-body">
@@ -2836,7 +2837,7 @@ Requirements:
                                 <div class="col">
                                     <h3 class="card-title text-success"><i class="fa-solid fa-chart-line"></i> Dashboard SPA & Quản Lý SQLite</h3>
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
-                                        Bản v4.1 giới thiệu Dashboard trực quan (nền tảng Flask + SQLite) giúp hiển thị kết quả từ khóa, theo dõi độ biến động volume/score và so sánh chéo hiệu suất giữa các app:
+                                        Bản v4.2 giới thiệu Dashboard trực quan (nền tảng Flask + SQLite) giúp hiển thị kết quả từ khóa, theo dõi độ biến động volume/score và so sánh chéo hiệu suất giữa các app:
                                     </p>
                                     <ul class="slide-list success-list" style="font-size: 17px;">
                                         <li><strong>SQLite Database (db_manager.py):</strong> Lưu trữ tập trung lịch sử quét từ khóa, các chỉ số Balanced Score, Relevancy, Volume để vẽ biểu đồ tăng trưởng.</li>
@@ -2855,7 +2856,7 @@ Requirements:
                                 <div class="col" style="justify-content: center;">
                                     <div class="glass-card card-success" style="padding: 20px; border: 1px solid rgba(52, 211, 153, 0.3); background: rgba(16, 185, 129, 0.05); display: flex; flex-direction: column; width: 100%;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
-                                            <span style="font-weight: 700; color: var(--accent-success);"><i class="fa-solid fa-gauge-high"></i> ASO KEYWORD TRACKER v4.1</span>
+                                            <span style="font-weight: 700; color: var(--accent-success);"><i class="fa-solid fa-gauge-high"></i> ASO KEYWORD TRACKER v4.2</span>
                                             <span class="pill-badge pill-success" style="font-size: 11px;">Server Live</span>
                                         </div>
                                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
@@ -2873,20 +2874,20 @@ Requirements:
                                             </div>
                                         </div>
                                         <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.4; color: #94a3b8;">
-                                            * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)<br>
+                                            * Running on http://127.0.0.1:5101/ (Press CTRL+C to quit)<br>
                                             * DB Manager: SQLite initialized at tracker/aso_tracker.db<br>
                                             * Scanning for new files in Output/... Found 5 new workbooks!<br>
                                             * Data successfully synced into database.
                                         </div>
                                         <div style="margin-top: 15px; text-align: center;">
-                                            <span style="font-size: 13px; color: var(--text-muted);">Mở <strong>http://localhost:5000</strong> trên Chrome để phân tích biểu đồ trực quan</span>
+                                            <span style="font-size: 13px; color: var(--text-muted);">Mở <strong>http://127.0.0.1:5101</strong> trên Chrome để phân tích biểu đồ trực quan</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="slide-footer">
-                            <span>Keyword Tracker Dashboard v4.1</span>
+                            <span>Keyword Tracker Dashboard v4.2</span>
                             <span>Trang 19 / 26</span>
                         </div>
                     </section>
@@ -3085,7 +3086,7 @@ Requirements:
                                     <p style="font-size: 18px; line-height: 1.5; color: var(--text-main);">
                                         Đừng bỏ qua sheet <code>04_Dropped_Audit</code>. Đây là nguồn kiểm toán xem hệ thống có loại nhầm từ khóa giá trị nào không.
                                     </p>
-                                    <h3 class="card-title text-danger"><i class="fa-solid fa-circle-exclamation"></i> Các lý do loại v4.1</h3>
+                                    <h3 class="card-title text-danger"><i class="fa-solid fa-circle-exclamation"></i> Các lý do loại v4.2</h3>
                                     <ul class="slide-list danger-list" style="font-size: 17px;">
                                         <li><strong>Competitor Brand:</strong> Tên đối thủ cạnh tranh chặn cứng hoặc thương hiệu nhạy cảm (ambiguous_brand_terms).</li>
                                         <li><strong>Noise/Generic:</strong> Từ khóa rác, từ vô nghĩa (app, free, download).</li>
@@ -3724,7 +3725,7 @@ Requirements:
             },
             shared: {
                 title: '<i class="fa-solid fa-folder text-warning"></i> Thư mục shared/',
-                desc: 'Thư mục chứa các module và thuật toán dùng chung của hệ thống v4.1. Bao gồm bộ lọc từ khóa chi tiết (keyword_filter/), bộ de-dedup từ khóa (text_dedup.py) và dịch vụ ngôn ngữ.'
+                desc: 'Thư mục chứa các module và thuật toán dùng chung của hệ thống v4.2. Bao gồm bộ lọc từ khóa chi tiết (keyword_filter/), bộ de-dedup từ khóa (text_dedup.py) và dịch vụ ngôn ngữ.'
             },
             apps: {
                 title: '<i class="fa-solid fa-folder text-warning"></i> Thư mục apps/',
@@ -3906,7 +3907,7 @@ Requirements:
   python run_aso_batch.py                                 Run pipeline in batch mode for all apps
   clear                                                   Clear the screen`,
             
-            run: `Starting ASO Keyword Lọc Pipeline v4.1...
+            run: `Starting ASO Keyword Lọc Pipeline v4.2...
 [STEP 1/10] Đang tải cấu hình App Profile (apps/AR_Filter/App_Profile.json)... OK
 [STEP 2/10] Đang quét thư mục Input tìm CSV raw... Phát hiện: Input/052026/ARFilter_US_EN.csv
 [STEP 3/10] Chuẩn hóa cột & ép kiểu volume/difficulty... OK (Loaded 420 keywords)
@@ -4437,7 +4438,7 @@ Requirements:
                 ]
             },
             {
-                q: "6. Thư mục shared/ trong v4.1 được thiết kế nhằm mục đích gì?",
+                q: "6. Thư mục shared/ trong v4.2 được thiết kế nhằm mục đích gì?",
                 a: [
                     { text: "Để chứa các file CSV keyword thô của các app khác nhau.", correct: false },
                     { text: "Đóng gói toàn bộ thuật toán core và dịch vụ dùng chung để các app gọi thống nhất.", correct: true },
@@ -4570,7 +4571,7 @@ Requirements:
                 "Hệ thống phân nhóm làm gì?",
                 "Workflow tổng quan 5 bước",
                 "Cấu trúc thư mục package",
-                "Shared Modules & Kiến Trúc v4.1",
+                "Shared Modules & Kiến Trúc v4.2",
                 "Chuẩn bị công cụ & thư viện",
                 "File CSV input chuẩn",
                 "Khái niệm App Profile",
@@ -4582,8 +4583,8 @@ Requirements:
                 "app_config.py là gì?",
                 "Cách chỉnh app_config.py",
                 "Chạy Pipeline với Antigravity",
-                "Chạy Batch & Master Keywords v4.1",
-                "Keyword Tracker Dashboard v4.1",
+                "Chạy Batch & Master Keywords v4.2",
+                "Keyword Tracker Dashboard v4.2",
                 "Chi tiết quy trình 10 bước",
                 "Đọc hiểu Excel Output",
                 "Cách review sheet Shortlist",

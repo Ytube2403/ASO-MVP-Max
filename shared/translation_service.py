@@ -19,7 +19,7 @@ class TranslationUnavailableError(ConnectionError):
 PROVIDER = "libretranslate_local"
 TARGET_LANGUAGE = "en"
 TRANSLATION_COLUMNS = ["TranslationStatus", "TranslationError"]
-DEFAULT_BASE_URL = "http://127.0.0.1:5001"
+DEFAULT_BASE_URL = "http://127.0.0.1:5102"
 DEFAULT_REQUESTS_PER_SECOND = 2
 DEFAULT_MAX_WORKERS = 2
 

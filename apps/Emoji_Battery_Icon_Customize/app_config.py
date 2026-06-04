@@ -45,17 +45,17 @@ elif "VI" in _market or "VN" in _market:
     _primary = ["vi"]
     _secondary = ["en"]
     _core_intent = [
-        "pin emoji", "widget pin", "tiá»‡n Ã­ch pin", "icon pin", "Ä‘á»•i icon pin", "thanh tráº¡ng thÃ¡i",
-        "nhÃ£n dÃ¡n emoji", "sticker emoji", "emoji battery", "emoji battery widget", "emoji battery status bar",
+        "pin emoji", "widget pin", "tiện ích pin", "icon pin", "đổi icon pin", "thanh trạng thái",
+        "nhãn dán emoji", "sticker emoji", "emoji battery", "emoji battery widget", "emoji battery status bar",
         "emoji battery icon", "custom battery icon", "battery icon customize", "emoji widget",
         "funny status bar", "custom status bar", "emoji status bar", "emoji sticker", "emoji stickers"
     ]
     _feature = [
-        "hiá»‡u á»©ng sáº¡c", "animated emojis", "gesture shortcuts", "notch customizer",
+        "hiệu ứng sạc", "animated emojis", "gesture shortcuts", "notch customizer",
         "status bar stickers", "battery level"
     ]
     _style = [
-        "dá»… thÆ°Æ¡ng", "kawaii", "cute bear", "pastel style"
+        "dễ thương", "kawaii", "cute bear", "pastel style"
     ]
     _visual = [
         "rounded corners", "heart shapes", "custom notch"
@@ -182,6 +182,35 @@ APP_CONFIG = {
     # =========================================================================
     # 3. PHÃ‚N NHÃ“M Tá»ª KHÃ“A NGá»® NGHÄ¨A (SEMANTIC GROUPS)
     # =========================================================================
+    "ai_keyword_classifier": {
+        "enabled": True,
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "batch_size": 50,
+        "requests_per_second": 2.0,
+        "prompt_version": "aso-keyword-classifier-v1",
+        "fail_on_api_error": True,
+        "min_confidence": 0.55,
+        "cache_path": ".cache/ai_keyword_analysis.sqlite3",
+        "pre_filter": {
+            "enabled": True,
+            "duplicate_strategy": "canonical_reuse",
+            "preserve_if_matches_intent": True,
+            "allow_possible_truncated_to_ai": True,
+            "skip_rules": [
+                "empty_keyword",
+                "duplicate_keyword",
+                "competitor_brand",
+                "typo_blacklist",
+                "truncated_keyword",
+                "irrelevant_intent",
+                "noise_only",
+                "platform_affiliation",
+                "platform_only"
+            ]
+        }
+    },
+
     "intent_core_terms": _core_intent,
     "feature_terms": _feature,
     "style_terms": _style,

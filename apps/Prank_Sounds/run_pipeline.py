@@ -24,6 +24,7 @@ from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
 from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
+from shared import ai_keyword_classifier as _shared_ai_keyword_classifier
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
 # Parse arguments
@@ -492,28 +493,21 @@ except Exception as e:
     print(f"Warning loading shared language detector: {e}. Falling back to legacy detector.")
 
 # Populate language columns in df
-detected_langs = []
-lang_groups = []
-
-for idx, row in df.iterrows():
-    # If columns already exist in raw data, use them
-    raw_lang = df_raw.loc[idx, 'DetectedLanguage'] if 'DetectedLanguage' in df_raw.columns else None
-    raw_group = df_raw.loc[idx, 'LanguageGroup'] if 'LanguageGroup' in df_raw.columns else None
-    
-    if pd.notna(raw_lang) and pd.notna(raw_group):
-        detected_langs.append(raw_lang)
-        lang_groups.append(raw_group)
-    else:
-        lang, group = detect_keyword_language(row['Keyword'], config.get('market', 'US_EN'), config)
-        detected_langs.append(lang)
-        lang_groups.append(group)
-
-df['DetectedLanguage'] = detected_langs
-df['LanguageGroup'] = lang_groups
+ai_language_frame = _shared_ai_keyword_classifier.analyze_dataframe(
+    df,
+    config,
+    app_profile=app_profile,
+    cache_path=os.path.join(PROJECT_ROOT, ".cache", "ai_keyword_analysis.sqlite3"),
+    market=config.get("market", ""),
+    english_vocab=english_vocab,
+)
+for column in _shared_ai_keyword_classifier.OUTPUT_COLUMNS:
+    df[column] = ai_language_frame[column]
 
 # Translate non-English keywords to English
 print("[Step 2.5] Translating non-English keywords to English...")
-provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else None
+provided_en = df_raw['EN'].fillna('').astype(str) if 'EN' in df_raw.columns else pd.Series("", index=df.index)
+provided_en = provided_en.where(provided_en.str.strip() != "", df['AIEnglishGloss'].fillna('').astype(str))
 translation_frame = _shared_translation_service.translate_dataframe(
     df, provided_en=provided_en, cache_path=os.path.join(_SHARED_ROOT, ".cache", "translations.sqlite3"),
     market=config.get("market", ""),
@@ -1397,6 +1391,7 @@ ws_report.column_dimensions['E'].width = 65
 # --- 08_All_Candidates ---
 ws_all = wb.create_sheet(title="08_All_Candidates")
 cols_all = ['Keyword', 'EN', 'Volume', 'Max. Volume', 'Difficulty', 'KEI', 'Rank', 'BalancedScore', 'MaximumReach', 'Traffic Stability', 'Stability Class', 'RelevancyScore', 'CompetitorProven', 'ProvenDetails', 'Bucket',
+            'NeedsAI', 'PreAIAction', 'PreAIRule', 'PreAIReason', 'CanonicalKeyword', 'AISemanticBucket', 'AIDecisionRule', 'AIReason', 'AIConfidence', 'AIStatus',
             'DetectedLanguage', 'LanguageGroup', 'NaturalnessFlag', 'Reason', 'HardFilterRule', 'HardFilterTerm', 'HardFilterSource', 'PolicyFlags']
 for col_idx, col in enumerate(cols_all, 1):
     ws_all.cell(row=1, column=col_idx, value=col)
