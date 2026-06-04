@@ -43,13 +43,26 @@ class VolumeScoreTests(unittest.TestCase):
         self.assertGreater(high, medium)
         self.assertLess(medium, 0.10)
 
-    def test_low_tier_does_not_fill_metadata_quota(self):
+    def test_low_tier_can_fill_metadata_quota_by_default_in_v4_1(self):
         row = {"Volume": 5}
-        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Core Intent Final"))
-        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Broad Expansion"))
-        self.assertTrue(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 2))
-        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 3))
+        self.assertTrue(keyword_filter.is_shortlist_volume_eligible(row, "Core Intent Final"))
+        self.assertTrue(keyword_filter.is_shortlist_volume_eligible(row, "Broad Expansion"))
+        self.assertTrue(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 998))
+        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 999))
         self.assertTrue(keyword_filter.is_shortlist_volume_eligible({"Volume": 6}, "Core Intent Final"))
+
+    def test_low_tier_v4_0_quota_can_still_be_configured_explicitly(self):
+        config = {
+            "volume_score_policy": {
+                "exclude_low_tier_from_metadata_shortlist": True,
+                "max_low_tier_consider_keywords": 3,
+            }
+        }
+        row = {"Volume": 5}
+        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Core Intent Final", config=config))
+        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Broad Expansion", config=config))
+        self.assertTrue(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 2, config=config))
+        self.assertFalse(keyword_filter.is_shortlist_volume_eligible(row, "Consider Keywords", 3, config=config))
 
 
 if __name__ == "__main__":

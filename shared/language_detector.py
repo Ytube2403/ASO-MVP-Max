@@ -114,8 +114,16 @@ def lang_match(left, right):
 def parse_market(market):
     market = str(market or "US_EN").strip()
     if "_" in market:
-        country, lang = market.split("_", 1)
-        return country.upper(), normalize_lang_code(lang)
+        parts = market.split("_", 1)
+        p1 = parts[0].upper()
+        p2 = parts[1].upper()
+        if f"{p2}_{p1}" in MARKET_OVERRIDES:
+            return p2, normalize_lang_code(p1)
+        if f"{p1}_{p2}" in MARKET_OVERRIDES:
+            return p1, normalize_lang_code(p2)
+        if p1 in {"EN", "ES", "PT", "VI", "HI", "ID", "TH", "JA", "KO", "ZH"} and p2 not in {"EN", "ES", "PT", "VI", "HI", "ID", "TH", "JA", "KO", "ZH"}:
+            return p2, normalize_lang_code(p1)
+        return p1, normalize_lang_code(p2)
     return market.upper(), "en"
 
 

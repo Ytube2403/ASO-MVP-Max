@@ -92,6 +92,31 @@ class TextDedupTests(unittest.TestCase):
         quota = result.records[:2]
         self.assertEqual([record["Keyword"] for record in quota], ["ar filter", "camera effects"])
 
+    def test_token_bag_permutations_remain_independent_by_default(self):
+        result = text_dedup.deduplicate_candidates(
+            [
+                {"Keyword": "emoji battery widget", "Volume": 10, "Bucket": "Core Intent Final"},
+                {"Keyword": "battery emoji widget", "Volume": 8, "Bucket": "Core Intent Final"},
+            ],
+            "sheet",
+            "en",
+        )
+        self.assertEqual([record["Keyword"] for record in result.records], ["emoji battery widget", "battery emoji widget"])
+        self.assertEqual(result.log_entries, [])
+
+    def test_token_bag_permutations_can_be_merged_explicitly(self):
+        result = text_dedup.deduplicate_candidates(
+            [
+                {"Keyword": "emoji battery widget", "Volume": 10, "Bucket": "Core Intent Final"},
+                {"Keyword": "battery emoji widget", "Volume": 8, "Bucket": "Core Intent Final"},
+            ],
+            "sheet",
+            "en",
+            {"auto_merge_token_bag": True},
+        )
+        self.assertEqual([record["Keyword"] for record in result.records], ["emoji battery widget"])
+        self.assertEqual(result.log_entries[0]["DedupRule"], "stemmed_token_bag_key")
+
     def test_log_entries_round_trip_through_workbook_schema(self):
         result = text_dedup.deduplicate_candidates(
             [

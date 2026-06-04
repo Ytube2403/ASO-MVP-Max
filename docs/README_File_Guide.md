@@ -1,4 +1,4 @@
-# Huong dan cau truc file ASO Keyword Filter v4.0
+# Huong dan cau truc file ASO Keyword Filter v4.1
 
 ## Root
 
@@ -22,6 +22,7 @@ Moi app co workspace rieng:
 apps/<AppName>/
 |-- app_config.py
 |-- App_Profile.json
+|-- PROJECT_MEMORY.md
 |-- Input/<MMYYYY>/
 |-- Output/<MMYYYY>/
 `-- runner Python
@@ -43,10 +44,11 @@ App da dang ky:
 - `shared/app_registry.py`: map alias app chinh xac toi folder, runner va config.
 - `shared/locale_parser.py`: parser locale dung chung cho orchestrator, exporter, tracker va batch.
 - `shared/language_detector.py`: nhan dien ngon ngu theo market policy.
-- `shared/keyword_filter/`: matcher precompiled, hard filter, classifier, validator, audit va cache atomic.
+- `shared/keyword_filter/`: matcher precompiled, hard filter, classifier, validator, audit, cache atomic va truncation hardening complete-token aware.
 - `shared/text_dedup.py`: dedup Unicode cho `01_Main_Keyword_Shortlist`.
 - `shared/translation_service.py`: dich EN bang LibreTranslate local, SQLite WAL cache, retry, rate limit, TLS verification va mapping model theo locale.
 - `shared/profile_service.py`: custom/generated profile cache va stale fallback.
+- `shared/project_memory.py`: doc `app_config.py` va `App_Profile.json` de render Project Memory cho Dashboard, workbook va `PROJECT_MEMORY.md`.
 
 ## `tools/`
 
@@ -59,16 +61,16 @@ Wrapper tai root duoc giu de cac lenh cu van chay.
 
 ## `tracker/`
 
-- `tracker/run_dashboard.py`: Flask API va web launcher.
+- `tracker/run_dashboard.py`: Flask API, web launcher va API `GET /api/setup/<app_name>` cho tab Setup.
 - `tracker/db_manager.py`: SQLite schema va query.
 - `tracker/data_scanner.py`: quet CSV trong `apps/*/Input/`.
-- `tracker/static/`: SPA HTML, CSS va JavaScript.
+- `tracker/static/`: SPA HTML, CSS va JavaScript, gom tab `Setup` de xem app identity, keyword setup, competitor setup, drop policy, overrides va warnings.
 
 Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 
 ## `docs/`
 
-- `docs/ASO_Keyword_Planner_v4_0.md`: dac ta logic pipeline.
+- `docs/ASO_Keyword_Planner_v4_1.md`: dac ta logic pipeline.
 - `docs/SETUP_WINDOWS.md`: checklist phan mem, extension, Python packages va cach kiem tra moi truong Windows.
 - `docs/App_Config_Template.py`: template config.
 - `docs/App_Profile_Template.json`: template profile.
@@ -82,7 +84,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 
 ## `tests/`
 
-Regression test cho registry, parser locale, hard filter, dedup, translation, profile, exporter va batch runner.
+Regression test cho registry, parser locale, hard filter, truncation false positive, dedup, translation, profile, project memory, exporter va batch runner.
 
 ## `releases/`
 

@@ -1,4 +1,4 @@
-import pandas as pd
+﻿import pandas as pd
 import numpy as np
 import re
 import os
@@ -16,11 +16,13 @@ from openpyxl.utils import get_column_letter
 import argparse
 import sys
 
-_SHARED_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SHARED_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 if _SHARED_ROOT not in sys.path:
     sys.path.insert(0, _SHARED_ROOT)
 from shared import text_dedup as _shared_text_dedup
 from shared import profile_service as _shared_profile_service
+from shared import project_memory as _shared_project_memory
 from shared import translation_service as _shared_translation_service
 from shared.paths import COUNTRY_LANGUAGE_MAP_PATH, DOCS_DIR
 
@@ -49,7 +51,7 @@ config = {
     "platform_mode": "google_play",
     "semantic_mode": "ar_filter",
     "dedup_policy": {
-        "auto_merge_token_bag": True,
+        "auto_merge_token_bag": False,
         "review_overlap_threshold": 0.80,
         "accent_fold_auto_merge_locales": [],
         "enable_review_log": True,
@@ -129,7 +131,11 @@ config = {
     "truncation_policy": {
         "enabled": True,
         "min_prefix_length": 2,
-        "allowed_partial_terms": []
+        "allowed_partial_terms": [],
+        "protect_complete_tokens": True,
+        "ignore_inflection_prefix": True,
+        "low_confidence_action": "manual_review",
+        "dangling_action": "manual_review"
     },
     "risk_policy": {
         "competitor_brand_action": "drop",
@@ -173,18 +179,18 @@ market_lang = config["market"].split("_")[1].upper() if "_" in config["market"] 
 
 localized_data = {
     "ES": {
-        "intent_core_words": ["filtro", "filtros", "cámara", "camara", "efecto", "efectos", "lente", "lentes"],
-        "intent_core_terms": ["filtro ar", "filtros ar", "camara ar", "cámara ar", "filtro de cara", "filtros de cara", "filtro de rostro", "filtros de rostro", "efeito ar", "efecto ar", "efectos ar", "filtro divertido", "filtros divertidos", "filtro gracioso", "filtros graciosos", "filtro de perro", "filtros de perro", "filtro de perrito", "filtros de perrito", "filtro meme", "filtros de memes", "filtro facial", "filtros faciales"],
-        "feature_terms": ["personaje 3d", "personajes 3d", "personaje ar", "personajes ar", "video divertido", "videos divertidos", "video ar", "videos ar", "broma de filtro", "filtro de broma", "deformar cara", "cara de perro", "cara de perrito", "filtro feo", "filtro de llanto", "filtro calvo", "efecto calvo", "muñeco 3d", "muñeco animado", "avatar animado", "personaje animado", "personajes animados"],
+        "intent_core_words": ["filtro", "filtros", "cÃ¡mara", "camara", "efecto", "efectos", "lente", "lentes"],
+        "intent_core_terms": ["filtro ar", "filtros ar", "camara ar", "cÃ¡mara ar", "filtro de cara", "filtros de cara", "filtro de rostro", "filtros de rostro", "efeito ar", "efecto ar", "efectos ar", "filtro divertido", "filtros divertidos", "filtro gracioso", "filtros graciosos", "filtro de perro", "filtros de perro", "filtro de perrito", "filtros de perrito", "filtro meme", "filtros de memes", "filtro facial", "filtros faciales"],
+        "feature_terms": ["personaje 3d", "personajes 3d", "personaje ar", "personajes ar", "video divertido", "videos divertidos", "video ar", "videos ar", "broma de filtro", "filtro de broma", "deformar cara", "cara de perro", "cara de perrito", "filtro feo", "filtro de llanto", "filtro calvo", "efecto calvo", "muÃ±eco 3d", "muÃ±eco animado", "avatar animado", "personaje animado", "personajes animados"],
         "style_terms": ["divertido", "gracioso", "perro", "perrito", "mascota", "mascotas", "broma", "bromas", "animado", "realidad aumentada", "virtual"],
-        "visual_terms": ["foto", "fotos", "video", "videos", "cámara", "camara", "selfie", "selfies", "imagen", "imágenes"]
+        "visual_terms": ["foto", "fotos", "video", "videos", "cÃ¡mara", "camara", "selfie", "selfies", "imagen", "imÃ¡genes"]
     },
     "PT": {
-        "intent_core_words": ["filtro", "filtros", "câmera", "camera", "efeito", "efeitos", "lente", "lentes"],
-        "intent_core_terms": ["filtro ar", "filtros ar", "camera ar", "câmera ar", "filtro de cara", "filtros de cara", "filtro de rosto", "filtros de rosto", "efeito ar", "efeitos ar", "filtro divertido", "filtros divertidos", "filtro engraçado", "filtros engraçados", "filtro de cachorro", "filtros de cachorro", "filtro de cão", "filtro de pet", "filtro meme", "filtros de memes", "filtro facial", "filtros faciais"],
+        "intent_core_words": ["filtro", "filtros", "cÃ¢mera", "camera", "efeito", "efeitos", "lente", "lentes"],
+        "intent_core_terms": ["filtro ar", "filtros ar", "camera ar", "cÃ¢mera ar", "filtro de cara", "filtros de cara", "filtro de rosto", "filtros de rosto", "efeito ar", "efeitos ar", "filtro divertido", "filtros divertidos", "filtro engraÃ§ado", "filtros engraÃ§ados", "filtro de cachorro", "filtros de cachorro", "filtro de cÃ£o", "filtro de pet", "filtro meme", "filtros de memes", "filtro facial", "filtros faciais"],
         "feature_terms": ["personagem 3d", "personagens 3d", "personagem ar", "personagens ar", "video divertido", "videos divertidos", "video ar", "videos ar", "piada de filtro", "filtro de piada", "deformar rosto", "cara de cachorro", "filtro feio", "filtro de choro", "filtro careca", "efeito careca", "boneco 3d", "boneco animado", "avatar animado", "personagem animado", "personagens animados"],
-        "style_terms": ["divertido", "engraçado", "cachorro", "cão", "pet", "pets", "piada", "piadas", "animado", "realidade aumentada", "virtual"],
-        "visual_terms": ["foto", "fotos", "video", "videos", "câmera", "camera", "selfie", "selfies", "imagem", "imagens"]
+        "style_terms": ["divertido", "engraÃ§ado", "cachorro", "cÃ£o", "pet", "pets", "piada", "piadas", "animado", "realidade aumentada", "virtual"],
+        "visual_terms": ["foto", "fotos", "video", "videos", "cÃ¢mera", "camera", "selfie", "selfies", "imagem", "imagens"]
     },
     "ID": {
         "intent_core_words": ["filter", "kamera", "efek", "lensa"],
@@ -711,7 +717,7 @@ def check_naturalness(kw, config):
         if re.search(pat, kw_lower):
             return 'UNNATURAL', 'Fails structural validation'
     for char in kw_lower:
-        if ord(char) > 127 and char not in 'áéíóúüñ¿¡íóú':
+        if ord(char) > 127 and char not in 'Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±Â¿Â¡Ã­Ã³Ãº':
             return 'LANGUAGE_BLEED', 'Foreign script character detected'
     return 'OK', 'Natural enough for keyword research'
 
@@ -1291,15 +1297,15 @@ for idx, entry in enumerate(all_shortlist):
     sec = entry['Section']
     if sec == 'Core Intent Final':
         if idx < 2:
-            entry['WhereToUse'] = '🏷️ Title'
+            entry['WhereToUse'] = 'ðŸ·ï¸ Title'
         elif idx < 9:
-            entry['WhereToUse'] = '📱 Short Description'
+            entry['WhereToUse'] = 'ðŸ“± Short Description'
         else:
-            entry['WhereToUse'] = '📄 Full Description'
+            entry['WhereToUse'] = 'ðŸ“„ Full Description'
     elif sec == 'Broad Expansion':
-        entry['WhereToUse'] = '📄 Full Description'
+        entry['WhereToUse'] = 'ðŸ“„ Full Description'
     else:
-        entry['WhereToUse'] = '🔍 Consider / Research Only'
+        entry['WhereToUse'] = 'ðŸ” Consider / Research Only'
 
 df_shortlist = pd.DataFrame(all_shortlist)
 
@@ -1307,6 +1313,14 @@ df_shortlist = pd.DataFrame(all_shortlist)
 print("[Step 10] Exporting to stylized Excel Workbook...")
 wb = Workbook()
 wb.remove(wb.active)
+try:
+    _profile_for_memory, _raw_profile_for_memory, _ = _shared_project_memory.load_profile_from_app(SCRIPT_DIR, config)
+except Exception:
+    _raw_profile_for_memory = {}
+project_memory = _shared_project_memory.build_project_memory(
+    config, app_profile, _raw_profile_for_memory, SCRIPT_DIR, "runtime config", []
+)
+_shared_project_memory.add_project_memory_sheet(wb, project_memory)
 
 def style_sheet(ws, title, is_report=False):
     ws.views.sheetView[0].showGridLines = True
@@ -1361,9 +1375,9 @@ def style_sheet(ws, title, is_report=False):
 # --- 00_README_CONFIG ---
 ws_readme = wb.create_sheet(title="00_README_CONFIG")
 ws_readme.views.sheetView[0].showGridLines = True
-ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Configuration Summary").font = Font(size=14, bold=True)
+ws_readme.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Configuration Summary").font = Font(size=14, bold=True)
 configs = [
-    ("Pipeline Version", "ASO Keyword Planner v4.0"),
+    ("Pipeline Version", "ASO Keyword Planner v4.1"),
     ("App Name", config["app_name"]),
     ("App ID", config["app_id"]),
     ("Category", config["category"]),
@@ -1431,7 +1445,7 @@ style_sheet(ws_dropped, "04_Dropped_Audit")
 # --- 05_Report_Summary ---
 ws_report = wb.create_sheet(title="05_Report_Summary")
 ws_report.views.sheetView[0].showGridLines = True
-ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.0 - Report Summary").font = Font(size=14, bold=True)
+ws_report.cell(row=1, column=1, value="ASO Keyword Planner v4.1 - Report Summary").font = Font(size=14, bold=True)
 ws_report.cell(row=3, column=1, value="Metric Summary").font = Font(size=12, bold=True)
 metrics = [
     ("Total Raw Keywords", len(df)),
@@ -1573,6 +1587,12 @@ if not df_dedup_log.empty:
 style_sheet(ws_dedup, "12_Text_Dedup_Log")
 
 # Save
+try:
+    memory_path = _shared_project_memory.write_project_memory_markdown(SCRIPT_DIR, project_memory)
+    print(f"Project Memory updated: {memory_path}")
+except Exception as exc:
+    print(f"WARNING: Could not write PROJECT_MEMORY.md: {exc}")
+
 print(f"Saving stylized workbook to {OUTPUT_PATH}...")
 try:
     wb.save(OUTPUT_PATH)

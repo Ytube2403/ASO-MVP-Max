@@ -25,8 +25,12 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
     }
 }
 
-$installedVersion = & $venvPython -c "import importlib.metadata as metadata; print(metadata.version('libretranslate'))" 2>$null
-if ($LASTEXITCODE -ne 0 -or "$installedVersion".Trim() -ne $Version) {
+$hasLibre = & $venvPython -c "import importlib.util; print(importlib.util.find_spec('libretranslate') is not None)"
+$installedVersion = ""
+if ($hasLibre.Trim() -eq "True") {
+    $installedVersion = & $venvPython -c "import importlib.metadata as metadata; print(metadata.version('libretranslate'))" 2>$null
+}
+if ($installedVersion.Trim() -ne $Version) {
     Write-Host "Installing LibreTranslate $Version"
     & $venvPython -m pip install --upgrade "libretranslate==$Version"
     if ($LASTEXITCODE -ne 0) {
@@ -50,6 +54,7 @@ if (-not $LoadOnly) {
 if (-not $env:ARGOS_CHUNK_TYPE) {
     $env:ARGOS_CHUNK_TYPE = "MINISBD"
 }
+$env:PYTHONIOENCODING = "utf-8"
 
 $arguments = @(
     "--host", $BindHost,

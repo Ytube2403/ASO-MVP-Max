@@ -243,6 +243,238 @@ body {
     border-bottom-color: var(--primary);
 }
 
+/* Setup Tab */
+.setup-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.setup-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.setup-eyebrow {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.setup-hero h2 {
+    font-size: 28px;
+    line-height: 1.2;
+    margin: 4px 0;
+}
+
+.setup-hero p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.setup-hero-meta,
+.setup-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.setup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.setup-card {
+    min-height: 180px;
+}
+
+.setup-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.setup-card-header .material-icons-outlined {
+    color: var(--primary);
+}
+
+.setup-card-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.setup-kv-list,
+.setup-policy-list,
+.setup-competitor-list,
+.setup-warning-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.setup-kv-row,
+.setup-policy-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.setup-kv-row span,
+.setup-policy-row span:first-child {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.setup-kv-row strong {
+    color: var(--text-primary);
+    font-size: 13px;
+    text-align: right;
+}
+
+.setup-copy-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.setup-copy-block p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.setup-term-group {
+    margin-top: 14px;
+}
+
+.setup-term-group label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.setup-term-group div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.setup-chip,
+.setup-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 10px;
+}
+
+.setup-chip {
+    background: var(--background);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.setup-chip-primary {
+    background: var(--primary-bg);
+    border-color: rgba(26, 115, 232, 0.25);
+    color: var(--primary);
+}
+
+.setup-chip-danger {
+    background: var(--danger-bg);
+    border-color: rgba(234, 67, 53, 0.25);
+    color: var(--danger-text);
+}
+
+.setup-chip-warning {
+    background: var(--warning-bg);
+    border-color: rgba(251, 188, 5, 0.35);
+    color: var(--warning-text);
+}
+
+.setup-badge-neutral {
+    background: var(--background);
+    color: var(--text-secondary);
+}
+
+.setup-badge-success {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.setup-badge-danger {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+}
+
+.setup-badge-warning {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.setup-badge-purple {
+    background: #f3e8fd;
+    color: #7e22ce;
+}
+
+.setup-competitor-item,
+.setup-warning-item {
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 12px;
+}
+
+.setup-competitor-item strong {
+    display: block;
+    font-size: 14px;
+}
+
+.setup-competitor-item span,
+.setup-competitor-item p,
+.setup-muted {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.setup-warning-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.setup-warning-item .material-icons-outlined {
+    font-size: 18px;
+}
+
+@media (max-width: 960px) {
+    .setup-hero,
+    .setup-kv-row,
+    .setup-policy-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .setup-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Main Layout */
 .main-content {
     padding: 24px;

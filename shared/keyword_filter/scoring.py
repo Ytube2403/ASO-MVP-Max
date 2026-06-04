@@ -12,8 +12,8 @@ DEFAULT_VOLUME_SCORE_POLICY = {
     "historical_max_volume_weight": 0.15,
     "low_tier_threshold": 5.0,
     "low_tier_score_cap": 0.05,
-    "exclude_low_tier_from_metadata_shortlist": True,
-    "max_low_tier_consider_keywords": 3,
+    "exclude_low_tier_from_metadata_shortlist": False,
+    "max_low_tier_consider_keywords": 999,
 }
 
 QUERY_PATTERNS = [
@@ -79,9 +79,9 @@ def is_shortlist_volume_eligible(row, section, selected_low_tier_count=0, config
     if not is_low_volume_tier(row, config):
         return True
     if section in {"Core Intent Final", "Broad Expansion"}:
-        return not bool(policy.get("exclude_low_tier_from_metadata_shortlist", True))
+        return not bool(policy.get("exclude_low_tier_from_metadata_shortlist", False))
     if section == "Consider Keywords":
-        return selected_low_tier_count < int(number(policy.get("max_low_tier_consider_keywords"), 3))
+        return selected_low_tier_count < int(number(policy.get("max_low_tier_consider_keywords"), 999))
     return True
 
 

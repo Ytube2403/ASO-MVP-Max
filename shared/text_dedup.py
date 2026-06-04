@@ -8,7 +8,7 @@ except Exception:
 
 
 DEFAULT_DEDUP_POLICY = {
-    "auto_merge_token_bag": True,
+    "auto_merge_token_bag": False,
     "accent_fold_auto_merge_locales": [],
 }
 
@@ -342,7 +342,7 @@ def _auto_match(left, right, policy):
     if left.stemmed_sequence_key and left.stemmed_sequence_key == right.stemmed_sequence_key:
         return "stemmed_sequence_key", 0.95, " ".join(left.stemmed_sequence_key)
     if (
-        policy.get("auto_merge_token_bag", True)
+        policy.get("auto_merge_token_bag", False)
         and left.stemmed_token_bag_key
         and left.stemmed_token_bag_key == right.stemmed_token_bag_key
     ):
@@ -396,7 +396,7 @@ def _indexed_auto_groups(keys, policy):
             groups.setdefault(("accent", item.language, item.accent_fold_review_key), []).append(index)
         if item.stemmed_sequence_key:
             groups.setdefault(("stem_sequence", item.stemmed_sequence_key), []).append(index)
-        if policy.get("auto_merge_token_bag", True) and item.stemmed_token_bag_key:
+        if policy.get("auto_merge_token_bag", False) and item.stemmed_token_bag_key:
             groups.setdefault(("stem_bag", item.stemmed_token_bag_key), []).append(index)
     return groups.values()
 

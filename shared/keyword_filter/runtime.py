@@ -1,5 +1,11 @@
 from collections import OrderedDict
 
+from shared.language_detector import (
+    DEFAULT_ENGLISH_WORDS,
+    LANG_LEXICONS,
+    get_market_language_policy,
+)
+
 from .cache import config_hash
 from .matcher import compile_terms, normalize_filter_text, tokenize
 
@@ -16,6 +22,14 @@ TERM_KEYS = [
 DEFAULT_NOISE_TERMS = [
     "app", "apps", "free", "download", "android", "for android",
     "new", "best", "top", "2026", "2025",
+]
+COMPLETE_TOKEN_SOURCES = [
+    "intent_core_terms",
+    "intent_core_words",
+    "feature_terms",
+    "style_terms",
+    "visual_terms",
+    "noise_terms",
 ]
 _RUNTIME_CACHE = OrderedDict()
 _MAX_RUNTIME_CACHE_SIZE = 128
@@ -46,7 +60,19 @@ class FilterRuntime:
             for term in config.get(source, []) or []
             for token in tokenize(term)
         }
+        self.truncation_complete_tokens = {
+            token
+            for source in COMPLETE_TOKEN_SOURCES
+            for term in config.get(source, []) or []
+            for token in tokenize(term)
+        }
+        self.truncation_complete_tokens.update(self.noise_tokens)
+        self.truncation_complete_tokens.update(tokenize(" ".join(DEFAULT_ENGLISH_WORDS)))
+        language_policy = get_market_language_policy(config.get("market", "US_EN"), config)
+        for language in language_policy.get("primary", []) + language_policy.get("secondary", []):
+            self.truncation_complete_tokens.update(tokenize(" ".join(LANG_LEXICONS.get(language, set()))))
         allowlist = set(truncation_policy.get("allowlist", []) or [])
+        allowlist.update(truncation_policy.get("allowed_partial_terms", []) or [])
         allowlist.update((config.get("user_overrides", {}) or {}).get("do_not_auto_drop_terms", []) or [])
         self.truncation_allowlist = {normalize_filter_text(term) for term in allowlist}
 

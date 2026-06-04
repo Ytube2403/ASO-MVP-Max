@@ -15,6 +15,7 @@ from shared.translation_service import (
     DEFAULT_REQUESTS_PER_SECOND,
     PROVIDER,
     TranslationService,
+    TranslationUnavailableError,
     normalize_source_language,
     translate_dataframe,
     translation_cache_count,
@@ -75,7 +76,7 @@ class TranslationServiceTests(unittest.TestCase):
                 },
             )
 
-    def test_failed_health_check_keeps_raw_without_repeated_requests(self):
+    def test_failed_health_check_stops_without_repeated_requests(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             calls = []
 
@@ -90,10 +91,9 @@ class TranslationServiceTests(unittest.TestCase):
                 retries=3,
                 requests_per_second=1000,
             )
-            result = service.translate("broma", "es")
-            self.assertEqual(result.text, "broma")
-            self.assertEqual(result.status, "FAILED_RAW_FALLBACK")
-            self.assertIn("LibreTranslate health check failed", result.error)
+            with self.assertRaises(TranslationUnavailableError) as context:
+                service.translate("broma", "es")
+            self.assertIn("LibreTranslate health check failed", str(context.exception))
             self.assertEqual(len(calls), 1)
 
     def test_source_language_mapping_uses_libretranslate_codes(self):
@@ -215,7 +215,7 @@ class TranslationServiceTests(unittest.TestCase):
             )
             self.assertEqual(list(translated["TranslationStatus"]), ["NOT_REQUIRED", "PROVIDED_EN"])
 
-    def test_dataframe_prints_one_summary_warning_for_raw_fallbacks(self):
+    def test_dataframe_stops_when_translation_is_unavailable(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             calls = []
 
@@ -229,13 +229,9 @@ class TranslationServiceTests(unittest.TestCase):
             ])
             service = TranslationService(os.path.join(temp_dir, "translations.sqlite3"), opener=opener)
             output = io.StringIO()
-            with redirect_stdout(output):
-                translated = translate_dataframe(frame, service=service)
-            self.assertEqual(
-                list(translated["TranslationStatus"]),
-                ["FAILED_RAW_FALLBACK", "FAILED_RAW_FALLBACK"],
-            )
-            self.assertIn("LibreTranslate kept raw text for 2 keyword(s)", output.getvalue())
+            with self.assertRaises(TranslationUnavailableError):
+                with redirect_stdout(output):
+                    translate_dataframe(frame, service=service)
             self.assertEqual(len(calls), 1)
 
 
