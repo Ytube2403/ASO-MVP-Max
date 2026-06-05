@@ -27,6 +27,7 @@ DEFAULT_PROMPT_VERSION = "aso-keyword-classifier-v1"
 DEFAULT_BATCH_SIZE = 50
 DEFAULT_REQUESTS_PER_SECOND = 2.0
 DEFAULT_TIMEOUT = 60
+DOTENV_KEYS = {"DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL"}
 DEFAULT_PRE_FILTER_CONFIG = {
     "enabled": True,
     "duplicate_strategy": "canonical_reuse",
@@ -104,6 +105,49 @@ class PreAIItem:
 def enabled(config):
     classifier_config = (config or {}).get("ai_keyword_classifier", {})
     return bool(classifier_config.get("enabled", False))
+
+
+def _project_env_paths():
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    paths = [
+        os.path.join(os.getcwd(), ".env"),
+        os.path.join(project_root, ".env"),
+    ]
+    unique_paths = []
+    seen = set()
+    for path in paths:
+        normalized = os.path.abspath(path)
+        if normalized not in seen:
+            unique_paths.append(normalized)
+            seen.add(normalized)
+    return unique_paths
+
+
+def _strip_env_quotes(value):
+    value = str(value or "").strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
+def load_project_env():
+    """Load project-local .env secrets without overriding existing environment."""
+    loaded = []
+    for path in _project_env_paths():
+        if not os.path.exists(path):
+            continue
+        with open(path, "r", encoding="utf-8") as env_file:
+            for line in env_file:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                if key not in DOTENV_KEYS or os.environ.get(key):
+                    continue
+                os.environ[key] = _strip_env_quotes(value)
+        loaded.append(path)
+    return loaded
 
 
 def _classifier_config(config):
@@ -331,6 +375,7 @@ class AIKeywordClassifier:
         self.app_profile = app_profile or {}
         self.market = str(market or self.config.get("market", ""))
         self.cache_path = os.path.abspath(cache_path)
+        load_project_env()
         self.api_key = str(api_key if api_key is not None else os.environ.get("DEEPSEEK_API_KEY", "")).strip()
         self.base_url = str(base_url or os.environ.get("DEEPSEEK_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
         self.opener = opener or urllib.request.urlopen

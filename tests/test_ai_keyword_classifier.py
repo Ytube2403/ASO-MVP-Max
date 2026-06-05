@@ -107,6 +107,31 @@ class AIKeywordClassifierTests(unittest.TestCase):
             with self.assertRaises(AIKeywordClassifierError):
                 analyze_dataframe(df, BASE_CONFIG, cache_path=service.cache_path, market="VN_VI", service=service)
 
+    def test_loads_deepseek_credentials_from_project_env_file(self):
+        previous_key = os.environ.pop("DEEPSEEK_API_KEY", None)
+        previous_base_url = os.environ.pop("DEEPSEEK_BASE_URL", None)
+        previous_cwd = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                try:
+                    with open(os.path.join(temp_dir, ".env"), "w", encoding="utf-8") as env_file:
+                        env_file.write("DEEPSEEK_API_KEY=env-file-key\nDEEPSEEK_BASE_URL=https://example.deepseek.local\n")
+                    os.chdir(temp_dir)
+                    service = AIKeywordClassifier(os.path.join(temp_dir, "ai.sqlite3"), BASE_CONFIG, market="VN_VI")
+                    self.assertEqual(service.api_key, "env-file-key")
+                    self.assertEqual(service.base_url, "https://example.deepseek.local")
+                finally:
+                    os.chdir(previous_cwd)
+        finally:
+            if previous_key is not None:
+                os.environ["DEEPSEEK_API_KEY"] = previous_key
+            else:
+                os.environ.pop("DEEPSEEK_API_KEY", None)
+            if previous_base_url is not None:
+                os.environ["DEEPSEEK_BASE_URL"] = previous_base_url
+            else:
+                os.environ.pop("DEEPSEEK_BASE_URL", None)
+
 
     def test_pre_ai_filter_skips_waste_preserves_broad_terms_and_reuses_duplicates(self):
         config = copy.deepcopy(BASE_CONFIG)

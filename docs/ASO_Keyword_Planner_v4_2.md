@@ -2455,7 +2455,7 @@ Mac dinh khong pre-skip `possible_truncated_keyword`, `risky_ip`, `ambiguous_bra
 }
 ```
 
-API key khong duoc luu vao repo/config. Dat qua bien moi truong `DEEPSEEK_API_KEY` tren may chay pipeline.
+API key khong duoc luu vao repo/config. Cach khuyen nghi la copy `.env.example` thanh `.env`, dien `DEEPSEEK_API_KEY=...`, va de `.env` local trong `.gitignore`. Neu khong dung `.env`, co the dat qua bien moi truong `DEEPSEEK_API_KEY` tren may chay pipeline.
 
 ### 30.5 Audit columns moi
 

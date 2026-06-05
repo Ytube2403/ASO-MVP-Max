@@ -77,6 +77,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 - `docs/App_Profile_Template.json`: template profile.
 - `docs/english_words_10k.txt`: whitelist tieng Anh.
 - `docs/DESIGN.md`: design system cua dashboard.
+- `.env.example`: template key DeepSeek local; copy thanh `.env` de chay may ca nhan, `.env` khong commit.
 
 ## `data/`
 

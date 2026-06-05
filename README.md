@@ -66,7 +66,21 @@ ASO-MVP-Max/
 
 ## AI keyword classifier v4.2
 
-Dat API key ngoai repo truoc khi chay pipeline co keyword moi:
+Khuyen nghi tao file `.env` tu template va dien key local:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+Noi dung `.env`:
+
+```env
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+File `.env` da nam trong `.gitignore`, khong commit len repo. Neu khong dung `.env`, co the set key tam thoi trong terminal:
 
 ```powershell
 $env:DEEPSEEK_API_KEY = "your_key_here"
