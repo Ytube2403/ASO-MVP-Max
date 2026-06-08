@@ -247,14 +247,19 @@ body {
 .setup-layout {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
 .setup-hero {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 20px;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+}
+
+.setup-hero > div:first-child {
+    min-width: 0;
 }
 
 .setup-eyebrow {
@@ -266,7 +271,7 @@ body {
 }
 
 .setup-hero h2 {
-    font-size: 28px;
+    font-size: 26px;
     line-height: 1.2;
     margin: 4px 0;
 }
@@ -274,6 +279,7 @@ body {
 .setup-hero p {
     color: var(--text-secondary);
     font-size: 14px;
+    overflow-wrap: anywhere;
 }
 
 .setup-hero-meta,
@@ -283,21 +289,57 @@ body {
     gap: 8px;
 }
 
-.setup-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+.setup-hero-meta {
+    justify-content: flex-end;
+    max-width: 46%;
+    padding-top: 8px;
 }
 
+.setup-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.setup-top-grid {
+    grid-template-columns: minmax(320px, 0.85fr) minmax(420px, 1.15fr);
+}
+
+.setup-main-grid {
+    align-items: start;
+    grid-template-columns: minmax(520px, 1.05fr) minmax(420px, 0.95fr);
+    grid-template-areas:
+        "keywords competitors"
+        "keywords risk"
+        "warnings risk";
+}
+
+.setup-card-keywords { grid-area: keywords; }
+.setup-card-competitors { grid-area: competitors; }
+.setup-card-risk { grid-area: risk; }
+.setup-card-warnings { grid-area: warnings; }
+
 .setup-card {
-    min-height: 180px;
+    min-height: 0;
+    overflow: visible;
+    padding: 16px;
+}
+
+.setup-card-risk {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+}
+
+.setup-card-risk .setup-card-header,
+.setup-card-risk .setup-policy-list {
+    grid-column: 1 / -1;
 }
 
 .setup-card-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .setup-card-header .material-icons-outlined {
@@ -310,7 +352,6 @@ body {
 }
 
 .setup-kv-list,
-.setup-policy-list,
 .setup-competitor-list,
 .setup-warning-list {
     display: flex;
@@ -318,14 +359,24 @@ body {
     gap: 10px;
 }
 
+.setup-policy-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+}
+
 .setup-kv-row,
 .setup-policy-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: minmax(120px, 170px) minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 8px;
+}
+
+.setup-policy-row {
+    grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .setup-kv-row span,
@@ -337,7 +388,9 @@ body {
 .setup-kv-row strong {
     color: var(--text-primary);
     font-size: 13px;
-    text-align: right;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    text-align: left;
 }
 
 .setup-copy-block {
@@ -349,11 +402,12 @@ body {
 
 .setup-copy-block p {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .setup-term-group {
-    margin-top: 14px;
+    margin-top: 12px;
 }
 
 .setup-term-group label {
@@ -368,7 +422,7 @@ body {
 .setup-term-group div {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .setup-chip,
@@ -378,14 +432,17 @@ body {
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    line-height: 1;
-    padding: 6px 10px;
+    line-height: 1.2;
+    max-width: 100%;
+    padding: 5px 9px;
 }
 
 .setup-chip {
     background: var(--background);
     color: var(--text-secondary);
     border: 1px solid var(--border);
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .setup-chip-primary {
@@ -435,7 +492,13 @@ body {
 .setup-warning-item {
     border: 1px solid var(--border);
     border-radius: var(--border-radius-sm);
-    padding: 12px;
+    padding: 10px;
+}
+
+.setup-card-competitors .setup-competitor-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .setup-competitor-item strong {
@@ -448,6 +511,7 @@ body {
 .setup-muted {
     color: var(--text-secondary);
     font-size: 13px;
+    overflow-wrap: anywhere;
 }
 
 .setup-warning-item {
@@ -464,14 +528,29 @@ body {
 
 @media (max-width: 960px) {
     .setup-hero,
-    .setup-kv-row,
-    .setup-policy-row {
+    .setup-hero-meta {
         align-items: flex-start;
         flex-direction: column;
+        max-width: none;
     }
 
-    .setup-grid {
+    .setup-top-grid,
+    .setup-main-grid {
+        grid-template-areas: none;
         grid-template-columns: 1fr;
+    }
+
+    .setup-card-risk,
+    .setup-policy-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .setup-kv-row,
+    .setup-policy-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
     }
 }
 

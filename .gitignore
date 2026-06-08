@@ -10,6 +10,7 @@
 !.env.example
 
 # ── Python cache ──
+.venv/
 __pycache__/
 *.py[cod]
 *.pyo

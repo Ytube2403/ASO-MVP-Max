@@ -29,9 +29,10 @@ function actionClass(action) {
     return "setup-badge-neutral";
 }
 
-function renderSetupSection(title, icon, bodyHtml) {
+function renderSetupSection(title, icon, bodyHtml, className = "") {
+    const extraClass = className ? ` ${className}` : "";
     return `
-        <article class="card setup-card">
+        <article class="card setup-card${extraClass}">
             <div class="setup-card-header">
                 <span class="material-icons-outlined">${icon}</span>
                 <h3>${escapeHtml(title)}</h3>
@@ -92,13 +93,13 @@ function renderSetupTab(memory) {
             </div>
         </div>
 
-        <div class="setup-grid">
+        <div class="setup-grid setup-top-grid">
             ${renderSetupSection("Identity", "badge", renderKeyValueRows([
                 { label: "Category", value: setupText(identity.category) },
                 { label: "Platform", value: setupText(identity.platform_mode) },
                 { label: "Config source", value: setupText(memory.config_source) },
                 { label: "Profile status", value: setupText(positioning.profile_status) }
-            ]))}
+            ]), "setup-card-identity")}
 
             ${renderSetupSection("Positioning", "flag", `
                 <div class="setup-copy-block">
@@ -107,14 +108,16 @@ function renderSetupTab(memory) {
                     <p>${escapeHtml(positioning.primary_positioning || positioning.full_description_summary || "")}</p>
                 </div>
                 <div class="setup-chip-group">${setupList(positioning.strongest_differentiators || [])}</div>
-            `)}
+            `, "setup-card-positioning")}
+        </div>
 
+        <div class="setup-grid setup-main-grid">
             ${renderSetupSection("Keyword Setup", "sell", `
                 <div class="setup-term-group"><label>Core terms</label><div>${setupList(keywordSetup.core_terms || [], "setup-chip setup-chip-primary")}</div></div>
                 <div class="setup-term-group"><label>Feature terms</label><div>${setupList(keywordSetup.feature_terms || [])}</div></div>
                 <div class="setup-term-group"><label>Style terms</label><div>${setupList(keywordSetup.style_terms || [])}</div></div>
                 <div class="setup-term-group"><label>Visual terms</label><div>${setupList(keywordSetup.visual_terms || [])}</div></div>
-            `)}
+            `, "setup-card-keywords")}
 
             ${renderSetupSection("Competitors", "group", `
                 <div class="setup-term-group"><label>Blocked competitor brands</label><div>${setupList(competitorSetup.blocked_brands || [], "setup-chip setup-chip-danger")}</div></div>
@@ -127,7 +130,7 @@ function renderSetupTab(memory) {
                         </div>
                     `).join("") : '<span class="setup-muted">No competitor apps configured</span>'}
                 </div>
-            `)}
+            `, "setup-card-competitors")}
 
             ${renderSetupSection("Drop & Risk Rules", "policy", `
                 <div class="setup-policy-list">
@@ -141,7 +144,7 @@ function renderSetupTab(memory) {
                 <div class="setup-term-group"><label>Noise</label><div>${setupList(riskGroups.noise_terms || [])}</div></div>
                 <div class="setup-term-group"><label>Irrelevant intent</label><div>${setupList(riskGroups.irrelevant_intent_terms || [], "setup-chip setup-chip-danger")}</div></div>
                 <div class="setup-term-group"><label>Risky platform/IP</label><div>${setupList([...(riskGroups.risky_platform_terms || []), ...(riskGroups.risky_ip_terms || [])], "setup-chip setup-chip-warning")}</div></div>
-            `)}
+            `, "setup-card-risk")}
 
             ${renderSetupSection("Warnings", "warning", `
                 <div class="setup-warning-list">
@@ -152,7 +155,7 @@ function renderSetupTab(memory) {
                         </div>
                     `).join("")}
                 </div>
-            `)}
+            `, "setup-card-warnings")}
         </div>
     `;
 }
