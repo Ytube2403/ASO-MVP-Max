@@ -5,8 +5,12 @@
 # ── Antigravity / AI tools ──
 .understand-anything/
 .pytest_cache/
+.env
+.env.*
+!.env.example
 
 # ── Python cache ──
+.venv/
 __pycache__/
 *.py[cod]
 *.pyo
