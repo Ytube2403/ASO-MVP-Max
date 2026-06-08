@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration File
 Version: 4.1
@@ -22,40 +22,40 @@ if "ES" in _market or "MX" in _market:
     _primary = ["es"]
     _secondary = ["en"]
     _core_intent = [
-        "baterÃ­a emoji", "widget de baterÃ­a", "icono de baterÃ­a", "personalizar baterÃ­a",
-        "estado de la baterÃ­a", "barra de estado emoji", "stickers emoji", "calcomanÃ­as emoji",
+        "batería emoji", "widget de batería", "icono de batería", "personalizar batería",
+        "estado de la batería", "barra de estado emoji", "stickers emoji", "calcomanías emoji",
         "emoji battery", "emoji battery widget", "emoji battery status bar", "emoji battery icon",
         "custom battery icon", "battery icon customize", "emoji widget", "funny status bar",
         "custom status bar", "emoji status bar", "emoji sticker", "emoji stickers"
     ]
     _feature = [
-        "emojis animados", "nivel de baterÃ­a", "barra de notificaciones",
-        "personalizar Ã­cono", "muesca", "gestos de deslizamiento",
+        "emojis animados", "nivel de batería", "barra de notificaciones",
+        "personalizar ícono", "muesca", "gestos de deslizamiento",
         "personalizar notch", "animated emojis", "gesture shortcuts", "notch customizer",
         "status bar stickers", "battery level"
     ]
     _style = [
-        "lindos", "divertidos", "diseÃ±o lindo", "temas emojis", "kawaii faces", "pastel style"
+        "lindos", "divertidos", "diseño lindo", "temas emojis", "kawaii faces", "pastel style"
     ]
     _visual = [
-        "esquinas redondeadas", "diseÃ±o de corazÃ³n", "notch personalizado",
+        "esquinas redondeadas", "diseño de corazón", "notch personalizado",
         "rounded corners", "heart shapes", "custom notch"
     ]
 elif "VI" in _market or "VN" in _market:
     _primary = ["vi"]
     _secondary = ["en"]
     _core_intent = [
-        "pin emoji", "widget pin", "tiện ích pin", "icon pin", "đổi icon pin", "thanh trạng thái",
-        "nhãn dán emoji", "sticker emoji", "emoji battery", "emoji battery widget", "emoji battery status bar",
+        "pin emoji", "widget pin", "ti?n �ch pin", "icon pin", "d?i icon pin", "thanh tr?ng th�i",
+        "nh�n d�n emoji", "sticker emoji", "emoji battery", "emoji battery widget", "emoji battery status bar",
         "emoji battery icon", "custom battery icon", "battery icon customize", "emoji widget",
         "funny status bar", "custom status bar", "emoji status bar", "emoji sticker", "emoji stickers"
     ]
     _feature = [
-        "hiệu ứng sạc", "animated emojis", "gesture shortcuts", "notch customizer",
+        "hi?u ?ng s?c", "animated emojis", "gesture shortcuts", "notch customizer",
         "status bar stickers", "battery level"
     ]
     _style = [
-        "dễ thương", "kawaii", "cute bear", "pastel style"
+        "d? thuong", "kawaii", "cute bear", "pastel style"
     ]
     _visual = [
         "rounded corners", "heart shapes", "custom notch"
@@ -82,7 +82,7 @@ elif "PT" in _market or "BR" in _market:
     _primary = ["pt"]
     _secondary = ["en"]
     _core_intent = [
-        "bateria emoji", "widget de bateria", "Ã­cone de bateria", "personalizar bateria",
+        "bateria emoji", "widget de bateria", "ícone de bateria", "personalizar bateria",
         "adesivo emoji", "adesivos emoji", "emoji battery", "emoji battery widget",
         "emoji battery status bar", "emoji battery icon", "custom battery icon", "battery icon customize",
         "emoji widget", "funny status bar", "custom status bar", "emoji status bar", "emoji sticker", "emoji stickers"
@@ -143,7 +143,7 @@ else:
 
 APP_CONFIG = {
     # =========================================================================
-    # 1. IDENTITY & META (ThÃ´ng tin Ä‘á»‹nh danh)
+    # 1. IDENTITY & META (Thông tin định danh)
     # =========================================================================
     "app_id": "com.cute.emoji.battery.icon.widget.customize.emojisticker.statusbar",
     "app_name": "Emoji Battery Icon Customize",
@@ -154,7 +154,7 @@ APP_CONFIG = {
     "semantic_mode": "emoji_battery_customize",
 
     # =========================================================================
-    # 2. MARKET LANGUAGE POLICY (ChÃ­nh sÃ¡ch ngÃ´n ngá»¯)
+    # 2. MARKET LANGUAGE POLICY (Chính sách ngôn ngữ)
     # =========================================================================
     "market_language_policy": {
         "enabled": True,
@@ -162,12 +162,12 @@ APP_CONFIG = {
         "primary_languages": _primary,
         "secondary_languages": _secondary,
         "optional_secondary_languages": [],
-        
+
         "primary_language_action": "keep",
         "secondary_language_action": "consider",
         "optional_secondary_action": "audit_or_consider",
         "foreign_language_action": "drop_to_audit",
-        
+
         "allow_secondary_in_top25_core": False,
         "allow_secondary_in_broad_expansion": False,
         "secondary_max_quota_in_broad": 0,
@@ -180,7 +180,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 3. PHÃ‚N NHÃ“M Tá»ª KHÃ“A NGá»® NGHÄ¨A (SEMANTIC GROUPS)
+    # 3. PHÂN NHÓM TỪ KHÓA NGỮ NGHĨA (SEMANTIC GROUPS)
     # =========================================================================
     "ai_keyword_classifier": {
         "enabled": True,
@@ -188,6 +188,10 @@ APP_CONFIG = {
         "model": "deepseek-v4-flash",
         "batch_size": 50,
         "requests_per_second": 2.0,
+        "requests_per_second_per_key": 1.0,
+        "max_workers": 2,
+        "key_strategy": "round_robin",
+        "failover_on_key_error": True,
         "prompt_version": "aso-keyword-classifier-v1",
         "fail_on_api_error": True,
         "min_confidence": 0.55,
@@ -217,25 +221,25 @@ APP_CONFIG = {
     "visual_terms": _visual,
 
     # =========================================================================
-    # 4. Bá»˜ Lá»ŒC VÃ€ DANH SÃCH ÄEN (FILTERS & BLACKLIST)
+    # 4. BỘ LỌC VÀ DANH SÁCH ĐEN (FILTERS & BLACKLIST)
     # =========================================================================
     "competitor_brands": [
         "hoangsi", "zappsolution", "rikatech", "bralyvn", "diy battery", "hoang devops", "feedback pirates"
     ],
-    
+
     "noise_terms": [
         "app", "apps", "free", "download", "android", "for android", "new", "best", "top"
     ],
-    
+
     "typo_blacklist": [
         "emojibattery", "emoji batery", "emojibatery"
     ],
-    
+
     "irrelevant_intent_terms": [
         "zipper lock screen", "ziplock screen", "zipper lock", "ziplocker", "retro games",
         "voice changer", "voice effects", "ar filter", "face filter", "calculator lock", "app lock"
     ],
-    
+
     "risky_ip_terms": [
         "disney", "kitty", "hello kitty", "barbie", "marvel"
     ],
@@ -254,7 +258,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 5. RISK HANDLING & PRECEDENCE (ChÃ­nh sÃ¡ch rá»§i ro & Thá»© tá»± Æ°u tiÃªn)
+    # 5. RISK HANDLING & PRECEDENCE (Chính sách rủi ro & Thứ tự ưu tiên)
     # =========================================================================
     "risk_policy": {
         "competitor_brand_action": "drop",
@@ -268,18 +272,13 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 6. KEYWORD QUOTA (Háº¡n ngáº¡ch phÃ¢n bá»• tá»« khÃ³a)
+    # 6. KEYWORD QUOTA (Hạn ngạch phân bổ từ khóa)
     # =========================================================================
     "keyword_quota": {
         "main_file": {
             "core_intent": 25,
             "broad_expansion": 5,
-            "consider": 10,
-            "consider_subquota": {
-                "platform_style": 4,
-                "secondary_language": 3,
-                "missed_opportunity": 3
-            }
+            "consider": 10
         },
         "feature_file": {
             "max_keywords": 30,
@@ -303,7 +302,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 7. LANGUAGE NATURALNESS (Äá»™ tá»± nhiÃªn ngÃ´n ngá»¯)
+    # 7. LANGUAGE NATURALNESS (Độ tự nhiên ngôn ngữ)
     # =========================================================================
     "language_naturalness": {
         "enabled": True,
@@ -327,7 +326,7 @@ APP_CONFIG = {
                 "flag": "TOO_LONG"
             },
             "cross_language_bleed": {
-                "note": "Chá»‰ dÃ¹ng Ä‘á»ƒ loáº¡i bá» ngÃ´n ngá»¯ láº¡, khÃ´ng flag nháº§m secondary language",
+                "note": "Chỉ dùng để loại bỏ ngôn ngữ lạ, không flag nhầm secondary language",
                 "forbidden_foreign_in_market": {},
                 "flag": "LANGUAGE_BLEED"
             }
@@ -335,7 +334,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 8. SCORING WEIGHTS (Trá»ng sá»‘ Relevancy & Balanced Score)
+    # 8. SCORING WEIGHTS (Trọng số Relevancy & Balanced Score)
     # =========================================================================
     "relevancy_weights": {
         "base": 0.30,
@@ -379,7 +378,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 9. METADATA SLOTS & OUTPUT (PhÃ¢n bá»• & Äá»‹nh dáº¡ng Ä‘áº§u ra)
+    # 9. METADATA SLOTS & OUTPUT (Phân bổ & Định dạng đầu ra)
     # =========================================================================
     "metadata_slots": {
         "google_play": {
@@ -434,7 +433,7 @@ APP_CONFIG = {
     },
 
     # =========================================================================
-    # 10. USER OVERRIDES (Ghi Ä‘Ã¨ thá»§ cÃ´ng tá»« User)
+    # 10. USER OVERRIDES (Ghi đè thủ công từ User)
     # =========================================================================
     "user_overrides": {
         "do_not_auto_drop_terms": [],

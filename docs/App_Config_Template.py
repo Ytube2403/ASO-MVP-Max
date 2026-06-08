@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ASO Keyword Planner - App Configuration Template
-Version: 4.2
+Version: 4.3
 Purpose: Template configuration for deploying ASO Keyword Planner on a new application.
 """
 
@@ -27,7 +27,7 @@ APP_CONFIG = {
         "primary_languages": ["en"],              # Danh sÃ¡ch ngÃ´n ngá»¯ chÃ­nh Ä‘Æ°á»£c phÃ©p xuáº¥t hiá»‡n trong Top 25 Core
         "secondary_languages": ["es", "es-MX"],   # NgÃ´n ngá»¯ phá»¥ (vÃ­ dá»¥ tiáº¿ng TÃ¢y Ban Nha táº¡i Má»¹), Ä‘Æ°a vÃ o danh sÃ¡ch Consider
         "optional_secondary_languages": [],       # NgÃ´n ngá»¯ tÃ¹y chá»n khÃ¡c
-        
+
         "primary_language_action": "keep",
         "secondary_language_action": "consider",
         "optional_secondary_action": "audit_or_consider",
@@ -39,13 +39,13 @@ APP_CONFIG = {
         "secondary_max_quota_in_consider": 3,
         "allow_secondary_in_feature_file": False,
         "allow_secondary_in_style_file": False,
-        
+
         "mixed_language_action": "manual_review",
         "unknown_language_action": "manual_review_if_high_score"
     },
 
     # ==========================================
-    # 2.5 AI KEYWORD CLASSIFIER (DeepSeek + cache + pre-filter)
+    # 2.5 AI KEYWORD CLASSIFIER (DeepSeek + cache + pre-filter + key pool)
     # ==========================================
     "ai_keyword_classifier": {
         "enabled": True,
@@ -53,6 +53,10 @@ APP_CONFIG = {
         "model": "deepseek-v4-flash",
         "batch_size": 50,
         "requests_per_second": 2.0,
+        "requests_per_second_per_key": 1.0,
+        "max_workers": 2,
+        "key_strategy": "round_robin",
+        "failover_on_key_error": True,
         "prompt_version": "aso-keyword-classifier-v1",
         "fail_on_api_error": True,
         "min_confidence": 0.55,
@@ -84,20 +88,20 @@ APP_CONFIG = {
         # VÃ­ dá»¥: "control panel", "control center" cho Control Widget
         "core term 1", "core term 2"
     ],
-    
+
     "feature_terms": [
         # CÃ¡c tá»« khÃ³a mÃ´ táº£ tÃ­nh nÄƒng / chá»©c nÄƒng cá»¥ thá»ƒ cá»§a á»©ng dá»¥ng
         # VÃ­ dá»¥: "brightness", "volume", "wifi toggle"
         "feature 1", "feature 2"
     ],
-    
+
     "style_terms": [
         # CÃ¡c tá»« khÃ³a mÃ´ táº£ phong cÃ¡ch, giao diá»‡n, IP hoáº·c theme tháº©m má»¹
         # VÃ­ dá»¥: "aesthetic", "cute", "anime", "neon"
         # LÆ¯U Ã: style_terms chá»‰ Ä‘Æ°á»£c phÃ¢n bá»• vÃ o Full Description, khÃ´ng dÃ¹ng á»Ÿ Title/Subtitle Ä‘á»ƒ trÃ¡nh vi pháº¡m IP
         "style 1", "style 2"
     ],
-    
+
     "visual_terms": [
         # CÃ¡c tá»« khÃ³a mÃ´ táº£ giao diá»‡n phá»¥ trá»£, hiá»‡u á»©ng hÃ¬nh áº£nh
         "visual 1", "visual 2"
@@ -110,23 +114,23 @@ APP_CONFIG = {
         # TÃªn cÃ¡c Ä‘á»‘i thá»§ cáº¡nh tranh. Keyword chá»©a brand Ä‘á»‘i thá»§ sáº½ bá»‹ cáº¥m sá»­ dá»¥ng trong Metadata chÃ­nh
         "competitor brand 1", "competitor brand 2"
     ],
-    
+
     "noise_terms": [
         # CÃ¡c tá»« khÃ³a chung chung, generic quÃ¡ rá»™ng khÃ´ng mang Ã½ Ä‘á»‹nh tÃ¬m app cá»¥ thá»ƒ
         # VÃ­ dá»¥: "app", "free", "download", "android"
         "app", "free", "download", "android", "new", "best"
     ],
-    
+
     "typo_blacklist": [
         # CÃ¡c tá»« khÃ³a gÃµ sai chÃ­nh táº£ phá»• biáº¿n hoáº·c cÃ¡c tá»« khÃ³a vÃ´ nghÄ©a thu Ä‘Æ°á»£c tá»« auto-suggest
         "typo 1", "typo 2"
     ],
-    
+
     "irrelevant_intent_terms": [
         # Tá»« khÃ³a thuá»™c danh má»¥c khÃ¡c, hoÃ n toÃ n khÃ´ng liÃªn quan Ä‘áº¿n á»©ng dá»¥ng cá»§a báº¡n
         "calculator", "weather"
     ],
-    
+
     "risky_ip_terms": [
         # Tá»« khÃ³a chá»©a IP hoáº·c báº£n quyá»n nháº¡y cáº£m cáº§n háº¡n cháº¿
         "brandname"
@@ -167,11 +171,6 @@ APP_CONFIG = {
             "core_intent": 25,       # Sá»‘ lÆ°á»£ng keyword core chÃ­nh (Top 25)
             "broad_expansion": 5,    # Sá»‘ lÆ°á»£ng keyword má»Ÿ rá»™ng rá»™ng hÆ¡n (Top 5)
             "consider": 10,          # Sá»‘ lÆ°á»£ng keyword Ä‘Æ°a vÃ o danh sÃ¡ch Consider
-            "consider_subquota": {
-                "platform_style": 4,      # Quota cho keyword dÃ­nh platform risk (iPhone, iOS...)
-                "secondary_language": 3,  # Quota cho keyword ngÃ´n ngá»¯ phá»¥
-                "missed_opportunity": 3   # Quota cho keyword Ä‘iá»ƒm cao nhÆ°ng trÆ°á»£t Top 30
-            }
         },
         "feature_file": {
             "max_keywords": 30,

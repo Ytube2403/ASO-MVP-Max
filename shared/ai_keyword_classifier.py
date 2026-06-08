@@ -4,8 +4,9 @@ import sqlite3
 import ssl
 import threading
 import time
+import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from dataclasses import dataclass
 
@@ -26,8 +27,16 @@ DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_PROMPT_VERSION = "aso-keyword-classifier-v1"
 DEFAULT_BATCH_SIZE = 50
 DEFAULT_REQUESTS_PER_SECOND = 2.0
+DEFAULT_REQUESTS_PER_SECOND_PER_KEY = 1.0
+DEFAULT_MAX_WORKERS = 2
 DEFAULT_TIMEOUT = 60
-DOTENV_KEYS = {"DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL"}
+DOTENV_KEYS = {
+    "DEEPSEEK_API_KEY",
+    "DEEPSEEK_API_KEYS",
+    "DEEPSEEK_BASE_URL",
+    "DEEPSEEK_MAX_WORKERS",
+    "DEEPSEEK_REQUESTS_PER_SECOND_PER_KEY",
+}
 DEFAULT_PRE_FILTER_CONFIG = {
     "enabled": True,
     "duplicate_strategy": "canonical_reuse",
@@ -151,6 +160,7 @@ def load_project_env():
 
 
 def _classifier_config(config):
+    load_project_env()
     configured = dict((config or {}).get("ai_keyword_classifier", {}) or {})
     pre_filter_config = dict(DEFAULT_PRE_FILTER_CONFIG)
     pre_filter_config.update(dict(configured.get("pre_filter", {}) or {}))
@@ -162,6 +172,19 @@ def _classifier_config(config):
         "cache_path": str(configured.get("cache_path", ".cache/ai_keyword_analysis.sqlite3") or ".cache/ai_keyword_analysis.sqlite3"),
         "fail_on_api_error": bool(configured.get("fail_on_api_error", True)),
         "requests_per_second": float(configured.get("requests_per_second", DEFAULT_REQUESTS_PER_SECOND) or DEFAULT_REQUESTS_PER_SECOND),
+        "requests_per_second_per_key": float(
+            configured.get(
+                "requests_per_second_per_key",
+                os.environ.get("DEEPSEEK_REQUESTS_PER_SECOND_PER_KEY", DEFAULT_REQUESTS_PER_SECOND_PER_KEY),
+            )
+            or DEFAULT_REQUESTS_PER_SECOND_PER_KEY
+        ),
+        "max_workers": int(
+            configured.get("max_workers", os.environ.get("DEEPSEEK_MAX_WORKERS", DEFAULT_MAX_WORKERS))
+            or DEFAULT_MAX_WORKERS
+        ),
+        "key_strategy": str(configured.get("key_strategy", "round_robin") or "round_robin"),
+        "failover_on_key_error": bool(configured.get("failover_on_key_error", True)),
         "timeout": float(configured.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
         "retries": int(configured.get("retries", 3) or 3),
         "pre_filter": pre_filter_config,
@@ -357,6 +380,41 @@ def _empty_analysis(keyword, status, decision_rule="", reason=""):
     )
 
 
+def _dedupe_ordered(values):
+    output = []
+    seen = set()
+    for value in values:
+        value = str(value or "").strip()
+        if value and value not in seen:
+            output.append(value)
+            seen.add(value)
+    return output
+
+
+def _parse_api_keys(explicit_key=None):
+    if explicit_key is not None:
+        return _dedupe_ordered([explicit_key])
+    configured_keys = []
+    for item in str(os.environ.get("DEEPSEEK_API_KEYS", "") or "").replace("\n", ",").split(","):
+        configured_keys.append(_strip_env_quotes(item))
+    configured_keys.append(os.environ.get("DEEPSEEK_API_KEY", ""))
+    return _dedupe_ordered(configured_keys)
+
+
+def _key_label(index):
+    return f"key_{index + 1}"
+
+
+def _is_rate_limit_error(exc):
+    return isinstance(exc, urllib.error.HTTPError) and getattr(exc, "code", None) == 429
+
+
+def _is_timeout_error(exc):
+    name = type(exc).__name__.lower()
+    message = str(exc).lower()
+    return "timeout" in name or "timed out" in message or "timeout" in message
+
+
 class AIKeywordClassifier:
     def __init__(
         self,
@@ -371,18 +429,62 @@ class AIKeywordClassifier:
         clock=None,
     ):
         self.config = config or {}
+        load_project_env()
         self.classifier_config = _classifier_config(self.config)
         self.app_profile = app_profile or {}
         self.market = str(market or self.config.get("market", ""))
         self.cache_path = os.path.abspath(cache_path)
-        load_project_env()
-        self.api_key = str(api_key if api_key is not None else os.environ.get("DEEPSEEK_API_KEY", "")).strip()
+        self.api_keys = _parse_api_keys(api_key)
+        self.api_key = self.api_keys[0] if self.api_keys else ""
         self.base_url = str(base_url or os.environ.get("DEEPSEEK_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
         self.opener = opener or urllib.request.urlopen
         self.sleep = sleep or time.sleep
         self.clock = clock or time.time
         self._request_lock = threading.Lock()
+        self._key_lock = threading.Lock()
+        self._stats_lock = threading.Lock()
+        self._key_cursor = 0
+        self.stats = {}
         self._initialize_cache()
+
+    def _reset_stats(self, total_rows=0):
+        self.stats = {
+            "total_rows": int(total_rows),
+            "cache_hit": 0,
+            "api_candidates": 0,
+            "api_batches": 0,
+            "key_pool_size": len(self.api_keys),
+            "max_workers": 0,
+            "batch_seconds": [],
+            "retries": 0,
+            "rate_limit_errors": 0,
+            "timeout_errors": 0,
+            "failed_batches": 0,
+            "total_ai_seconds": 0.0,
+        }
+
+    def _record_batch_stat(self, elapsed, retries=0, rate_limit_errors=0, timeout_errors=0, failed=False):
+        with self._stats_lock:
+            self.stats.setdefault("batch_seconds", []).append(float(elapsed))
+            self.stats["retries"] = int(self.stats.get("retries", 0)) + int(retries)
+            self.stats["rate_limit_errors"] = int(self.stats.get("rate_limit_errors", 0)) + int(rate_limit_errors)
+            self.stats["timeout_errors"] = int(self.stats.get("timeout_errors", 0)) + int(timeout_errors)
+            if failed:
+                self.stats["failed_batches"] = int(self.stats.get("failed_batches", 0)) + 1
+
+    def _next_key_index(self):
+        with self._key_lock:
+            index = self._key_cursor % max(len(self.api_keys), 1)
+            self._key_cursor += 1
+            return index
+
+    def _candidate_key_indices(self, primary_index):
+        if not self.api_keys:
+            return []
+        indices = [primary_index]
+        if self.classifier_config.get("failover_on_key_error", True):
+            indices.extend(index for index in range(len(self.api_keys)) if index != primary_index)
+        return indices
 
     def _connect(self):
         connection = sqlite3.connect(self.cache_path, timeout=30)
@@ -498,14 +600,15 @@ class AIKeywordClassifier:
             )
             connection.commit()
 
-    def _reserve_request(self):
-        interval = 1.0 / max(float(self.classifier_config["requests_per_second"]), 0.1)
+    def _reserve_request(self, key_index):
+        interval = 1.0 / max(float(self.classifier_config["requests_per_second_per_key"]), 0.1)
+        rate_limit_key = f"{PROVIDER}:{_key_label(key_index)}"
         with self._request_lock:
             with closing(self._connect()) as connection:
                 connection.execute("BEGIN IMMEDIATE")
                 row = connection.execute(
                     "SELECT next_request_at FROM ai_keyword_rate_limit WHERE provider = ?",
-                    (PROVIDER,),
+                    (rate_limit_key,),
                 ).fetchone()
                 now = self.clock()
                 request_at = max(now, row[0] if row else now)
@@ -514,7 +617,7 @@ class AIKeywordClassifier:
                     INSERT INTO ai_keyword_rate_limit(provider, next_request_at) VALUES (?, ?)
                     ON CONFLICT(provider) DO UPDATE SET next_request_at = excluded.next_request_at
                     """,
-                    (PROVIDER, request_at + interval),
+                    (rate_limit_key, request_at + interval),
                 )
                 connection.commit()
         wait_time = request_at - self.clock()
@@ -590,9 +693,24 @@ class AIKeywordClassifier:
         ]
 
     def _fetch_batch(self, keyword_rows):
-        if not self.api_key:
-            raise AIKeywordClassifierError("Missing DEEPSEEK_API_KEY for uncached AI keyword classification")
-        self._reserve_request()
+        if not self.api_keys:
+            raise AIKeywordClassifierError("Missing DEEPSEEK_API_KEYS or DEEPSEEK_API_KEY for uncached AI keyword classification")
+        primary_index = self._next_key_index()
+        errors = []
+        for key_index in self._candidate_key_indices(primary_index):
+            try:
+                return self._fetch_batch_with_key(keyword_rows, key_index)
+            except AIKeywordClassifierError as exc:
+                errors.append(f"{_key_label(key_index)}: {exc}")
+                if not self.classifier_config.get("failover_on_key_error", True):
+                    break
+        raise AIKeywordClassifierError(f"DeepSeek keyword classification failed on all configured keys: {' | '.join(errors)[-1000:]}")
+
+    def _fetch_batch_with_key(self, keyword_rows, key_index):
+        api_key = self.api_keys[key_index]
+        key_label = _key_label(key_index)
+        started_at = self.clock()
+        self._reserve_request(key_index)
         prompt_payload = self._build_prompt_payload(keyword_rows)
         body = {
             "model": self.classifier_config["model"],
@@ -608,28 +726,72 @@ class AIKeywordClassifier:
             data=json.dumps(body).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {api_key}",
             },
             method="POST",
         )
         errors = []
+        retry_count = 0
+        rate_limit_errors = 0
+        timeout_errors = 0
         for attempt in range(max(1, int(self.classifier_config["retries"]))):
             try:
                 with self.opener(request, timeout=self.classifier_config["timeout"], context=ssl.create_default_context()) as response:
                     response_data = json.loads(response.read().decode("utf-8"))
                 break
             except Exception as exc:
+                if _is_rate_limit_error(exc):
+                    rate_limit_errors += 1
+                if _is_timeout_error(exc):
+                    timeout_errors += 1
                 errors.append(f"{type(exc).__name__}: {exc}")
                 if attempt + 1 < max(1, int(self.classifier_config["retries"])):
+                    retry_count += 1
                     self.sleep(1.0 * (2 ** attempt))
         else:
+            elapsed = self.clock() - started_at
+            self._record_batch_stat(
+                elapsed,
+                retries=retry_count,
+                rate_limit_errors=rate_limit_errors,
+                timeout_errors=timeout_errors,
+                failed=True,
+            )
+            print(
+                "AI batch completed: "
+                f"key={key_label}, rows={len(keyword_rows)}, seconds={elapsed:.2f}, status=error"
+            )
             raise AIKeywordClassifierError(f"DeepSeek keyword classification failed: {' | '.join(errors)[-1000:]}")
         try:
             content = response_data["choices"][0]["message"]["content"]
             parsed = json.loads(content)
         except Exception as exc:
+            elapsed = self.clock() - started_at
+            self._record_batch_stat(
+                elapsed,
+                retries=retry_count,
+                rate_limit_errors=rate_limit_errors,
+                timeout_errors=timeout_errors,
+                failed=True,
+            )
+            print(
+                "AI batch completed: "
+                f"key={key_label}, rows={len(keyword_rows)}, seconds={elapsed:.2f}, status=error"
+            )
             raise AIKeywordClassifierError(f"DeepSeek returned invalid JSON content: {type(exc).__name__}: {exc}") from exc
-        return self._validate_batch(keyword_rows, parsed), parsed
+        results = self._validate_batch(keyword_rows, parsed)
+        elapsed = self.clock() - started_at
+        self._record_batch_stat(
+            elapsed,
+            retries=retry_count,
+            rate_limit_errors=rate_limit_errors,
+            timeout_errors=timeout_errors,
+        )
+        print(
+            "AI batch completed: "
+            f"key={key_label}, rows={len(keyword_rows)}, seconds={elapsed:.2f}, status=ok"
+        )
+        return results, parsed
 
     def _validate_batch(self, keyword_rows, parsed):
         items = parsed.get("items") if isinstance(parsed, dict) else None
@@ -673,6 +835,8 @@ class AIKeywordClassifier:
         return results
 
     def analyze_rows(self, rows):
+        started_at = self.clock()
+        self._reset_stats(total_rows=len(rows))
         results = {}
         missing = []
         for row in rows:
@@ -680,15 +844,34 @@ class AIKeywordClassifier:
             cached = self._get_cached(keyword)
             if cached is not None:
                 results[keyword] = cached
+                self.stats["cache_hit"] += 1
             else:
                 missing.append(row)
+        self.stats["api_candidates"] = len(missing)
         batch_size = max(1, int(self.classifier_config["batch_size"]))
-        for start in range(0, len(missing), batch_size):
-            batch = missing[start:start + batch_size]
+        batches = [missing[start:start + batch_size] for start in range(0, len(missing), batch_size)]
+        self.stats["api_batches"] = len(batches)
+        effective_workers = min(
+            max(1, int(self.classifier_config.get("max_workers", DEFAULT_MAX_WORKERS) or DEFAULT_MAX_WORKERS)),
+            max(1, len(self.api_keys) * 2),
+            max(1, len(batches)),
+        )
+        self.stats["max_workers"] = effective_workers if batches else 0
+
+        def fetch_and_store(batch):
             batch_results, raw_json = self._fetch_batch(batch)
+            stored = {}
             for result in batch_results:
                 self._store_cached(result, raw_json)
-                results[result.keyword] = result
+                stored[result.keyword] = result
+            return stored
+
+        if batches:
+            with ThreadPoolExecutor(max_workers=effective_workers) as executor:
+                futures = [executor.submit(fetch_and_store, batch) for batch in batches]
+                for future in as_completed(futures):
+                    results.update(future.result())
+        self.stats["total_ai_seconds"] = self.clock() - started_at
         return results
 
 
@@ -791,12 +974,27 @@ def analyze_dataframe(df, config, app_profile=None, cache_path=None, market="", 
         })
     frame = pd.DataFrame(output, index=df.index)
     status_counts = frame["AIStatus"].value_counts().to_dict()
+    stats = getattr(service, "stats", {}) or {}
+    batch_seconds = list(stats.get("batch_seconds", []) or [])
+    avg_batch_seconds = (sum(batch_seconds) / len(batch_seconds)) if batch_seconds else 0.0
+    slowest_batch_seconds = max(batch_seconds) if batch_seconds else 0.0
     print(
         "AI keyword classification summary: "
         f"provider={PROVIDER}, model={classifier_config['model']}, "
+        f"total_rows={len(df)}, "
         f"cache_hit={status_counts.get('AI_CACHE_HIT', 0)}, "
         f"classified={status_counts.get('AI_CLASSIFIED', 0)}, "
         f"reused={status_counts.get('AI_REUSED_CANONICAL', 0)}, "
-        f"pre_skipped={status_counts.get('AI_SKIPPED_PREFILTER', 0)}"
+        f"pre_skipped={status_counts.get('AI_SKIPPED_PREFILTER', 0)}, "
+        f"api_candidates={stats.get('api_candidates', 0)}, "
+        f"api_batches={stats.get('api_batches', 0)}, "
+        f"key_pool_size={stats.get('key_pool_size', 0)}, "
+        f"max_workers={stats.get('max_workers', 0)}, "
+        f"avg_batch_seconds={avg_batch_seconds:.2f}, "
+        f"slowest_batch_seconds={slowest_batch_seconds:.2f}, "
+        f"retries={stats.get('retries', 0)}, "
+        f"rate_limit_errors={stats.get('rate_limit_errors', 0)}, "
+        f"timeout_errors={stats.get('timeout_errors', 0)}, "
+        f"total_ai_seconds={float(stats.get('total_ai_seconds', 0.0)):.2f}"
     )
     return frame

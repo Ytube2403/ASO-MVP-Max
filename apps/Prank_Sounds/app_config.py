@@ -26,12 +26,12 @@ APP_CONFIG = {
         "primary_languages": ["en"],              # Ngôn ngữ chính được phép xuất hiện trong Top 25 Core
         "secondary_languages": ["es", "es-MX"],   # Ngôn ngữ phụ (VD: Tiếng Tây Ban Nha ở thị trường Mỹ), đưa vào Consider
         "optional_secondary_languages": [],
-        
+
         "primary_language_action": "keep",
         "secondary_language_action": "consider",
         "optional_secondary_action": "audit_or_consider",
         "foreign_language_action": "drop_to_audit",
-        
+
         "allow_secondary_in_top25_core": False,
         "allow_secondary_in_broad_expansion": False,
         "secondary_max_quota_in_broad": 0,
@@ -52,6 +52,10 @@ APP_CONFIG = {
         "model": "deepseek-v4-flash",
         "batch_size": 50,
         "requests_per_second": 2.0,
+        "requests_per_second_per_key": 1.0,
+        "max_workers": 2,
+        "key_strategy": "round_robin",
+        "failover_on_key_error": True,
         "prompt_version": "aso-keyword-classifier-v1",
         "fail_on_api_error": True,
         "min_confidence": 0.55,
@@ -77,15 +81,15 @@ APP_CONFIG = {
 
     "intent_core_terms": [
         # Các từ khóa cốt lõi thể hiện ý định tìm kiếm chính của ứng dụng
-        "prank sounds", "prank sound", "haircut prank", "taser prank", "hair clipper", 
-        "soundboard", "fart sounds", "fart sound", "air horn", "stun gun", 
-        "clipper prank", "razor prank", "clippers", "trimmer prank", 
-        "stun gun simulator", "taser simulator", "shock gun", "funny sounds", 
-        "funny sound", "prank app", "prank apps", "gun sounds", "gun sound", 
+        "prank sounds", "prank sound", "haircut prank", "taser prank", "hair clipper",
+        "soundboard", "fart sounds", "fart sound", "air horn", "stun gun",
+        "clipper prank", "razor prank", "clippers", "trimmer prank",
+        "stun gun simulator", "taser simulator", "shock gun", "funny sounds",
+        "funny sound", "prank app", "prank apps", "gun sounds", "gun sound",
         "gun simulator", "weapon sounds", "firearm sounds",
         # Generic core keywords and common translations
-        "prank", "pranks", "fart", "taser", "shaver", "clipper", "shave", "razor", 
-        "trimmer", "horn", "sound effects", "fake sound", "fake sounds", 
+        "prank", "pranks", "fart", "taser", "shaver", "clipper", "shave", "razor",
+        "trimmer", "horn", "sound effects", "fake sound", "fake sounds",
         "fun sound", "fun sounds", "hair cut", "hair cutting", "joke sound", "joke sounds", "barber"
     ],
 
@@ -97,22 +101,22 @@ APP_CONFIG = {
 
     "feature_terms": [
         # Các từ khóa mô tả tính năng / chức năng cụ thể của ứng dụng
-        "clipper sound", "taser sounds", "fart noise", "airhorn prank", "broken glass", 
-        "barber prank", "gun simulator", "laser blaster", "shaving simulator", "police siren", 
-        "burp sounds", "scary sounds", "coughing sounds", "laughing sounds", "siren sounds", 
-        "doorbell sounds", "vibration effect", "timer prank", "custom lists", "favorites list", 
-        "voice changer", "face dance", "gunshot sound", "shotgun reload", "pistol fire", 
+        "clipper sound", "taser sounds", "fart noise", "airhorn prank", "broken glass",
+        "barber prank", "gun simulator", "laser blaster", "shaving simulator", "police siren",
+        "burp sounds", "scary sounds", "coughing sounds", "laughing sounds", "siren sounds",
+        "doorbell sounds", "vibration effect", "timer prank", "custom lists", "favorites list",
+        "voice changer", "face dance", "gunshot sound", "shotgun reload", "pistol fire",
         "machine gun burst", "weapon simulator", "noise", "noisy"
     ],
-    
+
     "style_terms": [
         # Các từ khóa mô tả phong cách, giao diện, IP hoặc theme thẩm mỹ
         # LƯU Ý: style_terms chỉ được phân bổ vào Full Description, không dùng ở Title/Subtitle để tránh vi phạm IP
-        "funny", "crazy", "silly", "troll", "trolls", "joke", "jokes", 
-        "hilarious", "meme", "memes", "viral", "laughter", "prankster", 
+        "funny", "crazy", "silly", "troll", "trolls", "joke", "jokes",
+        "hilarious", "meme", "memes", "viral", "laughter", "prankster",
         "friendly joke", "haha", "cheeky"
     ],
-    
+
     "visual_terms": [
         # Các từ khóa mô tả giao diện phụ trợ, hiệu ứng hình ảnh
         "simulator", "soundboard", "effects", "effect", "board", "button", "buttons", "machine", "trigger"
@@ -123,28 +127,28 @@ APP_CONFIG = {
     # =========================================================================
     "competitor_brands": [
         # Tên các đối thủ cạnh tranh nổi tiếng. Keyword chứa các từ này sẽ bị cấm dùng trong metadata chính
-        "meowclaw", "meowclaw studio", "era games", "era games studio", 
-        "falcon global", "hiprank", "hiprank studio", "haha prank", 
+        "meowclaw", "meowclaw studio", "era games", "era games studio",
+        "falcon global", "hiprank", "hiprank studio", "haha prank",
         "wister stella", "cem software", "sigma prank"
     ],
-    
+
     "noise_terms": [
         # Các từ khóa chung chung, generic quá rộng không mang ý định tìm app cụ thể
         "app", "apps", "free", "download", "android", "for android", "new", "best", "top", "sounds", "sound", "play", "offline"
     ],
-    
+
     "typo_blacklist": [
         # Các từ khóa gõ sai chính tả phổ biến hoặc các từ khóa vô nghĩa thu được từ auto-suggest
         "haricut", "cliper", "tazer", "airhon", "fartsound", "fartsounds", "clippr", "rrazor"
     ],
-    
+
     "irrelevant_intent_terms": [
         # Từ khóa thuộc danh mục khác, hoàn toàn không liên quan đến ứng dụng của bạn
-        "makeup", "editor", "photo", "video", "filter", "filters", 
-        "launcher", "theme", "widget", "widgets", "wallpaper", 
+        "makeup", "editor", "photo", "video", "filter", "filters",
+        "launcher", "theme", "widget", "widgets", "wallpaper",
         "keyboard", "calculator", "games", "game", "emulator", "emulators"
     ],
-    
+
     "risky_platform_terms": [
         # Từ khóa chứa tên nền tảng hoặc dịch vụ bên thứ ba để đưa vào consider thay vì drop
         "iphone", "ios", "ipad", "apple", "android", "tiktok", "snapchat", "instagram", "facebook", "whatsapp", "messenger"
@@ -185,11 +189,6 @@ APP_CONFIG = {
             "core_intent": 25,       # Số lượng keyword core chính (Top 25)
             "broad_expansion": 5,    # Số lượng keyword mở rộng rộng hơn (Top 5)
             "consider": 10,          # Số lượng keyword đưa vào danh sách Consider
-            "consider_subquota": {
-                "platform_style": 4,      # Quota cho keyword dính platform risk (iPhone, iOS...)
-                "secondary_language": 3,  # Quota cho keyword ngôn ngữ phụ
-                "missed_opportunity": 3   # Quota cho keyword điểm cao nhưng trượt Top 30
-            }
         },
         "feature_file": {
             "max_keywords": 30,

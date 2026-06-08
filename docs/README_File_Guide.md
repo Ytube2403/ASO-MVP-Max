@@ -1,4 +1,4 @@
-# Huong dan cau truc file ASO Keyword Filter v4.2
+# Huong dan cau truc file ASO Keyword Filter v4.3
 
 ## Root
 
@@ -32,6 +32,7 @@ App da dang ky:
 
 - `apps/AR_Filter/`
 - `apps/Control_Widget/`
+- `apps/Emoji_Battery_Icon_Customize/`
 - `apps/Game_Emulator/`
 - `apps/Prank_Sounds/`
 - `apps/App_Template/`
@@ -44,7 +45,7 @@ App da dang ky:
 - `shared/app_registry.py`: map alias app chinh xac toi folder, runner va config.
 - `shared/locale_parser.py`: parser locale dung chung cho orchestrator, exporter, tracker va batch.
 - `shared/language_detector.py`: nhan dien ngon ngu theo market policy.
-- `shared/ai_keyword_classifier.py`: DeepSeek classifier, SQLite cache va `pre_ai_filter` conservative truoc API.
+- `shared/ai_keyword_classifier.py`: DeepSeek classifier, SQLite cache, `pre_ai_filter` conservative truoc API, key pool va batch song song co rate limit rieng tung key.
 - `shared/keyword_filter/`: matcher precompiled, hard filter, classifier, validator, audit, cache atomic va truncation hardening complete-token aware.
 - `shared/text_dedup.py`: dedup Unicode cho `01_Main_Keyword_Shortlist`.
 - `shared/translation_service.py`: dich EN bang LibreTranslate local, SQLite WAL cache, retry, rate limit, TLS verification va mapping model theo locale.
@@ -55,6 +56,7 @@ App da dang ky:
 
 - `tools/run_aso_batch.py`: batch implementation.
 - `tools/export_master_keywords.py`: Master Keywords exporter implementation.
+- `tools/warm_ai_keyword_cache.py`: lam nong AI cache bang DeepSeek truoc khi chay pipeline chinh, khong tao workbook.
 - `tools/start_libretranslate.ps1`: cai va khoi dong LibreTranslate local theo profile workload.
 - `tools/check_libretranslate_quality.py`: smoke quality model LibreTranslate chay thu cong.
 
@@ -71,13 +73,13 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 
 ## `docs/`
 
-- `docs/ASO_Keyword_Planner_v4_2.md`: dac ta logic pipeline v4.2, gom DeepSeek AI classifier va `pre_ai_filter`.
+- `docs/ASO_Keyword_Planner_v4_3.md`: dac ta logic pipeline v4.3, gom DeepSeek AI classifier, `pre_ai_filter`, key pool va warm cache.
 - `docs/SETUP_WINDOWS.md`: checklist phan mem, extension, Python packages va cach kiem tra moi truong Windows.
 - `docs/App_Config_Template.py`: template config.
 - `docs/App_Profile_Template.json`: template profile.
 - `docs/english_words_10k.txt`: whitelist tieng Anh.
 - `docs/DESIGN.md`: design system cua dashboard.
-- `.env.example`: template key DeepSeek local; copy thanh `.env` de chay may ca nhan, `.env` khong commit.
+- `.env.example`: template key DeepSeek local; copy thanh `.env` de chay may ca nhan, ho tro `DEEPSEEK_API_KEY` hoac `DEEPSEEK_API_KEYS`, `.env` khong commit.
 
 ## `data/`
 
@@ -87,7 +89,7 @@ Database `tracker/keyword_tracker.db` la file local va khong commit len Git.
 ## `tests/`
 
 Regression test cho registry, parser locale, hard filter, truncation false positive, dedup, translation, profile, project memory, exporter va batch runner.
-`tests/test_ai_keyword_classifier.py` bao phu cache hit, API call, canonical duplicate reuse va pre-AI skip/preserve rule.
+`tests/test_ai_keyword_classifier.py` bao phu cache hit, API call, canonical duplicate reuse, pre-AI skip/preserve rule, key pool round-robin va failover.
 
 ## `releases/`
 

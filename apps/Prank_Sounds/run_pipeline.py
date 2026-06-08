@@ -71,7 +71,7 @@ def start_interactive_server(df, config, app_profile):
     import webbrowser
     import threading
     import time
-    
+
     keywords_data = []
     for idx, row in df.iterrows():
         keywords_data.append({
@@ -86,7 +86,7 @@ def start_interactive_server(df, config, app_profile):
             "CompetitorProven": row.get('CompetitorProven', 'No'),
             "ProvenDetails": row.get('ProvenDetails', '')
         })
-        
+
     data_payload = {
         "app_name": config["app_name"],
         "app_id": config["app_id"],
@@ -94,13 +94,13 @@ def start_interactive_server(df, config, app_profile):
         "competitors": app_profile.get("competitors", []),
         "keywords": keywords_data
     }
-    
+
     server_data = {"confirmed_payload": None}
-    
+
     class SelectionHandler(http.server.BaseHTTPRequestHandler):
         def log_message(self, format, *args):
             return
-            
+
         def do_GET(self):
             if self.path == '/':
                 self.send_response(200)
@@ -117,7 +117,7 @@ def start_interactive_server(df, config, app_profile):
             else:
                 self.send_response(404)
                 self.end_headers()
-                
+
         def do_POST(self):
             if self.path == '/confirm':
                 content_length = int(self.headers['Content-Length'])
@@ -128,12 +128,12 @@ def start_interactive_server(df, config, app_profile):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(b'{"status": "ok"}')
-                
+
                 def shutdown_soon():
                     time.sleep(0.5)
                     server.shutdown()
                 threading.Thread(target=shutdown_soon).start()
-                
+
     port = 8000
     for p in range(8000, 8050):
         try:
@@ -142,10 +142,10 @@ def start_interactive_server(df, config, app_profile):
             break
         except OSError:
             continue
-            
+
     print(f"\n[INTERACTIVE SELECTOR] Starting local server at http://localhost:{port}...")
     print("Opening browser automatically... Please select keywords and write ASO descriptions in the dashboard, then click Confirm.")
-    
+
     webbrowser.open(f"http://localhost:{port}/")
     server.serve_forever()
     server.server_close()
@@ -274,7 +274,7 @@ def _load_country_language_map():
     try:
         import openpyxl
         map_path = COUNTRY_LANGUAGE_MAP_PATH
-        
+
         if os.path.exists(map_path):
             wb = openpyxl.load_workbook(map_path, read_only=True)
             if 'Country-Language Map' in wb.sheetnames:
@@ -286,7 +286,7 @@ def _load_country_language_map():
                         secondary_locale = str(row[6] or '').strip()
                         if not country:
                             continue
-                        
+
                         p_langs = [primary_locale.split('-')[0].lower()] if primary_locale else []
                         s_langs = []
                         if secondary_locale and secondary_locale.lower() != 'none':
@@ -304,7 +304,7 @@ def _load_country_language_map():
 def _get_language_policy(config, primary_lang):
     """Get or auto-derive market language policy, incorporating the spreadsheet mapping."""
     policy = config.get('market_language_policy', {})
-    
+
     # 1. If explicit policy exists in the configuration, use it
     if policy.get('primary_languages') or policy.get('secondary_languages'):
         policy_primary = [l.split('-')[0].lower() for l in policy.get('primary_languages', [])]
@@ -312,7 +312,7 @@ def _get_language_policy(config, primary_lang):
         if not policy_primary:
             policy_primary = [primary_lang]
         return policy_primary, secondary_langs
-    
+
     # 2. Derive policy dynamically from the Country-Language map
     market = config.get('market', 'US_EN')
     if "_" in market:
@@ -322,12 +322,12 @@ def _get_language_policy(config, primary_lang):
     else:
         country_code = market.upper()
         target_lang = primary_lang
-        
+
     cmap = _load_country_language_map()
     if cmap and country_code in cmap:
         sheet_primary = cmap[country_code]['primary']
         sheet_secondary = cmap[country_code]['secondary']
-        
+
         # If the target language is part of the spreadsheet's primary languages
         if target_lang in sheet_primary:
             policy_primary = [target_lang]
@@ -336,14 +336,14 @@ def _get_language_policy(config, primary_lang):
             policy_primary = [target_lang]
             # Include the spreadsheet's primary and other secondary languages as secondary for this run
             secondary_langs = [l for l in (sheet_primary + sheet_secondary) if l != target_lang]
-            
+
         # Ensure secondary_langs is deduplicated and doesn't contain target_lang
         secondary_langs = list(dict.fromkeys(secondary_langs))
     else:
         # Fallback to standard derivation if spreadsheet is not loaded or country not found
         policy_primary = [target_lang]
         secondary_langs = ['en'] if target_lang != 'en' else []
-        
+
     return policy_primary, secondary_langs
 
 def _build_eng_words_only(config):
@@ -393,19 +393,19 @@ def detect_keyword_language(kw, market_lang, config):
 
     kw_lower = str(kw).lower().strip()
     primary_lang = market_lang.split("_")[1].lower() if "_" in market_lang else "en"
-    
+
     if not kw_lower:
         return primary_lang, 'PRIMARY'
-    
+
     policy_primary, secondary_langs = _get_language_policy(config, primary_lang)
-    
+
     # Clean words in keyword
     words = [re.sub(r'[^a-z0-9]', '', w) for w in kw_lower.split()]
     words = [w for w in words if w]
-    
+
     if not words:
         return primary_lang, 'PRIMARY'
-    
+
     # --- Tier 1: Check if keyword is entirely English ---
     all_english = True
     for w in words:
@@ -413,7 +413,7 @@ def detect_keyword_language(kw, market_lang, config):
         if w not in _eng_words_cache and w not in english_vocab and root not in _eng_words_cache and root not in english_vocab:
             all_english = False
             break
-    
+
     if all_english:
         # Classify English based on market language policy
         if any(lang_match('en', p) for p in policy_primary):
@@ -422,14 +422,14 @@ def detect_keyword_language(kw, market_lang, config):
             return 'en', 'SECONDARY'
         else:
             return 'en', 'FOREIGN'
-    
+
     # --- Tier 2: Use langdetect with guardrails ---
     if HAS_LANGDETECT:
         try:
             langs = detect_langs(kw_lower)
             best_lang = langs[0].lang
             prob = langs[0].prob
-            
+
             # Apply confusion matrix corrections for short text
             word_count = len(words)
             confusion_corrected = False
@@ -454,17 +454,17 @@ def detect_keyword_language(kw, market_lang, config):
                 elif word_count <= 2:
                     best_lang = primary_lang
                     confusion_corrected = True
-            
+
             # Classify the detected language
             if lang_match(best_lang, primary_lang) or any(lang_match(best_lang, p) for p in policy_primary):
                 return best_lang, 'PRIMARY'
-            
+
             # For confusion-corrected results, trust the correction directly
             if confusion_corrected:
                 if any(lang_match(best_lang, s) for s in secondary_langs):
                     return best_lang, 'SECONDARY'
                 return best_lang, 'FOREIGN'
-            
+
             # For non-corrected results, require higher confidence for short keywords
             min_prob = 0.85 if word_count <= 2 else 0.7 if word_count <= 3 else 0.6
             if prob >= min_prob:
@@ -472,10 +472,10 @@ def detect_keyword_language(kw, market_lang, config):
                     return best_lang, 'SECONDARY'
                 # Only mark as FOREIGN with sufficient confidence
                 return best_lang, 'FOREIGN'
-            
+
         except Exception:
             pass
-    
+
     # --- Tier 3: Fallback to market primary language ---
     return primary_lang, 'PRIMARY'
 
@@ -584,24 +584,24 @@ competitor_boost_list = []
 
 for idx, row in df.iterrows():
     kw_norm = normalize_match_text(row['Keyword'])
-    
+
     comp_title_matches = []
     comp_short_matches = []
     comp_desc_matches = []
-    
+
     for comp in app_profile.get("competitors", []):
         comp_title_norm = normalize_match_text(comp.get("title", ""))
         comp_short_norm = normalize_match_text(comp.get("short_description", ""))
         comp_desc_norm = normalize_match_text(comp.get("desc200", ""))
         comp_name = comp.get("title", comp.get("package_id", ""))
-        
+
         if check_keyword_in_text(kw_norm, comp_title_norm):
             comp_title_matches.append(comp_name)
         if check_keyword_in_text(kw_norm, comp_short_norm):
             comp_short_matches.append(comp_name)
         if check_keyword_in_text(kw_norm, comp_desc_norm):
             comp_desc_matches.append(comp_name)
-            
+
     boost = 0.0
     details = []
     if comp_title_matches:
@@ -613,9 +613,9 @@ for idx, row in df.iterrows():
     if comp_desc_matches:
         boost += 0.05
         details.append(f"Desc200: {', '.join(comp_desc_matches)}")
-        
+
     boost = min(boost, 0.15)
-    
+
     if boost > 0:
         competitor_proven_list.append("Yes")
         proven_details_list.append("; ".join(details))
@@ -632,19 +632,19 @@ df['CompetitorBoost'] = competitor_boost_list
 def calculate_relevancy(row, config):
     kw = str(row.get('EN', row['Keyword'])).lower()
     score = 0.3 # baseline
-    
+
     # Core intent
     if any(term in kw for term in config['intent_core_terms']):
         score += 0.35
-        
+
     # Feature match
     if any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms']):
         score += 0.20
-        
+
     # Style match
     if any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms']):
         score += 0.15
-        
+
     # Penalties
     if row['is_competitor']:
         score -= 0.20
@@ -652,10 +652,10 @@ def calculate_relevancy(row, config):
         score -= 0.25
     if row['LanguageGroup'] == 'FOREIGN':
         score -= 0.30
-        
+
     # Competitor Boost
     score += row.get('CompetitorBoost', 0.0)
-        
+
     return max(0.0, min(1.0, score))
 
 if 'RelevancyScore' in df_raw.columns:
@@ -708,7 +708,7 @@ def calculate_expansion(row, config):
         score = 0.5
     else:
         score = 0.3
-        
+
     if 'widget' in kw or 'control' in kw:
         score += 0.1
     if row['is_competitor']:
@@ -743,7 +743,7 @@ df['RelevancyScore'] = df['RelevancyScore'].round(4)
 print("[Step 7] Bucket classification...")
 def classify_keyword(row, config):
     kw = str(row['Keyword']).lower()
-    
+
     # Hard drops
     if row['is_competitor']:
         return 'Dropped', 'competitor_brand', 'Dropped: Competitor brand'
@@ -755,7 +755,7 @@ def classify_keyword(row, config):
         return 'Dropped', 'noise_only', 'Dropped: Noise-only generic term'
     if row['NaturalnessFlag'] != 'OK':
         return 'Dropped', 'unnatural', f"Dropped: Unnatural phrase ({row['NaturalnessReason']})"
-        
+
     # Language Mismatches
     if row['LanguageGroup'] == 'FOREIGN':
         return 'Language Mismatch Audit', 'foreign_language_mismatch', 'Foreign language mismatch'
@@ -763,33 +763,33 @@ def classify_keyword(row, config):
         return 'Manual Review', 'manual_review', 'Mixed or unknown language'
     if row['LanguageGroup'] == 'SECONDARY':
         return 'Consider Keywords', 'secondary_language_handling', 'Secondary language handling'
-        
+
     # Platform Risk
     has_platform_risk = any(term in kw for term in config['risky_platform_terms'])
     if has_platform_risk:
         return 'Consider Keywords', 'platform_style_risk', 'Platform-style risk'
-        
+
     # Core, Feature, Style
     has_core = any(term in kw for term in config['intent_core_terms'])
     has_feature = any(re.search(r'\b' + re.escape(f.lower()) + r'\b', kw) for f in config['feature_terms'])
     has_style = any(re.search(r'\b' + re.escape(s.lower()) + r'\b', kw) for s in config['style_terms'])
-    
+
     if has_core:
         return 'Core Intent Final', 'core_intent_final', 'Strong core widget/control search intent'
-        
+
     # Check style-only held back
     if has_style and not has_core and not has_feature:
         return 'Generic Style Reserve', 'style_only', 'Generic aesthetic/style-only terms held back from shortlist'
-        
+
     if has_feature:
         return 'Feature Keywords', 'feature_keywords', 'Specific features/toggles candidate'
-        
+
     if has_style:
         return 'Style Keywords', 'style_keywords', 'Aesthetic/theme candidate'
-        
+
     if row['RelevancyScore'] < 0.45:
         return 'Dropped', 'dropped', 'Dropped: Weak app intent after scoring'
-        
+
     return 'Broad Expansion', 'broad_expansion', 'Broad widget expansion'
 
 classifications = df.apply(lambda r: _shared_keyword_filter.classify_keyword(r, config), axis=1)
@@ -815,12 +815,14 @@ def build_shortlist(df_all, config):
     df_sorted, dedup_log = _shared_text_dedup.prepare_dataframe(df_candidates, '01_Main_Keyword_Shortlist', config)
     df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
+    main_quota = (config.get('keyword_quota', {}) or {}).get('main_file', {}) or {}
+    consider_quota = int(main_quota.get('consider', 10) or 10)
     selected_normalized, selected_tokens = set(), set()
 
     def volume_eligible(row, section):
         low_tier_count = sum(_shared_keyword_filter.is_low_volume_tier(item, config) for item in selected_consider)
         return _shared_keyword_filter.is_shortlist_volume_eligible(row, section, low_tier_count, config)
-    
+
     def check_duplicate(kw, original_bucket):
         norm = normalize_text(kw)
         tokens = " ".join(sorted(norm.split()))
@@ -844,7 +846,7 @@ def build_shortlist(df_all, config):
                     break
             return True, f"Same normalized token set as '{kept_kw}'", kept_kw
         return False, "", ""
-        
+
     def add_to_shortlist(item, section):
         norm = normalize_text(item['Keyword'])
         tokens = " ".join(sorted(norm.split()))
@@ -874,7 +876,7 @@ def build_shortlist(df_all, config):
             })
         else:
             selected_core.append(add_to_shortlist(row, 'Core Intent Final'))
-            
+
     # Core Fallback
     if len(selected_core) < 25:
         fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Broad Expansion'])]
@@ -920,7 +922,7 @@ def build_shortlist(df_all, config):
             })
         else:
             selected_broad.append(add_to_shortlist(row, 'Broad Expansion'))
-            
+
     # Broad Fallback
     if len(selected_broad) < 5:
         fallback_candidates = df_sorted[df_sorted['Bucket'].isin(['Feature Keywords', 'Style Keywords'])]
@@ -949,10 +951,14 @@ def build_shortlist(df_all, config):
                 entry['FillReason'] = 'Broad Expansion Quota Fallback'
                 selected_broad.append(entry)
 
-    # Consider (Quota: 10)
-    consider_candidates = df_sorted[df_sorted['Bucket'] == 'Consider Keywords']
+    # Consider (quality-ranked review pool)
+    consider_candidates = df_sorted[df_sorted['Bucket'] == 'Consider Keywords'].copy()
+    consider_sort_cols = [col for col in ['RelevancyScore', 'VolumeN', 'BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'] if col in consider_candidates.columns]
+    consider_ascending = [col in {'Rank_numeric', 'Difficulty'} for col in consider_sort_cols]
+    if consider_sort_cols:
+        consider_candidates = consider_candidates.sort_values(by=consider_sort_cols, ascending=consider_ascending)
     for _, row in consider_candidates.iterrows():
-        if len(selected_consider) >= 10:
+        if len(selected_consider) >= consider_quota:
             break
         if not volume_eligible(row, 'Consider Keywords'):
             continue
@@ -966,14 +972,14 @@ def build_shortlist(df_all, config):
             })
         else:
             selected_consider.append(add_to_shortlist(row, 'Consider Keywords'))
-            
+
     # Consider Fallback
-    if len(selected_consider) < 10:
+    if len(selected_consider) < consider_quota:
         selected_kws = {item['Keyword'].lower() for item in selected_core + selected_broad}
-        missed_opps = df_sorted[df_sorted['Bucket'].isin(['Core Intent Final', 'Broad Expansion']) & 
+        missed_opps = df_sorted[df_sorted['Bucket'].isin(['Core Intent Final', 'Broad Expansion']) &
                                 (~df_sorted['Keyword'].str.lower().isin(selected_kws))]
         for _, row in missed_opps.iterrows():
-            if len(selected_consider) >= 10:
+            if len(selected_consider) >= consider_quota:
                 break
             if not volume_eligible(row, 'Consider Keywords'):
                 continue
@@ -1003,22 +1009,22 @@ selected_core, selected_broad, selected_consider, dedup_log_list = build_shortli
 
 def get_category_sound(kw, en=""):
     kw_lower = f"{kw} {en}".lower()
-    
+
     # Hair clipper category
     clipper_terms = ["clipper", "haircut", "hair cut", "razor", "shave", "trimmer", "barber"]
     if any(t in kw_lower for t in clipper_terms):
         return "hairclipper"
-        
+
     # Taser category
     taser_terms = ["taser", "stun gun", "electric shock", "shock gun"]
     if any(t in kw_lower for t in taser_terms):
         return "taser"
-        
+
     # Gun sound category
     gun_terms = ["gun", "weapon", "firearm", "gunshot", "shotgun", "pistol", "machine gun", "blaster"]
     if any(t in kw_lower for t in gun_terms):
         return "gun_sound"
-        
+
     # Default/General prank sounds
     return "prank_sound_general"
 
@@ -1027,14 +1033,14 @@ def classify_by_sound_category(df_all):
     # Topic sheets are independent ranked views. Dedup applies only to the main shortlist.
     df_candidates = df_all[df_all['Bucket'].isin(accepted_buckets)].copy()
     df_candidates['_TopicGroup'] = df_candidates.apply(lambda row: get_category_sound(row['Keyword'], row.get('EN', '')), axis=1)
-    
+
     groups = {
         "hairclipper": [],
         "taser": [],
         "gun_sound": [],
         "prank_sound_general": []
     }
-    
+
     for g in groups:
         df_group = df_candidates[df_candidates['_TopicGroup'] == g].drop(columns=['_TopicGroup']).sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).head(30)
         for _, row in df_group.iterrows():
@@ -1044,7 +1050,7 @@ def classify_by_sound_category(df_all):
             entry['FillSource'] = ''
             entry['FillReason'] = ''
             groups[g].append(entry)
-            
+
     return groups["hairclipper"], groups["taser"], groups["gun_sound"], groups["prank_sound_general"]
 
 # Headless classification of sound categories
@@ -1075,7 +1081,7 @@ else:
         if confirmed_selection:
             payload = _shared_keyword_filter.wrap_selection_payload(confirmed_selection, selection_cache_meta)
             _shared_keyword_filter.atomic_write_json(selections_file, payload)
-                
+
             print("\n" + "="*50)
             print("[SELECTION_CONFIRMED] Keyword selections successfully saved!")
             print("Selections saved to:", selections_file)
@@ -1088,9 +1094,9 @@ if confirmed_selection:
     user_secondary = confirmed_selection.get("secondary_keywords", [])
     user_feature = confirmed_selection.get("feature_keywords", [])
     user_style = confirmed_selection.get("style_keywords", [])
-    
+
     df_lookup = df.set_index('Keyword')
-    
+
     selected_core = []
     for kw in user_core:
         if kw in df_lookup.index:
@@ -1102,7 +1108,7 @@ if confirmed_selection:
             entry['Section'] = 'Core Intent Final'
             entry['QuotaStatus'] = 'EXACT'
             selected_core.append(entry)
-            
+
     selected_broad = []
     selected_consider = []
     for idx, kw in enumerate(user_secondary):
@@ -1118,7 +1124,7 @@ if confirmed_selection:
             else:
                 entry['Section'] = 'Consider Keywords'
                 selected_consider.append(entry)
-                
+
     selected_clipper, selected_taser, selected_gun, selected_general_prank = [], [], [], []
     user_all_kws = user_feature + user_style
     for kw in user_all_kws:
@@ -1129,7 +1135,7 @@ if confirmed_selection:
             entry = row.to_dict()
             entry['Keyword'] = kw
             entry['Section'] = row.get('Bucket', 'Feature/Style Keywords')
-            
+
             cat = get_category_sound(kw)
             if cat == "hairclipper":
                 selected_clipper.append(entry)
@@ -1139,7 +1145,7 @@ if confirmed_selection:
                 selected_gun.append(entry)
             else:
                 selected_general_prank.append(entry)
-            
+
     config["app_title_draft"] = confirmed_selection.get("title", "")
     config["short_desc_draft"] = confirmed_selection.get("short_description", "")
     config["full_desc_draft"] = confirmed_selection.get("full_description", "")
@@ -1178,24 +1184,24 @@ def style_sheet(ws, title, is_report=False):
     ws.views.sheetView[0].showGridLines = True
     if not is_report and ws.max_row > 1:
         ws.freeze_panes = 'A2'
-        
+
     navy_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
     white_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
     thin = Side(border_style="thin", color="D3D3D3")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    
+
     if not is_report:
         for col_idx in range(1, ws.max_column + 1):
             cell = ws.cell(row=1, column=col_idx)
             cell.fill = navy_fill
             cell.font = white_font
             cell.alignment = Alignment(horizontal="center", vertical="center")
-            
+
         for row_idx in range(2, ws.max_row + 1):
             for col_idx in range(1, ws.max_column + 1):
                 cell = ws.cell(row=row_idx, column=col_idx)
                 cell.border = border
-                
+
                 col_name = ws.cell(row=1, column=col_idx).value
                 if col_name in ['Volume', 'Max. Volume', 'Difficulty', 'Rank', 'MaximumReach']:
                     try: cell.value = int(float(cell.value))
@@ -1208,7 +1214,7 @@ def style_sheet(ws, title, is_report=False):
                         else:
                             cell.number_format = '0.0000'
                     except: pass
-                        
+
     for col in ws.columns:
         max_len = 0
         for cell in col:
@@ -1218,7 +1224,7 @@ def style_sheet(ws, title, is_report=False):
             max_len = max(max_len, len(val_str))
         col_letter = get_column_letter(col[0].column)
         ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
-        
+
         # Hide Traffic Stability and Stability Class columns
         col_name = ws.cell(row=1, column=col[0].column).value
         if col_name in ['Traffic Stability', 'Stability Class']:
@@ -1368,7 +1374,7 @@ for idx, (title, purpose) in enumerate(sheets_info, 5):
     ws_report.cell(row=idx, column=4, value=title).font = Font(bold=True)
     ws_report.cell(row=idx, column=5, value=purpose)
 
-thin_border = Border(left=Side(style='thin', color='C0C0C0'), right=Side(style='thin', color='C0C0C0'), 
+thin_border = Border(left=Side(style='thin', color='C0C0C0'), right=Side(style='thin', color='C0C0C0'),
                      top=Side(style='thin', color='C0C0C0'), bottom=Side(style='thin', color='C0C0C0'))
 for r in range(4, 15):
     ws_report.cell(row=r, column=1).border = thin_border

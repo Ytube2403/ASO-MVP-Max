@@ -1,12 +1,12 @@
 # Project Memory
 
-Generated: 2026-06-04 18:05:44
+Generated: 2026-06-05 01:09:48
 
 ## Identity
 - App: Emoji Battery Icon Customize
 - App ID: com.cute.emoji.battery.icon.widget.customize.emojisticker.statusbar
 - Category: Personalization
-- Market: PH_FIL
+- Market: ES_US
 - Semantic mode: emoji_battery_customize
 
 ## Positioning
@@ -17,11 +17,11 @@ Generated: 2026-06-04 18:05:44
 - strongest_differentiators: Animated battery emojis that dynamically change state and bounce or blink based on charge level, Drag-and-drop emoji stickers for free-form status bar customization, Built-in notch styling customizer and gesture shortcut controls on status bar
 
 ## Keyword Setup
-- core_terms: emoji baterya, widget ng baterya, sticker ng emoji, emoji battery, emoji battery widget, emoji battery status bar, emoji battery icon, custom battery icon, battery icon customize, emoji widget, funny status bar, custom status bar, emoji status bar, emoji sticker, emoji stickers
-- core_words: 
-- feature_terms: animated emojis, gesture shortcuts, notch customizer, status bar stickers, battery level
-- style_terms: kawaii faces, pastel style, cute bear, sleepy cat
-- visual_terms: rounded corners, heart shapes, custom notch
+- core_terms: baterÃ­a emoji, widget de baterÃ­a, icono de baterÃ­a, personalizar baterÃ­a, estado de la baterÃ­a, barra de estado emoji, stickers emoji, calcomanÃ­as emoji, emoji battery, emoji battery widget, emoji battery status bar, emoji battery icon, custom battery icon, battery icon customize, emoji widget, funny status bar, custom status bar, emoji status bar, emoji sticker, emoji stickers
+- core_words:
+- feature_terms: emojis animados, nivel de baterÃ­a, barra de notificaciones, personalizar Ã­cono, muesca, gestos de deslizamiento, personalizar notch, animated emojis, gesture shortcuts, notch customizer, status bar stickers, battery level
+- style_terms: lindos, divertidos, diseÃ±o lindo, temas emojis, kawaii faces, pastel style
+- visual_terms: esquinas redondeadas, diseÃ±o de corazÃ³n, notch personalizado, rounded corners, heart shapes, custom notch
 
 ## Competitors
 - Blocked brands: hoangsi, zappsolution, rikatech, bralyvn, diy battery, hoang devops, feedback pirates
