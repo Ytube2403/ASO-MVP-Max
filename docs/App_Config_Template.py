@@ -135,11 +135,6 @@ APP_CONFIG = {
             "core_intent": 25,       # Sá»‘ lÆ°á»£ng keyword core chÃ­nh (Top 25)
             "broad_expansion": 5,    # Sá»‘ lÆ°á»£ng keyword má»Ÿ rá»™ng rá»™ng hÆ¡n (Top 5)
             "consider": 10,          # Sá»‘ lÆ°á»£ng keyword Ä‘Æ°a vÃ o danh sÃ¡ch Consider
-            "consider_subquota": {
-                "platform_style": 4,      # Quota cho keyword dÃ­nh platform risk (iPhone, iOS...)
-                "secondary_language": 3,  # Quota cho keyword ngÃ´n ngá»¯ phá»¥
-                "missed_opportunity": 3   # Quota cho keyword Ä‘iá»ƒm cao nhÆ°ng trÆ°á»£t Top 30
-            }
         },
         "feature_file": {
             "max_keywords": 30,

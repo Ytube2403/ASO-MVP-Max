@@ -246,11 +246,6 @@ APP_CONFIG = {
             "core_intent": 25,
             "broad_expansion": 5,
             "consider": 10,
-            "consider_subquota": {
-                "platform_style": 4,
-                "secondary_language": 3,
-                "missed_opportunity": 3
-            }
         },
         "feature_file": {
             "max_keywords": 30,

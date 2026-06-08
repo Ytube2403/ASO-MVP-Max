@@ -996,6 +996,8 @@ def build_shortlist(df_all, config):
     df_sorted, dedup_log = _shared_text_dedup.prepare_dataframe(df_candidates, '01_Main_Keyword_Shortlist', config)
     df_sorted = df_sorted.sort_values(by=['BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'], ascending=[False, True, False, True]).copy()
     selected_core, selected_broad, selected_consider = [], [], []
+    main_quota = (config.get('keyword_quota', {}) or {}).get('main_file', {}) or {}
+    consider_quota = int(main_quota.get('consider', 10) or 10)
     selected_normalized, selected_tokens = set(), set()
 
     def volume_eligible(row, section):
@@ -1130,10 +1132,14 @@ def build_shortlist(df_all, config):
                 entry['FillReason'] = 'Broad Expansion Quota Fallback'
                 selected_broad.append(entry)
 
-    # Consider (Quota: 10)
-    consider_candidates = df_sorted[df_sorted['Bucket'] == 'Consider Keywords']
+    # Consider (quality-ranked review pool)
+    consider_candidates = df_sorted[df_sorted['Bucket'] == 'Consider Keywords'].copy()
+    consider_sort_cols = [col for col in ['RelevancyScore', 'VolumeN', 'BalancedScore', 'Rank_numeric', 'KEI', 'Difficulty'] if col in consider_candidates.columns]
+    consider_ascending = [col in {'Rank_numeric', 'Difficulty'} for col in consider_sort_cols]
+    if consider_sort_cols:
+        consider_candidates = consider_candidates.sort_values(by=consider_sort_cols, ascending=consider_ascending)
     for _, row in consider_candidates.iterrows():
-        if len(selected_consider) >= 10:
+        if len(selected_consider) >= consider_quota:
             break
         if not volume_eligible(row, 'Consider Keywords'):
             continue
@@ -1149,12 +1155,12 @@ def build_shortlist(df_all, config):
             selected_consider.append(add_to_shortlist(row, 'Consider Keywords'))
             
     # Consider Fallback
-    if len(selected_consider) < 10:
+    if len(selected_consider) < consider_quota:
         selected_kws = {item['Keyword'].lower() for item in selected_core + selected_broad}
         missed_opps = df_sorted[df_sorted['Bucket'].isin(['Core Intent Final', 'Broad Expansion']) & 
                                 (~df_sorted['Keyword'].str.lower().isin(selected_kws))]
         for _, row in missed_opps.iterrows():
-            if len(selected_consider) >= 10:
+            if len(selected_consider) >= consider_quota:
                 break
             if not volume_eligible(row, 'Consider Keywords'):
                 continue
